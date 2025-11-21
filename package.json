@@ -1,0 +1,15 @@
+{
+  "name": "my-react-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    // ... 依存パッケージ ...
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    // 👈 Vercelがコードを公開するために実行するコマンド
+    "build": "react-scripts build", 
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  }
+}
