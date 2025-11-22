@@ -541,8 +541,8 @@ guide: {
   faq_title: "Frequently Asked Questions",
   faq_data: [
     { q: "Q1: How does land protection work?", a: "A: Use `/tty` to set up your land protection. The specified coordinates will be protected automatically..." }
-  ]
-};
+]
+}}};
 
 // --- API Utility ---
 
