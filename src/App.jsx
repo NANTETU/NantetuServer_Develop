@@ -86,7 +86,7 @@ const CustomStyles = () => (
 );
 
 // --- Configuration ---
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_EXAMPLE_KEY/pub?output=csv"; 
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU/edit?gid=566365801#gid=566365801"; 
 
 // --- i18n Data (Japanese & English) ---
 
@@ -330,7 +330,7 @@ const LANGUAGES = {
     quiz_data: [
       { question: "【第1条】他人の建築物を無断で破壊・窃盗した場合、どうなりますか？", options: ["見つからなければ問題ない", "運営が警告する", "永久BANの対象となる"], answer: "永久BANの対象となる" },
       { question: "【第2条】ゲーム内で差別的な発言をしました。これは許可されますか？", options: ["サーバーの負荷にならないので許可される", "他のプレイヤーの不快感に関わるため禁止される", "個人的なやり取りなら問題ない"], answer: "他のプレイヤーの不快感に関わるため禁止される" },
-      { question: "【第3条】他のプレイヤーの拠点に近い場合、最低何ブロック離れるべきですか？", options: ["10ブロック", "50ブロック", "100ブロック"], answer: "10ブロック" }
+      { question: "【第3条】他のプレイヤーの拠点に近い場合、最低何ブロック離れるべきですか？", options: ["5ブロック", "10ブロック", "20ブロック"], answer: "5ブロック" }
     ],
     footer: {
       terms: "利用規約",
@@ -771,7 +771,7 @@ const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <a href="https://discord.gg/your_server_invite" target="_blank" rel="noreferrer" className="flex-1 group relative bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-6 rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/30 overflow-hidden">
+            <a href="https://discord.gg/79H7Jy65nz" target="_blank" rel="noreferrer" className="flex-1 group relative bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-6 rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/30 overflow-hidden">
               <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine"></div>
               <MessageCircle size={20} className="relative z-10" />
               <span className="relative z-10">{L.join.btn_discord}</span>
@@ -783,7 +783,7 @@ const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
           </div>
         </div>
         <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-0 overflow-hidden group">
-          <img src="https://images.unsplash.com/photo-1587573089734-09cb69c0f2b4?q=80&w=2070&auto=format&fit=crop" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+          <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/Minecraft%20Screenshot.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex flex-col justify-end p-8">
             <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                 <p className="text-white font-bold text-2xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
@@ -1013,7 +1013,7 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
     <div className="animate-fade-in">
       <header className="relative h-[85vh] min-h-[600px] flex items-center justify-center text-center px-4 overflow-hidden">
         <div className="absolute inset-0 z-0">
-            <img src="https://images.unsplash.com/photo-1607016284345-c5478694085f?q=80&w=2070&auto=format&fit=crop" alt="Minecraft Landscape" className="w-full h-full object-cover transform scale-105 animate-float" style={{animationDuration: '20s'}} onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/2070x600/1e293b/a8a8a8?text=Minecraft+Server"; }} />
+            <img src="https://images.unsplash.com/photo-1607016284345-c5478694085f?q=80&w=2070&auto=format&fit=crop" alt="Minecraft Landscape" className="w-full h-full object-cover transform scale-105 animate-float" style={{animationDuration: '20s'}} onError={(e) => { e.target.onerror = null; e.target.src = "https://github.com/NANTETU/Nantetu-Server/blob/main/images/banner.jpg?raw=true"; }} />
             <div className="absolute inset-0 bg-gradient-to-b from-gray-900/60 via-gray-900/50 to-gray-900"></div>
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
         </div>
@@ -1078,7 +1078,7 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
             <div className="relative">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-4 mt-12">
-                        <img src="https://images.unsplash.com/photo-1598550476439-6847785fcea6?q=80&w=800&auto=format&fit=crop" className="rounded-2xl shadow-lg hover:scale-[1.02] transition-transform duration-500" alt="Feature 1" />
+                        <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" className="rounded-2xl shadow-lg hover:scale-[1.02] transition-transform duration-500" alt="Feature 1" />
                         <div className="bg-purple-600 text-white p-6 rounded-2xl shadow-lg flex flex-col justify-center items-center text-center">
                             <Shield size={40} className="mb-2" /><span className="font-bold">Anti-Grief</span>
                         </div>
@@ -1087,7 +1087,7 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
                         <div className="bg-yellow-500 text-white p-6 rounded-2xl shadow-lg flex flex-col justify-center items-center text-center h-32">
                             <Clock size={40} className="mb-2" /><span className="font-bold">24/7 Online</span>
                         </div>
-                        <img src="https://images.unsplash.com/photo-1599639668333-7563441f7361?q=80&w=800&auto=format&fit=crop" className="rounded-2xl shadow-lg hover:scale-[1.02] transition-transform duration-500 h-64 object-cover" alt="Feature 2" />
+                        <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/step_server.jpg?raw=true" className="rounded-2xl shadow-lg hover:scale-[1.02] transition-transform duration-500 h-64 object-cover" alt="Feature 2" />
                     </div>
                 </div>
                 <div className="absolute -z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-full blur-3xl opacity-50"></div>
@@ -1734,12 +1734,12 @@ export default function App() {
                          <ul className="space-y-2">
                              <li><button onClick={() => navigate('home', 'contact')} className="hover:text-purple-400 transition-colors">{L.footer.contact}</button></li>
                              <li>
-                                <a href="https://www.youtube.com" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2">
+                                <a href="https://www.youtube.com/@なんてつ" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2">
                                     <Youtube size={14} /> YouTube
                                 </a>
                              </li>
                              <li>
-                                <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2">
+                                <a href="https://twitter.com/nantetu123" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2">
                                     <Twitter size={14} /> Twitter (X)
                                 </a>
                              </li>
