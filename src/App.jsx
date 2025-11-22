@@ -165,9 +165,9 @@ const LANGUAGES = {
       maintenance: "メンテナンス",
       info: "インフォメーション",
       default_data: [
-        { id: 1, date: "2025.11.17", title: "お知らせ", content: "軟鉄サーバーのウェブサイトがGoogle検索で表示されるようになりました！！", type: "info" },
-        { id: 2, date: "2025.11.17", title: "お問い合わせ機能について", content: "現在何らかの不具合により機能しておりません。そのため、お問い合わせはDiscordにてご報告ください。", type: "info" },
-        { id: 3, date: "2025.11.16", title: "新機能のお知らせ", content: "公式サイトに｢なんてつAIアシスタント｣が追加されました！どんな相談でもできます！さらに24時間いつでも対応！", type: "info" }
+        { id: 1, date: "2025.11.10", title: "サーバー稼働安定化のお知らせ", content: "サーバーのメモリ割り当てを調整し、多人数接続時のラグを解消しました。", type: "maintenance" },
+        { id: 2, date: "2025.09.01", title: "なんてつサーバー 正式オープン！", content: "統合版サバイバルサーバー「なんてつサーバー」がついにオープンしました！皆様の参加をお待ちしています。", type: "info" },
+        { id: 3, date: "2025.08.25", title: "ベータテスト終了のお知らせ", content: "多くのご協力をいただきありがとうございました。正式リリースに向けて最終調整を行います。", type: "info" }
       ],
     },
     commands: {
@@ -435,9 +435,7 @@ news: {
   maintenance: "Maintenance",
   info: "Information",
   default_data: [
-    { id: 1, date: "2025.11.10", title: "Server Stability Update", content: "Memory allocation has been adjusted to reduce lag during peak hours.", type: "maintenance" },
-    { id: 2, date: "2025.09.01", title: "Nantetsu Server Officially Open!", content: "Our survival Bedrock server is now open to everyone! We look forward to seeing you in-game.", type: "info" },
-    { id: 3, date: "2025.08.25", title: "Beta Test Concluded", content: "Thank you for your participation! Final adjustments are now underway for the official release.", type: "info" }
+    { id: 1, date: "2025", title: "Not Support", content: "English announcements are not supported.", type: "info" },
   ],
 },
 commands: {
@@ -541,8 +539,10 @@ guide: {
   faq_title: "Frequently Asked Questions",
   faq_data: [
     { q: "Q1: How does land protection work?", a: "A: Use `/tty` to set up your land protection. The specified coordinates will be protected automatically..." }
-]
-}}};
+  ]
+}
+
+};
 
 // --- API Utility ---
 
@@ -1024,12 +1024,9 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
         <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-pink-500/20 rounded-full mix-blend-screen filter blur-3xl animate-blob animation-delay-4000"></div>
 
         <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white mb-8 animate-fade-in-up">
-             <span className={`w-2 h-2 rounded-full animate-pulse ${serverStatus.online ? 'bg-green-400' : 'bg-red-500'}`}></span>
-             <span className="font-bold text-sm tracking-wider uppercase">
-                {serverStatus.online ? L.status.online(serverStatus.players) : L.status.offline}
-             </span>
-          </div>
+          
+          {/* Removed Server Status Pill from Here */}
+          
           <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700">
             {L.home.hero_title.split('\n')[0]}<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-yellow-300 animate-pulse">{L.home.hero_title.split('\n')[1]}</span>
@@ -1359,15 +1356,31 @@ export default function App() {
 
   // Initial Loading & Fetching Data
   useEffect(() => {
-    // 1. Simulate Initial App Load (2 seconds)
+    // 1. App Loading
     const loadTimer = setTimeout(() => {
         setIsAppLoading(false);
-    }, 2000);
-
-    // 2. Fetch Server Status
-    setTimeout(() => {
-        setServerStatus({ online: true, players: 12, loading: false });
     }, 1500);
+
+    // 2. Fetch Server Status from API (Real Data)
+    const fetchServerStatus = async () => {
+        try {
+            // Using mcsrvstat.us API for Bedrock
+            const response = await fetch(`https://api.mcsrvstat.us/bedrock/2/${L.server.ip}:${L.server.port}`);
+            const data = await response.json();
+            
+            setServerStatus({ 
+                online: data.online, 
+                players: data.online ? data.players.online : 0, 
+                loading: false 
+            });
+        } catch (error) {
+            console.error("Server status fetch failed", error);
+            setServerStatus({ online: false, players: 0, loading: false });
+        }
+    };
+
+    fetchServerStatus();
+    const intervalId = setInterval(fetchServerStatus, 60000); // Update every minute
 
     // 3. Fetch News from Google Sheets CSV
     const fetchNews = async () => {
@@ -1407,8 +1420,11 @@ export default function App() {
         }
     }
 
-    return () => clearTimeout(loadTimer);
-  }, []);
+    return () => {
+        clearTimeout(loadTimer);
+        clearInterval(intervalId);
+    };
+  }, []); // L dependency removed to prevent re-fetch loop on lang switch, initial load only
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -1596,12 +1612,30 @@ export default function App() {
                     ))}
                   </div>
 
-                  {/* Search & Toggles */}
+                  {/* Search & Toggles & Server Status */}
                   <div className="flex items-center gap-3">
                     <div className="relative group">
                       <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
                       <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-9 pr-4 py-1.5 w-40 focus:w-56 rounded-full text-sm bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
                     </div>
+
+                    {/* Server Status Indicator (Moved Here) */}
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        serverStatus.loading ? 'bg-gray-100 text-gray-400 border-gray-200 dark:bg-gray-800 dark:border-gray-700' :
+                        serverStatus.online 
+                            ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900' 
+                            : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900'
+                    }`}>
+                        <span className={`w-2 h-2 rounded-full ${serverStatus.online ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                        <span>
+                            {serverStatus.loading 
+                                ? L.status.loading 
+                                : serverStatus.online 
+                                    ? `${serverStatus.players} Online` 
+                                    : L.status.offline}
+                        </span>
+                    </div>
+
                     <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700 transition-colors font-bold text-xs">{currentLang === 'ja' ? 'EN' : 'JP'}</button>
                     <button onClick={() => setDarkMode(!darkMode)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-purple-100 dark:hover:bg-gray-700 transition-colors">{darkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
                   </div>
