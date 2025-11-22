@@ -385,7 +385,7 @@ home: {
   hero_subtitle: "Anti-griefing and powerful plugins included.\nEnjoy a stable, community–focused survival world.",
   join_now: "Join Now",
   see_details: "View Details",
-  what_is_nantetsu: "What is the Nantetsu Server?",
+  what_is_nantetsu: "What is the Nantetu Server?",
   description_p1: "A Bedrock server that breaks the limits of Bedrock.",
   description_p2: "A community survival server known for Java-like features and high quality.",
   description_p3: "Powerful plugins offer full protection and monitoring. Prevent griefing and enjoy building safely.",
@@ -540,9 +540,7 @@ guide: {
   faq_data: [
     { q: "Q1: How does land protection work?", a: "A: Use `/tty` to set up your land protection. The specified coordinates will be protected automatically..." }
   ]
-}
-
-};
+}}};
 
 // --- API Utility ---
 
@@ -604,7 +602,7 @@ const LoadingScreen = ({ onLoaded }) => (
              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-500 rounded-2xl flex items-center justify-center mb-6 mx-auto animate-bounce">
                 <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Loading" className="w-16 h-16 rounded-full object-cover" />
              </div>
-             <h1 className="text-white text-2xl font-bold tracking-wider mb-4">Nantetsu Server</h1>
+             <h1 className="text-white text-2xl font-bold tracking-wider mb-4">Nantetu Server</h1>
              <div className="w-48 h-1 bg-gray-800 rounded-full overflow-hidden mx-auto">
                  <div className="h-full bg-purple-500 animate-progress"></div>
              </div>
@@ -1583,7 +1581,7 @@ export default function App() {
                 <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('home')}>
                   <img 
                     src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" 
-                    alt="Nantetsu Server Icon" 
+                    alt="Nantetu Server Icon" 
                     className="w-9 h-9 rounded-full shadow-lg group-hover:scale-110 transition-transform object-cover"
                   />
                   <span className="font-black text-lg tracking-tight text-gray-800 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">なんてつサーバー</span>
@@ -1748,7 +1746,7 @@ export default function App() {
                          </ul>
                     </div>
                 </div>
-                <p className="text-sm opacity-50">&copy; 2025 Nantetsu Server. All rights reserved.<br/>Not affiliated with Mojang AB.</p>
+                <p className="text-sm opacity-50">&copy; 2025 Nantetu Server. All rights reserved.<br/>Not affiliated with Mojang AB.</p>
             </div>
         </div>
       </footer>
