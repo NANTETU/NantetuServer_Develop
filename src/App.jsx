@@ -56,13 +56,16 @@ const LANGUAGES = {
       feature_p5_desc: "ハイスペックな環境でストレスフリー。サバイバルも建築もヌルヌル動きます。",
       feature_p6_title: "初心者歓迎",
       feature_p6_desc: "優しいコミュニティで、マルチプレイが初めての方でも安心して参加できます。",
+      rules_title: "サーバーのルール",
+      rules_subtitle: "みんなが楽しく遊ぶための、最低限の約束事です。",
       quiz_title: "ルール確認クイズ",
-      quiz_subtitle: "サーバー参加前に、簡単なクイズでルールを確認しましょう！",
+      quiz_subtitle: "ルールを理解したことを確認するため、簡単な3問のクイズに挑戦してください。全問正解を目指しましょう！",
       quiz_start: "クイズを始める",
-      quiz_done: "完了！",
-      quiz_score: (score, total) => `正解数: ${score} / ${total}`,
-      quiz_retry: "もう一度",
-      quiz_view_terms: "規約全文を見る",
+      quiz_done: "お疲れ様でした！",
+      quiz_score: (score, total) => `あなたのスコア: ${score} / ${total}`,
+      quiz_result_perfect: "完璧です！安心してサーバーに参加してください。",
+      quiz_result_retry: "ルールをもう一度確認して、安全なプレイを心がけましょう。",
+      quiz_retry: "もう一度挑戦する",
       quiz_correct: "正解！",
       quiz_incorrect: "不正解...",
       contact_title: "お問い合わせ",
@@ -135,21 +138,21 @@ const LANGUAGES = {
       ]
     },
     join: {
-      title: "サーバーへの参加方法",
-      subtitle: "推奨される参加方法は「フレンドからの参加」または「サーバー追加」です。",
-      method1_tag: "方法 1 (推奨)",
-      method1_title: "フレンドから参加",
-      method1_desc: (tag) => `Minecraftの「プレイ」→「ソーシャル」→「プレイヤーを探す」から、以下のゲーマータグを検索してフレンド申請してください。\n承認されるとサーバーリストに表示されます。`,
-      gamer_tag: "ゲーマータグ",
-      method1_img: "フレンド追加画面イメージ",
-      method2_tag: "方法 2",
-      method2_title: "サーバーを追加",
-      method2_desc: "「サーバー」タブの一番下にある「サーバーを追加」から、以下の情報を入力して保存してください。",
-      ip_address: "IPアドレス",
-      port_number: "ポート番号",
-      method2_img: "サーバー追加画面イメージ",
-      next_step: "参加できたら、次はガイドをチェック！",
-      go_to_guide: "初心者ガイドへ進む",
+      title: "サーバー参加情報",
+      subtitle: "以下の情報を使用して、Minecraft統合版の「サーバー追加」から参加してください。フレンド申請での参加も可能です。",
+      bedrock_tag: "統合版 (Bedrock)",
+      status_online: "稼働中",
+      status_offline: "オフライン",
+      info_title: "サーバー参加情報",
+      info_desc: "以下の情報を使用して、Minecraft統合版の「サーバー追加」から参加してください。フレンド申請での参加も可能です。",
+      label_gamertag: "ゲーマータグ (フレンド申請用)",
+      label_ip: "IPアドレス",
+      label_port: "ポート番号",
+      btn_discord: "Discordに参加",
+      btn_guide: "詳しい接続手順",
+      img_alt_text: "Join Screen",
+      img_overlay_text: "さあ、冒険の始まりです。",
+      copy_success: "クリップボードにコピーしました！"
     },
     guide: {
       title: "初心者ガイド & FAQ",
@@ -216,10 +219,36 @@ const LANGUAGES = {
       section3_content: "運営連絡先:",
       email: "nantetu2@gmail.com"
     },
+    rules_data: [
+      {
+        title: "第1条: 荒らし行為・窃盗・チートの禁止",
+        content: [
+          "他プレイヤーの所有物（建築物、チェスト内のアイテム）の破壊、窃盗、無断使用は永久BANの対象です。",
+          "テクスチャパック以外の改造クライアント、チート、BOTの使用は禁止します。",
+          "発見したバグやグリッチは悪用せず、速やかに運営に報告してください。"
+        ]
+      },
+      {
+        title: "第2条: 迷惑行為・ハラスメントの禁止",
+        content: [
+          "他プレイヤーへの差別的発言、誹謗中傷、過度なハラスメント行為を禁止します。",
+          "サーバーへの過度な負荷をかける行為（クロック回路の放置など）は禁止します。",
+          "その他、他のプレイヤーが不快に感じる行為は、運営の判断でペナルティの対象となります。"
+        ]
+      },
+      {
+        title: "第3条: 建造物・景観に関するルール",
+        content: [
+          "景観を著しく損なう建築物（豆腐、巨大な柱など）は、改善を求められる場合があります。",
+          "プレイヤーが定住しているエリアから最低5ブロック離れた場所に建築を開始してください。",
+          "公序良俗に反するシンボルやメッセージを含む建築物は禁止します。"
+        ]
+      }
+    ],
     quiz_data: [
-      { question: "資源を無制限に確保するため、無限増殖バグを利用するのは？", options: ["許可されている", "禁止されている"], answer: "禁止されている" },
-      { question: "他のプレイヤーの建築物を許可なく改変・破壊する行為は？", options: ["許可されている", "禁止されている"], answer: "禁止されている" },
-      { question: "放置（AFK）は？", options: ["許可されている", "過度な放置は禁止されている"], answer: "過度な放置は禁止されている" }
+      { question: "【第1条】他人の建築物を無断で破壊・窃盗した場合、どうなりますか？", options: ["見つからなければ問題ない", "運営が警告する", "永久BANの対象となる"], answer: "永久BANの対象となる" },
+      { question: "【第2条】ゲーム内で差別的な発言をしました。これは許可されますか？", options: ["サーバーの負荷にならないので許可される", "他のプレイヤーの不快感に関わるため禁止される", "個人的なやり取りなら問題ない"], answer: "他のプレイヤーの不快感に関わるため禁止される" },
+      { question: "【第3条】他のプレイヤーの拠点に近い場合、最低何ブロック離れるべきですか？", options: ["10ブロック", "50ブロック", "100ブロック"], answer: "10ブロック" }
     ],
     footer: {
       terms: "利用規約",
@@ -295,13 +324,16 @@ const LANGUAGES = {
       feature_p5_desc: "Stress-free high-spec environment. Survival and building are smooth.",
       feature_p6_title: "Beginner Welcome",
       feature_p6_desc: "Friendly community ensures a safe experience even for first-time multiplayer users.",
+      rules_title: "Server Rules",
+      rules_subtitle: "Basic agreements for everyone to play happily.",
       quiz_title: "Rule Confirmation Quiz",
-      quiz_subtitle: "Let's check the rules with a quick quiz before joining the server!",
+      quiz_subtitle: "Let's check your understanding with 3 simple questions. Aim for a perfect score!",
       quiz_start: "Start Quiz",
-      quiz_done: "Completed!",
-      quiz_score: (score, total) => `Score: ${score} / ${total}`,
+      quiz_done: "Great Job!",
+      quiz_score: (score, total) => `Your Score: ${score} / ${total}`,
+      quiz_result_perfect: "Perfect! Please feel free to join the server.",
+      quiz_result_retry: "Please review the rules again to ensure safe play.",
       quiz_retry: "Try Again",
-      quiz_view_terms: "View Full Terms",
       quiz_correct: "Correct!",
       quiz_incorrect: "Incorrect...",
       contact_title: "Contact Us",
@@ -374,21 +406,21 @@ const LANGUAGES = {
       ]
     },
     join: {
-      title: "How to Join the Server",
-      subtitle: "The recommended methods are 'Joining from a Friend' or 'Adding a Server'.",
-      method1_tag: "Method 1 (Recommended)",
-      method1_title: "Joining from a Friend",
-      method1_desc: (tag) => `In Minecraft's 'Play' -> 'Social' -> 'Find Player', search for the GamerTag below and send a friend request.\nOnce accepted, the server will appear in your list.`,
-      gamer_tag: "GamerTag",
-      method1_img: "Friend Add Screen Image",
-      method2_tag: "Method 2",
-      method2_title: "Add a Server",
-      method2_desc: "In the 'Servers' tab, scroll down and click 'Add Server', then enter the following information and save.",
-      ip_address: "IP Address",
-      port_number: "Port",
-      method2_img: "Server Add Screen Image",
-      next_step: "Once you join, check out the guide!",
-      go_to_guide: "Proceed to Beginner's Guide",
+      title: "Server Participation Info",
+      subtitle: "Use the information below to join from 'Add Server' in Minecraft Bedrock. Joining via Friend Request is also possible.",
+      bedrock_tag: "Bedrock Edition",
+      status_online: "Online",
+      status_offline: "Offline",
+      info_title: "Server Join Info",
+      info_desc: "Use the info below to join via 'Add Server' in Minecraft Bedrock. Friend request method is also supported.",
+      label_gamertag: "GamerTag (Friend Request)",
+      label_ip: "IP Address",
+      label_port: "Port Number",
+      btn_discord: "Join Discord",
+      btn_guide: "Detailed Connection Guide",
+      img_alt_text: "Join Screen",
+      img_overlay_text: "Your adventure begins now.",
+      copy_success: "Copied to clipboard!"
     },
     guide: {
       title: "Beginner's Guide & FAQ",
@@ -455,10 +487,36 @@ const LANGUAGES = {
       section3_content: "Administration Contact:",
       email: "nantetu2@gmail.com"
     },
+    rules_data: [
+      {
+        title: "Article 1: Prohibition of Griefing, Theft, and Cheating",
+        content: [
+          "Destruction, theft, or unauthorized use of other players' property (buildings, items in chests) is subject to a permanent BAN.",
+          "The use of modified clients (other than texture packs), cheats, and BOTs is prohibited.",
+          "Do not exploit bugs or glitches; report them to the administration immediately."
+        ]
+      },
+      {
+        title: "Article 2: Prohibition of Nuisance and Harassment",
+        content: [
+          "Discriminatory remarks, slander, and excessive harassment towards other players are prohibited.",
+          "Acts that place an excessive load on the server (e.g., leaving clock circuits running) are prohibited.",
+          "Other acts deemed uncomfortable by other players may be subject to penalties at the discretion of the administration."
+        ]
+      },
+      {
+        title: "Article 3: Rules regarding Buildings and Scenery",
+        content: [
+          "Buildings that significantly impair the scenery (e.g., 'tofu' buildings, giant pillars) may be requested to be improved.",
+          "Start building at least 10 blocks away from areas where other players are settled.",
+          "Buildings containing symbols or messages contrary to public order and morals are prohibited."
+        ]
+      }
+    ],
     quiz_data: [
-      { question: "Is exploiting infinite duplication bugs for unlimited resources allowed?", options: ["Allowed", "Prohibited"], answer: "Prohibited" },
-      { question: "Is altering or destroying another player's structure without permission allowed?", options: ["Allowed", "Prohibited"], answer: "Prohibited" },
-      { question: "Is AFK (Away From Keyboard) allowed?", options: ["Allowed", "Excessive AFK is prohibited"], answer: "Excessive AFK is prohibited" }
+      { question: "【Art. 1】What happens if you destroy or steal another person's building without permission?", options: ["No problem if not found", "Admin will warn you", "Subject to Permanent BAN"], answer: "Subject to Permanent BAN" },
+      { question: "【Art. 2】I made a discriminatory remark in-game. Is this allowed?", options: ["Allowed as it doesn't lag the server", "Prohibited as it causes discomfort to others", "Allowed if it's a private exchange"], answer: "Prohibited as it causes discomfort to others" },
+      { question: "【Art. 3】What is the minimum distance you should keep from other players' bases?", options: ["10 blocks", "50 blocks", "100 blocks"], answer: "10 blocks" }
     ],
     footer: {
       terms: "Terms of Service",
@@ -591,15 +649,14 @@ const CopyBox = ({ label, value, onCopy }) => (
   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm group hover:border-purple-400 dark:hover:border-purple-500 transition-colors">
     <div>
       <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider mb-1">{label}</p>
-      <p className="font-mono text-xl font-bold text-gray-800 dark:text-gray-100 select-all">{value}</p>
+      <p className="font-mono text-xl font-bold text-gray-800 dark:text-gray-100 select-all break-all">{value}</p>
     </div>
     <button 
       onClick={() => onCopy(value)}
-      className="flex items-center justify-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900 dark:text-purple-200 dark:hover:bg-purple-800 px-4 py-2 rounded-lg transition-colors font-bold text-sm whitespace-nowrap"
+      className="flex-shrink-0 flex items-center justify-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900 dark:text-purple-200 dark:hover:bg-purple-800 px-4 py-2 rounded-lg transition-colors font-bold text-sm whitespace-nowrap"
     >
       <Copy size={16} />
-      {LANGUAGES[App.currentLang].join.copy_success.split(' ')[1] || 'Copy'} {/* Crude way to get 'Copy' or 'コピー' */}
-      {App.currentLang === 'ja' ? 'コピー' : 'Copy'}
+      {LANGUAGES[App.currentLang].footer.copy_success ? 'コピー' : 'Copy'}
     </button>
   </div>
 );
@@ -613,13 +670,93 @@ const AccordionItem = ({ title, content, isOpen, toggle }) => (
       <span>{title}</span>
       {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
     </button>
-    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-      <div className="p-5 bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 leading-relaxed">
-        {content}
-      </div>
+    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+       <div className="p-5 bg-gray-50 dark:bg-gray-900/50">
+          {Array.isArray(content) ? (
+             <ul className="space-y-2 text-gray-700 dark:text-gray-300 leading-relaxed">
+               {content.map((item, idx) => (
+                 <li key={idx} className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1.5 flex-shrink-0">•</span>
+                    <span>{item}</span>
+                 </li>
+               ))}
+             </ul>
+          ) : (
+             <div className="text-gray-700 dark:text-gray-300 leading-relaxed">{content}</div>
+          )}
+       </div>
     </div>
   </div>
 );
+
+const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
+  <section id="join" className="py-20 px-4 relative overflow-hidden animate-fade-in bg-white dark:bg-gray-900">
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-12">
+         <h2 className="text-3xl font-black mb-4 dark:text-white"><Gamepad2 className="inline mr-2 mb-1"/>{L.join.title}</h2>
+         <p className="text-gray-600 dark:text-gray-400">{L.join.subtitle}</p>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div className="grid lg:grid-cols-5">
+          
+          {/* Info Side */}
+          <div className="lg:col-span-3 p-8 md:p-12">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-4 py-1 rounded-full text-sm font-bold">
+                {L.join.bedrock_tag}
+              </span>
+              <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                <span className={`w-2.5 h-2.5 rounded-full ${serverStatus.online ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                {serverStatus.online ? L.join.status_online : L.join.status_offline}
+              </div>
+            </div>
+
+            <h2 className="text-3xl font-black mb-6 dark:text-white">{L.join.info_title}</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              {L.join.info_desc}
+            </p>
+
+            <div className="space-y-6 mb-8">
+              <CopyBox label={L.join.label_gamertag} value={L.server.tag} onCopy={handleCopy} />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <CopyBox label={L.join.label_ip} value={L.server.ip} onCopy={handleCopy} />
+                <CopyBox label={L.join.label_port} value={L.server.port} onCopy={handleCopy} />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a href="https://discord.gg/your_server_invite" target="_blank" rel="noreferrer" className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-4 px-6 rounded-xl text-center flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-500/30">
+                <MessageCircle size={20} />
+                {L.join.btn_discord}
+              </a>
+              <button 
+                onClick={() => navigate('guide')}
+                className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                <ExternalLink size={20} />
+                {L.join.btn_guide}
+              </button>
+            </div>
+          </div>
+
+          {/* Image Side */}
+          <div className="lg:col-span-2 bg-gray-100 dark:bg-gray-900 relative min-h-[300px] lg:min-h-0">
+            <img 
+              src="https://images.unsplash.com/photo-1587573089734-09cb69c0f2b4?q=80&w=2070&auto=format&fit=crop" 
+              alt={L.join.img_alt_text} 
+              className="absolute inset-0 w-full h-full object-cover opacity-90 hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
+              <p className="text-white font-bold text-xl drop-shadow-md">{L.join.img_overlay_text}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 
 // --- Page Content Components ---
 
@@ -669,25 +806,29 @@ const CommandsPage = ({ L }) => (
     </div>
     
     <div className="grid gap-12">
-      {L.commands.sections.map((section, idx) => (
-        <div key={idx} className="animate-fade-in-up" style={{animationDelay: `${idx * 100}ms`}}>
-          <h3 className={`text-2xl font-bold mb-6 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 ${section.color}`}>
-            {/* Note: Icons are mapped by position, not imported from data */}
-            {[Gamepad2, Shield, DollarSign, Users][idx]({size: 28})}
-            {section.category}
-          </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            {section.commands.map((cmd, cIdx) => (
-              <div key={cIdx} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-500 transition-colors">
-                <code className="block bg-gray-100 dark:bg-gray-900 text-purple-700 dark:text-purple-300 px-3 py-2 rounded-lg font-mono font-bold mb-2 w-fit text-sm">
-                  {cmd.cmd}
-                </code>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{cmd.desc}</p>
-              </div>
-            ))}
+      {L.commands.sections.map((section, idx) => {
+        const icons = [Gamepad2, Shield, DollarSign, Users];
+        const Icon = icons[idx] || HelpCircle;
+
+        return (
+          <div key={idx} className="animate-fade-in-up" style={{animationDelay: `${idx * 100}ms`}}>
+            <h3 className={`text-2xl font-bold mb-6 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 ${section.color}`}>
+              <Icon size={28} />
+              {section.category}
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {section.commands.map((cmd, cIdx) => (
+                <div key={cIdx} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-500 transition-colors">
+                  <code className="block bg-gray-100 dark:bg-gray-900 text-purple-700 dark:text-purple-300 px-3 py-2 rounded-lg font-mono font-bold mb-2 w-fit text-sm">
+                    {cmd.cmd}
+                  </code>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{cmd.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Admin Section */}
       <div className="mt-12 bg-red-50 dark:bg-red-900/10 p-8 rounded-3xl border border-red-100 dark:border-red-900/30">
@@ -766,68 +907,6 @@ const PrivacyPage = ({ L }) => (
         <p>{L.privacy.section3_content} <a href={`mailto:${L.privacy.email}`} className="text-purple-600 hover:underline">{L.privacy.email}</a></p>
 
         <p className="text-right text-sm text-gray-500 mt-8">{L.privacy.date}</p>
-    </div>
-  </div>
-);
-
-const JoinPage = ({ L, serverStatus, handleCopy, navigate }) => (
-  <div className="max-w-4xl mx-auto py-20 px-4 animate-fade-in">
-     <div className="text-center mb-12">
-      <h2 className="text-3xl font-black mb-4 dark:text-white"><Gamepad2 className="inline mr-2 mb-1"/>{L.join.title}</h2>
-      <p className="text-gray-600 dark:text-gray-400">{L.join.subtitle}</p>
-    </div>
-
-    <div className="space-y-12">
-        {/* Method 1 */}
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-purple-100 dark:border-gray-700 flex flex-col md:flex-row gap-8">
-            <div className="flex-1">
-                <div className="inline-block bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-bold mb-4 shadow-md shadow-purple-500/30">{L.join.method1_tag}</div>
-                <h3 className="text-2xl font-bold mb-4 dark:text-white">{L.join.method1_title}</h3>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 whitespace-pre-line">
-                    {L.join.method1_desc(L.server.tag)}
-                </p>
-                <CopyBox label={L.join.gamer_tag} value={L.server.tag} onCopy={handleCopy} />
-            </div>
-             <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 h-64 rounded-2xl flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 dark:border-gray-700">
-                <div className="text-center">
-                    <User size={48} className="mx-auto mb-2 opacity-50"/>
-                    <span className="text-sm">{L.join.method1_img}</span>
-                </div>
-            </div>
-        </div>
-
-        {/* Method 2 */}
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-purple-100 dark:border-gray-700 flex flex-col md:flex-row-reverse gap-8">
-            <div className="flex-1">
-                <div className="inline-block bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold mb-4 shadow-md shadow-blue-500/30">{L.join.method2_tag}</div>
-                <h3 className="text-2xl font-bold mb-4 dark:text-white">{L.join.method2_title}</h3>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
-                    {L.join.method2_desc}
-                </p>
-                <div className="space-y-4">
-                    <CopyBox label={L.join.ip_address} value={L.server.ip} onCopy={handleCopy} />
-                    <CopyBox label={L.join.port_number} value={L.server.port} onCopy={handleCopy} />
-                </div>
-            </div>
-            <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 h-64 rounded-2xl flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 dark:border-gray-700">
-                <div className="text-center">
-                    <Server size={48} className="mx-auto mb-2 opacity-50"/>
-                    <span className="text-sm">{L.join.method2_img}</span>
-                </div>
-            </div>
-        </div>
-
-        {/* Next Step */}
-        <div className="text-center pt-8">
-            <p className="mb-4 text-gray-600 dark:text-gray-400 font-bold">{L.join.next_step}</p>
-            <button 
-                onClick={() => navigate('guide')}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-green-500/30 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 mx-auto"
-            >
-                <BookOpen size={20} />
-                {L.join.go_to_guide}
-            </button>
-        </div>
     </div>
   </div>
 );
@@ -1078,7 +1157,7 @@ const SearchResultsPage = ({ L, searchTerm, searchResults, navigate }) => {
 };
 
 
-const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate }) => {
+const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion }) => {
   const QUIZ_DATA = L.quiz_data;
   return (
     <div className="animate-fade-in">
@@ -1104,7 +1183,7 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button 
-              onClick={() => navigate('join')}
+              onClick={() => scrollToSection('join')}
               className="w-full sm:w-auto px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-gray-900 text-lg font-black rounded-full shadow-lg hover:shadow-yellow-500/30 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2"
             >
               <Gamepad2 size={20} />
@@ -1216,24 +1295,46 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
         </div>
       </section>
 
-      {/* Rules Section (Simplified for Home) */}
+      {/* Join Section (Integrated into Home) */}
+      <JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} />
+
+      {/* Rules & Quiz Section */}
       <section id="rules" className="py-20 px-4 bg-gray-50 dark:bg-gray-900/50">
-          <div className="max-w-4xl mx-auto text-center">
-               <h2 className="text-3xl font-black mb-8 dark:text-white">{L.home.quiz_title}</h2>
-               <p className="mb-8 text-gray-600 dark:text-gray-300">{L.home.quiz_subtitle}</p>
+          <div className="max-w-4xl mx-auto">
+              {/* Header */}
+               <div className="text-center mb-12">
+                 <h2 className="text-3xl font-black mb-4 dark:text-white">{L.home.rules_title}</h2>
+                 <p className="text-gray-600 dark:text-gray-400">{L.home.rules_subtitle}</p>
+               </div>
                
-               <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 md:p-12 border border-purple-100 dark:border-gray-700 relative overflow-hidden">
-                {/* Quiz Content */}
+               {/* Accordion Rules */}
+               <div className="mb-16">
+                 {L.rules_data.map((rule, idx) => (
+                    <AccordionItem 
+                        key={idx}
+                        title={rule.title}
+                        content={rule.content}
+                        isOpen={activeAccordion === `rules-${idx}`}
+                        toggle={() => setActiveAccordion(activeAccordion === `rules-${idx}` ? null : `rules-${idx}`)}
+                    />
+                ))}
+               </div>
+
+               {/* Quiz Area */}
+               <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 md:p-12 border border-purple-100 dark:border-gray-700 relative overflow-hidden text-center">
+                {/* Background Decoration */}
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500"></div>
+
                 {!quizState.started ? (
                     <div className="animate-fade-in">
                         <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-6">
                             <HelpCircle size={40} className="text-yellow-600 dark:text-yellow-400" />
                         </div>
                         <h3 className="text-2xl font-bold mb-4 dark:text-white">{L.home.quiz_title}</h3>
-                        <p className="text-gray-600 dark:text-gray-300 mb-8">{L.quiz_data.length}問。正解してサーバーの平和を守りましょう。</p>
+                        <p className="text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto">{L.home.quiz_subtitle}</p>
                         <button 
                             onClick={() => setQuizState({ ...quizState, started: true })}
-                            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-10 rounded-full shadow-lg transition-all"
+                            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-10 rounded-full shadow-lg transition-all transform hover:scale-105"
                         >
                             {L.home.quiz_start}
                         </button>
@@ -1247,9 +1348,15 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
                         <p className="text-xl mb-6 dark:text-gray-300">
                             {L.home.quiz_score(quizState.score, QUIZ_DATA.length)}
                         </p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-8">
+                            {quizState.score === QUIZ_DATA.length 
+                                ? L.home.quiz_result_perfect
+                                : L.home.quiz_result_retry}
+                        </p>
                         <div className="flex justify-center gap-4">
-                             <button onClick={resetQuiz} className="bg-gray-200 dark:bg-gray-700 px-6 py-2 rounded-lg font-bold">{L.home.quiz_retry}</button>
-                             <button onClick={() => navigate('terms')} className="bg-purple-100 text-purple-700 px-6 py-2 rounded-lg font-bold">{L.home.quiz_view_terms}</button>
+                             <button onClick={resetQuiz} className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-6 py-2 rounded-lg font-bold transition-colors">
+                                {L.home.quiz_retry}
+                             </button>
                         </div>
                     </div>
                 ) : (
@@ -1258,7 +1365,7 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
                             <span className="font-bold text-purple-600 dark:text-purple-400">Q{quizState.current + 1}</span>
                             <span className="text-sm text-gray-400">{quizState.current + 1} / {QUIZ_DATA.length}</span>
                         </div>
-                        <h4 className="text-xl font-bold mb-8 dark:text-white">{QUIZ_DATA[quizState.current].question}</h4>
+                        <h4 className="text-xl font-bold mb-8 dark:text-white min-h-[3.5rem]">{QUIZ_DATA[quizState.current].question}</h4>
                         <div className="space-y-3">
                             {QUIZ_DATA[quizState.current].options.map((opt, idx) => (
                                 <button
@@ -1269,11 +1376,18 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
                                         quizState.showResult
                                             ? opt === QUIZ_DATA[quizState.current].answer
                                                 ? "bg-green-100 border-green-500 text-green-800 dark:bg-green-900 dark:text-green-100"
-                                                : "opacity-50"
-                                            : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-500 dark:hover:border-purple-400 text-gray-800 dark:text-gray-100"
+                                                : opt === QUIZ_DATA[quizState.current].options.find(o => o !== QUIZ_DATA[quizState.current].answer && quizState.isCorrect === false) 
+                                                    ? "bg-red-50 border-red-200 opacity-50 dark:bg-red-900/20 dark:border-red-800" // Selected wrong
+                                                    : "bg-white border-gray-200 opacity-50 dark:bg-gray-700 dark:border-gray-600"
+                                            : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100"
                                     }`}
                                 >
-                                    {opt}
+                                    <div className="flex justify-between items-center">
+                                        {opt}
+                                        {quizState.showResult && opt === QUIZ_DATA[quizState.current].answer && (
+                                            <CheckCircle size={20} className="text-green-600" />
+                                        )}
+                                    </div>
                                 </button>
                             ))}
                         </div>
@@ -1296,7 +1410,7 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
                 <form className="space-y-6" onSubmit={(e) => {
                     e.preventDefault();
                     // Custom non-alert message for submission
-                    showToast(L.currentLang === 'ja' ? "デモ用フォームです。実際には送信されません。" : "This is a demo form. No actual submission.");
+                    alert(L.currentLang === 'ja' ? "デモ用フォームです。実際には送信されません。" : "This is a demo form. No actual submission.");
                 }}>
                     <div>
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_name}</label>
@@ -1423,7 +1537,9 @@ export default function App() {
         // Handle specific section scrolls (e.g., from search results)
         if (target === 'guide' && sectionId.startsWith('guide-faq')) {
             // Open the specific FAQ item
-            setActiveAccordion(sectionId.split('-').slice(1).join('-'));
+            setTimeout(() => {
+               setActiveAccordion(sectionId.split('-').slice(1).join('-'));
+            }, 100);
         } else if (target === 'home') {
              setTimeout(() => {
                 const el = document.getElementById(sectionId);
@@ -1494,10 +1610,10 @@ export default function App() {
 
   const renderPage = () => {
       switch (page) {
-          case 'home': return <HomePage L={L} {...{serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, navigate, scrollToSection: (id) => navigate('home', id)}} showToast={showToast} />;
+          case 'home': return <HomePage L={L} {...{serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, navigate, activeAccordion, setActiveAccordion, scrollToSection: (id) => navigate('home', id)}} showToast={showToast} />;
           case 'news': return <NewsPage L={L} />;
           case 'commands': return <CommandsPage L={L} />;
-          case 'join': return <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} />;
+          // case 'join': return <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} />; // Integrated into Home
           case 'guide': return <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />;
           case 'terms': return <TermsPage L={L} />;
           case 'privacy': return <PrivacyPage L={L} />;
@@ -1524,7 +1640,7 @@ export default function App() {
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-6">
               <button onClick={() => navigate('home')} className={`text-sm font-bold transition-colors ${page === 'home' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-300 hover:text-purple-600'}`}>{L.nav.home}</button>
-              <button onClick={() => navigate('join')} className={`text-sm font-bold transition-colors ${page === 'join' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-300 hover:text-purple-600'}`}>{L.nav.join}</button>
+              <button onClick={() => navigate('home', 'join')} className={`text-sm font-bold transition-colors text-gray-600 dark:text-gray-300 hover:text-purple-600`}>{L.nav.join}</button>
               <button onClick={() => navigate('guide')} className={`text-sm font-bold transition-colors ${page === 'guide' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-300 hover:text-purple-600'}`}>{L.nav.guide}</button>
               <button onClick={() => navigate('commands')} className={`text-sm font-bold transition-colors ${page === 'commands' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-300 hover:text-purple-600'}`}>{L.nav.commands}</button>
               <button onClick={() => navigate('news')} className={`text-sm font-bold transition-colors ${page === 'news' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-300 hover:text-purple-600'}`}>{L.nav.news}</button>
@@ -1591,7 +1707,7 @@ export default function App() {
                  />
                </div>
                <button onClick={() => navigate('home')} className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-md">{L.nav.home}</button>
-               <button onClick={() => navigate('join')} className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-md">{L.nav.join}</button>
+               <button onClick={() => navigate('home', 'join')} className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-md">{L.nav.join}</button>
                <button onClick={() => navigate('guide')} className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-md">{L.nav.guide}</button>
                <button onClick={() => navigate('commands')} className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-md">{L.nav.commands}</button>
                <button onClick={() => navigate('news')} className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-md">{L.nav.news}</button>
