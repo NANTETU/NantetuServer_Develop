@@ -575,52 +575,82 @@ const withExponentialBackoff = async (fn, maxRetries = 5) => {
   }
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
+// pages/api/gemini.js (または app/api/gemini/route.js など、フレームワークによる)
+
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=`;
-const SYSTEM_INSTRUCTION_JA = "あなたはなんてつサーバーの公式AIアシスタントです。サーバーのルール、コマンド、遊び方、規約などについて簡潔かつ親切に回答してください。";
-const SYSTEM_INSTRUCTION_EN = "You are the official AI assistant for Nantetsu Server. Answer concisely and kindly about the server rules, commands, gameplay, and terms of service.";
 
+// サーバーレス関数としてエクスポート
+export default async function handler(req, res) {
+  // 1. Vercelの環境変数からAPIキーを安全に取得
+  const apiKey = process.env.GEMINI_API_KEY; 
 
-const fetchGeminiResponse = async (chatHistory, currentLang) => {
-  const apiKey = ""; // Canvas environment handles this key
-  const systemInstruction = currentLang === 'ja' ? SYSTEM_INSTRUCTION_JA : SYSTEM_INSTRUCTION_EN;
+  if (!apiKey) {
+    return res.status(500).json({ error: "API key not configured." });
+  }
   
-  const contents = chatHistory.map(msg => ({
-    role: msg.role === 'user' ? 'user' : 'model',
-    parts: [{ text: msg.text }]
-  }));
+  // 2. クライアントからのリクエストボディを取得
+  const { chatHistory, currentLang } = req.body;
 
-  const payload = {
-    contents: contents,
-    tools: [{ "google_search": {} }],
-    systemInstruction: {
-      parts: [{ text: systemInstruction }]
-    },
+  // 3. 元のロジック（fetchGeminiResponseの内容）をここに組み込む
+  const systemInstruction = currentLang === 'ja' ? SYSTEM_INSTRUCTION_JA : SYSTEM_INSTRUCTION_EN;
+  const contents = chatHistory.map(msg => ({ /* ... */ }));
+  const payload = { 
+    contents: contents, 
+    tools: [{ "google_search": {} }], 
+    systemInstruction: { parts: [{ text: systemInstruction }] } 
   };
 
-  const fetcher = () => fetch(API_URL + apiKey, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
   try {
-    const response = await withExponentialBackoff(fetcher);
+    const response = await fetch(API_URL + apiKey, { // API_URL + apiKey を使用
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
     const result = await response.json();
-    
-    const candidate = result.candidates?.[0];
-    const text = candidate?.content?.parts?.[0]?.text;
+    // ... レスポンスの処理 ...
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (text) {
-      return { text: text, error: null };
+      res.status(200).json({ text: text });
     } else {
       console.error("Gemini API Response Error:", result);
-      return { text: null, error: currentLang === 'ja' ? "回答を取得できませんでした。" : "Could not retrieve an answer." };
+      res.status(500).json({ error: "Could not retrieve an answer." });
     }
+
   } catch (error) {
-    console.error("Fetch or API Processing Error:", error);
-    return { text: null, error: currentLang === 'ja' ? "通信エラーが発生しました。" : "A communication error occurred." };
+    console.error("API Processing Error:", error);
+    res.status(500).json({ error: "A communication error occurred." });
   }
+}
+
+// 元の fetchGeminiResponse をクライアント側の関数として修正
+
+const fetchGeminiResponse = async (chatHistory, currentLang) => {
+  // APIキーの代わりに、VercelのAPI Route (例: /api/gemini) を呼び出す
+  const API_ROUTE_URL = '/api/gemini'; 
+  
+  try {
+    const response = await fetch(API_ROUTE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // chatHistory と currentLang をリクエストボディに含める
+      body: JSON.stringify({ chatHistory, currentLang })
+    });
+
+    const result = await response.json();
+    
+    if (response.ok && result.text) {
+      return { text: result.text, error: null };
+    } else {
+      const errorMessage = result.error || (currentLang === 'ja' ? "回答を取得できませんでした。" : "Could not retrieve an answer.");
+      return { text: null, error: errorMessage };
+    }
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    return { text: null, error: currentLang === 'ja' ? "通信エラーが発生しました。" : "A communication error occurred." };
+  }
 };
 
 // --- Components ---
