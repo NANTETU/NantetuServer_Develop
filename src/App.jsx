@@ -86,7 +86,12 @@ const CustomStyles = () => (
 );
 
 // --- Configuration ---
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU/edit?gid=566365801#gid=566365801"; 
+const SPREADSHEET_ID = '1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU';
+const SHEET_GID = '566365801'; 
+
+// データ取得用のURL (Google Visualization API)
+// A列: 日付, B列: タイトル, C列: 内容, D列: URL が入っていることを想定
+const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 
 // --- i18n Data (Japanese & English) ---
 
@@ -164,6 +169,7 @@ const LANGUAGES = {
       subtitle: "サーバーの最新情報やメンテナンス情報をお届けします。",
       maintenance: "メンテナンス",
       info: "インフォメーション",
+      fetch_error: "お知らせの読み込みに失敗しました。",
       default_data: [
         { id: 1, date: "2025.11.10", title: "サーバー稼働安定化のお知らせ", content: "サーバーのメモリ割り当てを調整し、多人数接続時のラグを解消しました。", type: "maintenance" },
         { id: 2, date: "2025.09.01", title: "なんてつサーバー 正式オープン！", content: "統合版サバイバルサーバー「なんてつサーバー」がついにオープンしました！皆様の参加をお待ちしています。", type: "info" },
@@ -434,6 +440,7 @@ news: {
   subtitle: "Latest server updates and maintenance information.",
   maintenance: "Maintenance",
   info: "Information",
+  fetch_error: "Failed to load news.",
   default_data: [
     { id: 1, date: "2025", title: "Not Support", content: "English announcements are not supported.", type: "info" },
   ],
@@ -578,22 +585,6 @@ const fetchGeminiResponse = async (chatHistory, currentLang) => {
   }
 };
 
-// CSV Parser for Google Sheets
-const parseCSV = (text) => {
-    const rows = text.split('\n').slice(1); // Skip header
-    return rows.map((row, index) => {
-        const cols = row.split(','); 
-        if (cols.length < 4) return null;
-        return {
-            id: index + 100, // Offset ID to avoid conflict
-            date: cols[0]?.trim() || "",
-            title: cols[1]?.trim() || "No Title",
-            content: cols[2]?.trim() || "",
-            type: cols[3]?.trim() === 'maintenance' ? 'maintenance' : 'info'
-        };
-    }).filter(item => item !== null);
-};
-
 // --- Components ---
 
 const LoadingScreen = ({ onLoaded }) => (
@@ -710,38 +701,43 @@ const NotFoundPage = ({ L, onNavigateHome }) => (
   </div>
 );
 
-const NewsPage = ({ L, newsData }) => (
-  <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
-    <div className="text-center mb-16">
-      <h2 className="text-4xl font-black mb-4 dark:text-white flex items-center justify-center gap-3">
-          <Bell className="text-purple-500" size={36} />
-          {L.news.title}
-      </h2>
-      <p className="text-gray-600 dark:text-gray-400 text-lg">{L.news.subtitle}</p>
-    </div>
-    <div className="space-y-8 relative">
-      <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700 hidden md:block"></div>
+const NewsPage = ({ L, newsData }) => {
+  // If newsData is passed from props, use it. Otherwise, use default.
+  // Note: App component fetches newsData, so we rely on that.
+  
+  const displayData = (newsData && newsData.length > 0) ? newsData : L.news.default_data;
+
+  return (
+    <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
+      <div className="text-center mb-16">
+        <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><Bell className="text-purple-500" size={40} />{L.news.title}</h2>
+        <p className="text-gray-600 dark:text-gray-400">{L.news.subtitle}</p>
+      </div>
       
-      {newsData.map((news, idx) => (
-        <div key={news.id} className="relative md:pl-24 animate-fade-in-up" style={{animationDelay: `${idx * 100}ms`}}>
-          <div className={`absolute left-6 top-6 w-4 h-4 rounded-full border-4 border-white dark:border-gray-900 shadow-sm z-10 hidden md:block ${news.type === 'maintenance' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-          <div className="glass-panel p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border-l-4 border-purple-500">
-            <div className="flex flex-wrap items-center gap-3 text-sm mb-4">
-              <span className="font-mono text-gray-500 dark:text-gray-400 flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                  <Clock size={14} /> {news.date}
-              </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${news.type === 'maintenance' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                {news.type === 'maintenance' ? L.news.maintenance : L.news.info}
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">{news.title}</h3>
-            <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{news.content}</p>
+      <div className="space-y-8">
+        {displayData.map((item) => (
+          <div key={item.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all group">
+             <div className="p-8">
+               <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${item.type === 'maintenance' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                    {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
+                  </span>
+                  <span className="text-gray-400 text-sm font-bold flex items-center gap-2"><Clock size={14} /> {item.date}</span>
+               </div>
+               <h3 className="text-2xl font-bold mb-4 dark:text-white group-hover:text-purple-600 transition-colors">{item.title}</h3>
+               <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{item.content}</p>
+               {item.url && (
+                   <a href={item.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 mt-4 text-purple-600 font-bold hover:underline">
+                       Link <ExternalLink size={16} />
+                   </a>
+               )}
+             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
   <section id="join" className="py-24 px-4 relative overflow-hidden animate-fade-in-scale">
@@ -1380,26 +1376,48 @@ export default function App() {
     fetchServerStatus();
     const intervalId = setInterval(fetchServerStatus, 60000); // Update every minute
 
-    // 3. Fetch News from Google Sheets CSV
+    // 3. Fetch News from Google Sheets (GViz API) - REPLACED CSV LOGIC
     const fetchNews = async () => {
         try {
-            let data = L.news.default_data; 
-            if (!SHEET_CSV_URL.includes("EXAMPLE_KEY")) {
-                 const res = await fetch(SHEET_CSV_URL);
-                 if (res.ok) {
-                     const text = await res.text();
-                     const parsed = parseCSV(text);
-                     if (parsed.length > 0) data = parsed;
-                 }
-            }
-            setNewsData(data);
+            // Use GViz API (JSON) instead of CSV to avoid parsing errors
+            const response = await fetch(NEWS_SHEET_URL);
             
-            const lastReadId = localStorage.getItem('lastReadNewsId');
-            const latestId = data[0]?.id;
-            if (latestId && (!lastReadId || latestId > parseInt(lastReadId))) {
-                setHasUnreadNews(true);
-            }
+            if (response.ok) {
+                const text = await response.text();
+                // Extract JSON from JSONP response
+                const jsonString = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
+                const data = JSON.parse(jsonString);
 
+                if (data.table && data.table.rows) {
+                    const parsedNews = data.table.rows.map((row, index) => {
+                        const cells = row.c;
+                        // c[0]: Date, c[1]: Title, c[2]: Content, c[3]: URL
+                        return {
+                            id: index + 100, // ID
+                            date: cells[0]?.v || '',
+                            title: cells[1]?.v || 'No Title',
+                            content: cells[2]?.v || '',
+                            url: cells[3]?.v || null,
+                            type: cells[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info' // Guess type based on content or add a column if needed
+                        };
+                    }).filter(item => item.title || item.content);
+                    
+                    // Sort by date (descending)
+                    const sortedNews = parsedNews.sort((a, b) => b.date.localeCompare(a.date));
+                    setNewsData(sortedNews);
+
+                    // Check for unread news
+                    const lastReadId = localStorage.getItem('lastReadNewsId');
+                    const latestId = sortedNews[0]?.id;
+                    if (latestId && (!lastReadId || latestId > parseInt(lastReadId))) {
+                        setHasUnreadNews(true);
+                    }
+                } else {
+                     setNewsData(L.news.default_data);
+                }
+            } else {
+                 setNewsData(L.news.default_data);
+            }
         } catch (e) {
             console.error("News fetch failed", e);
             setNewsData(L.news.default_data);
