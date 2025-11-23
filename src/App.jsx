@@ -703,10 +703,55 @@ const NotFoundPage = ({ L, onNavigateHome }) => (
   </div>
 );
 
+const NewsItem = ({ item, L }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div 
+      onClick={() => setIsOpen(!isOpen)}
+      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer group ${isOpen ? 'ring-2 ring-purple-500/20' : ''}`}
+    >
+       <div className="p-8">
+         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4 justify-between">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider w-fit ${item.type === 'maintenance' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
+              </span>
+              <span className="text-gray-400 text-sm font-bold flex items-center gap-2"><Clock size={14} /> {item.date}</span>
+            </div>
+            <div className="text-gray-300 group-hover:text-purple-500 transition-colors self-end md:self-center">
+                {isOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+            </div>
+         </div>
+         
+         <h3 className="text-2xl font-bold mb-4 dark:text-white group-hover:text-purple-600 transition-colors">{item.title}</h3>
+         
+         {/* Content with line clamp */}
+         <div className={`text-gray-600 dark:text-gray-300 leading-relaxed transition-all duration-300 ${isOpen ? 'line-clamp-none' : 'line-clamp-2'}`}>
+            {item.content}
+         </div>
+
+         {/* Action buttons (Link) - Visible only when expanded */}
+         <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-20 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+             {item.url && (
+                 <a 
+                    href={item.url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the link
+                    className="inline-flex items-center gap-2 text-purple-600 font-bold hover:underline bg-purple-50 dark:bg-purple-900/20 px-4 py-2 rounded-lg"
+                 >
+                     {L.news.link_text} <ExternalLink size={16} />
+                 </a>
+             )}
+         </div>
+       </div>
+    </div>
+  );
+};
+
 const NewsPage = ({ L, newsData }) => {
   // If newsData is passed from props, use it. Otherwise, use default.
-  // Note: App component fetches newsData, so we rely on that.
-  
   const displayData = (newsData && newsData.length > 0) ? newsData : L.news.default_data;
 
   return (
@@ -716,25 +761,9 @@ const NewsPage = ({ L, newsData }) => {
         <p className="text-gray-600 dark:text-gray-400">{L.news.subtitle}</p>
       </div>
       
-      <div className="space-y-8">
+      <div className="space-y-4">
         {displayData.map((item) => (
-          <div key={item.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all group">
-             <div className="p-8">
-               <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${item.type === 'maintenance' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                    {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
-                  </span>
-                  <span className="text-gray-400 text-sm font-bold flex items-center gap-2"><Clock size={14} /> {item.date}</span>
-               </div>
-               <h3 className="text-2xl font-bold mb-4 dark:text-white group-hover:text-purple-600 transition-colors">{item.title}</h3>
-               <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{item.content}</p>
-               {item.url && (
-                   <a href={item.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 mt-4 text-purple-600 font-bold hover:underline">
-                       {L.news.link_text} <ExternalLink size={16} />
-                   </a>
-               )}
-             </div>
-          </div>
+          <NewsItem key={item.id} item={item} L={L} />
         ))}
       </div>
     </div>
