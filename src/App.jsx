@@ -170,6 +170,7 @@ const LANGUAGES = {
       maintenance: "メンテナンス",
       info: "インフォメーション",
       fetch_error: "お知らせの読み込みに失敗しました。",
+      link_text: "リンクを開く",
       default_data: [
         { id: 1, date: "2025.11.10", title: "サーバー稼働安定化のお知らせ", content: "サーバーのメモリ割り当てを調整し、多人数接続時のラグを解消しました。", type: "maintenance" },
         { id: 2, date: "2025.09.01", title: "なんてつサーバー 正式オープン！", content: "統合版サバイバルサーバー「なんてつサーバー」がついにオープンしました！皆様の参加をお待ちしています。", type: "info" },
@@ -441,6 +442,7 @@ news: {
   maintenance: "Maintenance",
   info: "Information",
   fetch_error: "Failed to load news.",
+  link_text: "Open Link",
   default_data: [
     { id: 1, date: "2025", title: "Not Support", content: "English announcements are not supported.", type: "info" },
   ],
@@ -728,7 +730,7 @@ const NewsPage = ({ L, newsData }) => {
                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{item.content}</p>
                {item.url && (
                    <a href={item.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 mt-4 text-purple-600 font-bold hover:underline">
-                       Link <ExternalLink size={16} />
+                       {L.news.link_text} <ExternalLink size={16} />
                    </a>
                )}
              </div>
