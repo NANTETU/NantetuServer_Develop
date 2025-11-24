@@ -20,7 +20,7 @@ const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}
 const DISCORD_WEBHOOK_URL = ""; 
 
 // --- Firebase Setup ---
-const firebaseConfig = JSON.parse(__firebase_config || '{}');
+//const firebaseConfig = JSON.parse(__firebase_config || '{}');
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
