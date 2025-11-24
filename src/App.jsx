@@ -5,8 +5,26 @@ import {
   HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
   Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
   User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-  Youtube, Twitter
+  Youtube, Twitter, MessageSquare
 } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit } from 'firebase/firestore';
+
+// --- Configuration ---
+const SPREADSHEET_ID = '1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU';
+const SHEET_GID = '566365801'; 
+const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
+
+// ★★★ Discord Webhook URLを設定してください ★★★
+const DISCORD_WEBHOOK_URL = ""; 
+
+// --- Firebase Setup ---
+const firebaseConfig = JSON.parse(__firebase_config || '{}');
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // --- Custom Styles & Animations ---
 const CustomStyles = () => (
@@ -85,14 +103,6 @@ const CustomStyles = () => (
   `}</style>
 );
 
-// --- Configuration ---
-const SPREADSHEET_ID = '1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU';
-const SHEET_GID = '566365801'; 
-
-// データ取得用のURL (Google Visualization API)
-// A列: 日付, B列: タイトル, C列: 内容, D列: URL が入っていることを想定
-const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
-
 // --- i18n Data (Japanese & English) ---
 
 const LANGUAGES = {
@@ -109,6 +119,7 @@ const LANGUAGES = {
       guide: "ガイド",
       commands: "コマンド",
       news: "お知らせ",
+      forum: "フォーラム",
     },
     status: {
       loading: "...",
@@ -176,6 +187,17 @@ const LANGUAGES = {
         { id: 2, date: "2025.09.01", title: "なんてつサーバー 正式オープン！", content: "統合版サバイバルサーバー「なんてつサーバー」がついにオープンしました！皆様の参加をお待ちしています。", type: "info" },
         { id: 3, date: "2025.08.25", title: "ベータテスト終了のお知らせ", content: "多くのご協力をいただきありがとうございました。正式リリースに向けて最終調整を行います。", type: "info" }
       ],
+    },
+    forum: {
+        title: "コミュニティフォーラム",
+        subtitle: "ログイン不要で誰でも参加できる交流の場です。",
+        input_name: "お名前 (任意)",
+        input_message: "メッセージを入力...",
+        send: "投稿する",
+        sending: "送信中...",
+        empty_error: "メッセージを入力してください。",
+        no_posts: "まだ投稿がありません。最初の投稿をしてみましょう！",
+        anonymous: "名無しさん"
     },
     commands: {
       title: "コマンド一覧",
@@ -381,6 +403,7 @@ nav: {
   guide: "Guide",
   commands: "Commands",
   news: "News",
+  forum: "Forum",
 },
 status: {
   loading: "...",
@@ -446,6 +469,17 @@ news: {
   default_data: [
     { id: 1, date: "2025", title: "Not Support", content: "English announcements are not supported.", type: "info" },
   ],
+},
+forum: {
+    title: "Community Forum",
+    subtitle: "A place for everyone to chat without login.",
+    input_name: "Name (Optional)",
+    input_message: "Type your message...",
+    send: "Post",
+    sending: "Sending...",
+    empty_error: "Please enter a message.",
+    no_posts: "No posts yet. Be the first to post!",
+    anonymous: "Anonymous"
 },
 commands: {
   title: "Command List",
@@ -568,23 +602,100 @@ const withExponentialBackoff = async (fn, maxRetries = 5) => {
   }
 };
 
+// Generates system prompt from the site data
+const getSystemPrompt = (lang) => {
+    const L = LANGUAGES[lang];
+    let prompt = `You are the AI assistant for "Nantetu Server" (なんてつサーバー), a Minecraft Bedrock Edition server.
+    
+    Here is the information about the server:
+    
+    [Basic Info]
+    IP: ${L.server.ip}
+    Port: ${L.server.port}
+    Gamertag: ${L.server.tag}
+    Description: ${L.home.description_p2} ${L.home.description_p3}
+    
+    [Rules]
+    ${L.rules_data.map(r => `${r.title}: ${r.content.join(" ")}`).join("\n")}
+    
+    [Commands]
+    ${L.commands.sections.map(s => `${s.category}: ${s.commands.map(c => `${c.cmd} (${c.desc})`).join(", ")}`).join("\n")}
+    
+    [FAQ]
+    ${L.guide.faq_data.map(f => `Q: ${f.q}\nA: ${f.a}`).join("\n")}
+    
+    [Join Guide]
+    ${L.guide.steps.map(s => `${s.step}. ${s.title}: ${s.content}`).join("\n")}
+
+    Please answer questions from users based on this information. Be polite, helpful, and concise.
+    If the user asks something unrelated to the server, politely guide them back to server topics or answer briefly if it's general Minecraft knowledge.
+    Your language is ${L.lang_name}.
+    `;
+    return prompt;
+};
+
 const fetchGeminiResponse = async (chatHistory, currentLang) => {
-  const API_ROUTE_URL = '/api/gemini'; 
+  const apiKey = ""; // API key is injected by the environment
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  
+  const systemPrompt = getSystemPrompt(currentLang);
+
+  const contents = [
+    { role: "user", parts: [{ text: systemPrompt }] }, // System instruction as first user message for context
+    ...chatHistory.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }]
+    }))
+  ];
+
   try {
-    const response = await fetch(API_ROUTE_URL, {
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chatHistory, currentLang })
+      body: JSON.stringify({ contents: contents })
     });
+    
+    if (!response.ok) {
+        throw new Error(`Gemini API Error: ${response.status}`);
+    }
+
     const result = await response.json();
-    if (response.ok && result.text) {
-      return { text: result.text, error: null };
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (text) {
+      return { text: text, error: null };
     } else {
       return { text: null, error: currentLang === 'ja' ? "回答できませんでした。" : "Error fetching response." };
     }
   } catch (error) {
-    return { text: null, error: currentLang === 'ja' ? "通信エラー。" : "Network error." };
+    console.error("Gemini Error:", error);
+    return { text: null, error: currentLang === 'ja' ? "通信エラーが発生しました。" : "Network error." };
   }
+};
+
+// --- Custom Hooks ---
+
+const useScrollDirection = () => {
+  const [scrollDirection, setScrollDirection] = useState("up");
+  const [prevScrollY, setPrevScrollY] = useState(0);
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const updateScrollDirection = () => {
+      const scrollY = window.scrollY;
+      const direction = scrollY > lastScrollY ? "down" : "up";
+      if (direction !== scrollDirection && (scrollY - lastScrollY > 10 || scrollY - lastScrollY < -10)) {
+        setScrollDirection(direction);
+      }
+      lastScrollY = scrollY > 0 ? scrollY : 0;
+    };
+
+    window.addEventListener("scroll", updateScrollDirection);
+    return () => window.removeEventListener("scroll", updateScrollDirection);
+  }, [scrollDirection]);
+
+  return scrollDirection;
 };
 
 // --- Components ---
@@ -766,6 +877,112 @@ const NewsPage = ({ L, newsData }) => {
           <NewsItem key={item.id} item={item} L={L} />
         ))}
       </div>
+    </div>
+  );
+};
+
+const ForumPage = ({ L, user }) => {
+  const [posts, setPosts] = useState([]);
+  const [newPost, setNewPost] = useState('');
+  const [name, setName] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'), orderBy('createdAt', 'desc'), limit(50));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const postsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPosts(postsData);
+    }, (error) => {
+      console.error("Error fetching posts: ", error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const handlePost = async (e) => {
+    e.preventDefault();
+    if (!newPost.trim() || !user) return;
+
+    setIsSending(true);
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'), {
+        text: newPost,
+        name: name.trim() || L.forum.anonymous,
+        uid: user.uid,
+        createdAt: serverTimestamp()
+      });
+      setNewPost('');
+    } catch (error) {
+      console.error("Error adding post: ", error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
+        <div className="text-center mb-16">
+            <div className="inline-flex p-4 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-4"><MessageSquare size={32} /></div>
+            <h2 className="text-4xl font-black mb-4 dark:text-white">{L.forum.title}</h2>
+            <p className="text-gray-600 dark:text-gray-400">{L.forum.subtitle}</p>
+        </div>
+
+        {/* Post Form */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 mb-10">
+            <form onSubmit={handlePost}>
+                <div className="flex flex-col gap-4">
+                    <input 
+                        type="text" 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder={L.forum.input_name}
+                        className="w-full md:w-1/3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white"
+                    />
+                    <textarea 
+                        value={newPost}
+                        onChange={(e) => setNewPost(e.target.value)}
+                        placeholder={L.forum.input_message}
+                        rows="3"
+                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white resize-none"
+                    />
+                    <div className="flex justify-end">
+                        <button 
+                            type="submit" 
+                            disabled={isSending || !newPost.trim()}
+                            className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                        >
+                            {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                            {isSending ? L.forum.sending : L.forum.send}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {/* Posts List */}
+        <div className="space-y-4">
+            {posts.length === 0 ? (
+                <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+                    <MessageSquare size={48} className="mx-auto mb-4 opacity-20" />
+                    <p>{L.forum.no_posts}</p>
+                </div>
+            ) : (
+                posts.map(post => (
+                    <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in-up">
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="font-bold text-purple-600 dark:text-purple-400">{post.name}</span>
+                            <span className="text-xs text-gray-400">
+                                {post.createdAt?.toDate().toLocaleString() || 'Just now'}
+                            </span>
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{post.text}</p>
+                    </div>
+                ))
+            )}
+        </div>
     </div>
   );
 };
@@ -1036,6 +1253,50 @@ const SearchResultsPage = ({ L, searchTerm, searchResults, navigate }) => {
 
 const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast }) => {
   const QUIZ_DATA = L.quiz_data;
+
+  // Contact Form Logic with Webhook
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.name.value;
+    const email = form.email.value;
+    const message = form.message.value;
+
+    if (!DISCORD_WEBHOOK_URL) {
+      showToast(L.currentLang === 'ja' ? "Webhookが設定されていません (デモ)" : "Webhook not configured (Demo)");
+      return;
+    }
+
+    try {
+      const response = await fetch(DISCORD_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          embeds: [{
+            title: "📬 新しいお問い合わせ",
+            color: 0x8b5cf6, // Purple
+            fields: [
+              { name: "お名前 (MCID)", value: name, inline: true },
+              { name: "連絡先", value: email, inline: true },
+              { name: "メッセージ", value: message }
+            ],
+            timestamp: new Date().toISOString()
+          }]
+        })
+      });
+
+      if (response.ok) {
+        showToast(L.currentLang === 'ja' ? "送信しました！" : "Message Sent!");
+        form.reset();
+      } else {
+        throw new Error("Failed");
+      }
+    } catch (error) {
+      console.error(error);
+      showToast(L.currentLang === 'ja' ? "送信に失敗しました" : "Failed to send");
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <header className="relative h-[85vh] min-h-[600px] flex items-center justify-center text-center px-4 overflow-hidden">
@@ -1049,8 +1310,6 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
         <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-pink-500/20 rounded-full mix-blend-screen filter blur-3xl animate-blob animation-delay-4000"></div>
 
         <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center">
-          
-          {/* Removed Server Status Pill from Here */}
           
           <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700">
             {L.home.hero_title.split('\n')[0]}<br/>
@@ -1206,18 +1465,18 @@ const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQ
             <div className="absolute -bottom-10 -right-10 w-20 h-20 bg-purple-500/20 rounded-full blur-xl animate-pulse animation-delay-2000"></div>
             <div className="glass-panel p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 relative z-10">
                 <h2 className="text-3xl font-black mb-8 text-center dark:text-white">{L.home.contact_title}</h2>
-                <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); showToast(L.currentLang === 'ja' ? "送信しました！（デモ）" : "Message Sent! (Demo)"); }}>
+                <form className="space-y-6" onSubmit={handleContactSubmit}>
                     <div className="group">
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 group-focus-within:text-purple-600 transition-colors">{L.home.contact_name}</label>
-                        <div className="relative"><User className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-purple-500 transition-colors" size={20} /><input type="text" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition-all dark:text-white" placeholder={L.home.contact_placeholder_name} required /></div>
+                        <div className="relative"><User className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-purple-500 transition-colors" size={20} /><input type="text" name="name" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition-all dark:text-white" placeholder={L.home.contact_placeholder_name} required /></div>
                     </div>
                     <div className="group">
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 group-focus-within:text-purple-600 transition-colors">{L.home.contact_email}</label>
-                        <div className="relative"><MapPin className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-purple-500 transition-colors" size={20} /><input type="text" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition-all dark:text-white" placeholder={L.home.contact_placeholder_email} required /></div>
+                        <div className="relative"><MapPin className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-purple-500 transition-colors" size={20} /><input type="text" name="email" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition-all dark:text-white" placeholder={L.home.contact_placeholder_email} required /></div>
                     </div>
                     <div className="group">
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 group-focus-within:text-purple-600 transition-colors">{L.home.contact_message}</label>
-                        <textarea rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition-all dark:text-white resize-none" placeholder={L.home.contact_placeholder_msg} required></textarea>
+                        <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition-all dark:text-white resize-none" placeholder={L.home.contact_placeholder_msg} required></textarea>
                     </div>
                     <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"><Send size={20} />{L.home.contact_send}</button>
                 </form>
@@ -1367,6 +1626,8 @@ export default function App() {
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [newsData, setNewsData] = useState([]);
   const [hasUnreadNews, setHasUnreadNews] = useState(false);
+  const [user, setUser] = useState(null);
+  const scrollDirection = useScrollDirection(); // Scroll Direction Hook
 
   const L = LANGUAGES[currentLang];
   App.currentLang = currentLang;
@@ -1379,6 +1640,20 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // Auth Initialization
+  useEffect(() => {
+    const initAuth = async () => {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            await signInAnonymously(auth);
+        }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
   // Initial Loading & Fetching Data
   useEffect(() => {
     // 1. App Loading
@@ -1386,10 +1661,9 @@ export default function App() {
         setIsAppLoading(false);
     }, 1500);
 
-    // 2. Fetch Server Status from API (Real Data)
+    // 2. Fetch Server Status
     const fetchServerStatus = async () => {
         try {
-            // Using mcsrvstat.us API for Bedrock
             const response = await fetch(`https://api.mcsrvstat.us/bedrock/2/${L.server.ip}:${L.server.port}`);
             const data = await response.json();
             
@@ -1407,37 +1681,32 @@ export default function App() {
     fetchServerStatus();
     const intervalId = setInterval(fetchServerStatus, 60000); // Update every minute
 
-    // 3. Fetch News from Google Sheets (GViz API) - REPLACED CSV LOGIC
+    // 3. Fetch News
     const fetchNews = async () => {
         try {
-            // Use GViz API (JSON) instead of CSV to avoid parsing errors
             const response = await fetch(NEWS_SHEET_URL);
             
             if (response.ok) {
                 const text = await response.text();
-                // Extract JSON from JSONP response
                 const jsonString = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
                 const data = JSON.parse(jsonString);
 
                 if (data.table && data.table.rows) {
                     const parsedNews = data.table.rows.map((row, index) => {
                         const cells = row.c;
-                        // c[0]: Date, c[1]: Title, c[2]: Content, c[3]: URL
                         return {
-                            id: index + 100, // ID
+                            id: index + 100,
                             date: cells[0]?.v || '',
                             title: cells[1]?.v || 'No Title',
                             content: cells[2]?.v || '',
                             url: cells[3]?.v || null,
-                            type: cells[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info' // Guess type based on content or add a column if needed
+                            type: cells[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info'
                         };
                     }).filter(item => item.title || item.content);
                     
-                    // Sort by date (descending)
                     const sortedNews = parsedNews.sort((a, b) => b.date.localeCompare(a.date));
                     setNewsData(sortedNews);
 
-                    // Check for unread news
                     const lastReadId = localStorage.getItem('lastReadNewsId');
                     const latestId = sortedNews[0]?.id;
                     if (latestId && (!lastReadId || latestId > parseInt(lastReadId))) {
@@ -1459,7 +1728,7 @@ export default function App() {
     // 4. Handle URL Routing on Load
     const hash = window.location.hash.replace('#', '');
     if (hash) {
-        const validPages = ['home', 'join', 'news', 'commands', 'guide', 'terms', 'privacy'];
+        const validPages = ['home', 'join', 'news', 'commands', 'guide', 'terms', 'privacy', 'forum'];
         if (validPages.includes(hash)) {
             setPage(hash);
         } else {
@@ -1471,7 +1740,7 @@ export default function App() {
         clearTimeout(loadTimer);
         clearInterval(intervalId);
     };
-  }, []); // L dependency removed to prevent re-fetch loop on lang switch, initial load only
+  }, []); 
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -1605,6 +1874,7 @@ export default function App() {
           case 'join': return <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} />;
           case 'commands': return <CommandsPage L={L} />;
           case 'guide': return <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />;
+          case 'forum': return <ForumPage L={L} user={user} />;
           case 'terms': return <TermsPage L={L} />;
           case 'privacy': return <PrivacyPage L={L} />;
           case 'search': return <SearchResultsPage L={L} searchTerm={searchTerm} searchResults={searchResults} navigate={navigate} />;
@@ -1620,12 +1890,16 @@ export default function App() {
     <div className={`min-h-screen flex flex-col transition-colors duration-500 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-[#f8f9fa] text-gray-900'} font-sans selection:bg-purple-500 selection:text-white overflow-x-hidden`}>
       <CustomStyles />
       
-      {/* Fixed Header Container */}
-      <div className="fixed top-0 left-0 right-0 z-[500] flex flex-col shadow-md">
+      {/* Fixed Header Container with Scroll Logic */}
+      <div 
+        className={`fixed left-0 right-0 z-[500] flex flex-col shadow-md transition-all duration-300 ease-in-out ${
+          scrollDirection === "down" ? "-top-24" : "top-0"
+        }`}
+      >
           {/* Navbar */}
           <nav className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-all relative z-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-14"> {/* Slimmer height h-14 (56px) */}
+              <div className="flex justify-between items-center h-14">
                 {/* Left: Logo */}
                 <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('home')}>
                   <img 
@@ -1641,7 +1915,7 @@ export default function App() {
                   
                   {/* Nav Links */}
                   <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-full">
-                    {['home', 'join', 'news', 'commands', 'guide'].map((key) => (
+                    {['home', 'join', 'news', 'forum', 'commands', 'guide'].map((key) => (
                         <button 
                           key={key}
                           onClick={() => navigate(key)} 
@@ -1666,7 +1940,7 @@ export default function App() {
                       <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-9 pr-4 py-1.5 w-40 focus:w-56 rounded-full text-sm bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
                     </div>
 
-                    {/* Server Status Indicator (Moved Here) */}
+                    {/* Server Status Indicator */}
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
                         serverStatus.loading ? 'bg-gray-100 text-gray-400 border-gray-200 dark:bg-gray-800 dark:border-gray-700' :
                         serverStatus.online 
@@ -1703,7 +1977,7 @@ export default function App() {
                     <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
                   </div>
-                  {['home', 'join', 'news', 'guide', 'commands'].map((key) => (
+                  {['home', 'join', 'news', 'forum', 'guide', 'commands'].map((key) => (
                       <button 
                             key={key}
                             onClick={() => navigate(key)} 
