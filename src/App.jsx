@@ -17,14 +17,22 @@ const SHEET_GID = '566365801';
 const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 
 // ★★★ Discord Webhook URLを設定してください ★★★
-const DISCORD_WEBHOOK_URL = ""; 
+const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW7p_g_HSo409DYL"; 
 
 // --- Firebase Setup ---
-//const firebaseConfig = JSON.parse(__firebase_config || '{}');
+const firebaseConfig = {
+    apiKey: "AIzaSyAevnb74WfrSZrk-JpbYPt13TxbK3cCZM0",
+    authDomain: "nantetu-server.firebaseapp.com",
+    projectId: "nantetu-server",
+    storageBucket: "nantetu-server.firebasestorage.app",
+    messagingSenderId: "425815928148",
+    appId: "1:425815928148:web:e081fef325ac08e909acc1"
+};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// appIdはとりあえず固定の文字にしておきます
+const appId = 'nantetu-web';
 
 // --- Custom Styles & Animations ---
 const CustomStyles = () => (
