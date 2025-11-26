@@ -27,10 +27,11 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
                     <h2 className="text-3xl font-black mb-6 dark:text-white bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">{L.join.info_title}</h2>
                     <p className="text-gray-600 dark:text-gray-300 mb-10 leading-relaxed text-lg">{L.join.info_desc}</p>
                     <div className="space-y-6 mb-10">
-                        <CopyBox label={L.join.label_gamertag} value={L.server.tag} onCopy={handleCopy} lang={App.currentLang} />
+                        {/* 修正: App.currentLang を L.lang_code に変更（言語コードはLオブジェクト内にあると仮定） */}
+                        <CopyBox label={L.join.label_gamertag} value={L.server.tag} onCopy={handleCopy} lang={L.lang_code} />
                         <div className="grid sm:grid-cols-2 gap-4">
-                            <CopyBox label={L.join.label_ip} value={L.server.ip} onCopy={handleCopy} lang={App.currentLang} />
-                            <CopyBox label={L.join.label_port} value={L.server.port} onCopy={handleCopy} lang={App.currentLang} />
+                            <CopyBox label={L.join.label_ip} value={L.server.ip} onCopy={handleCopy} lang={L.lang_code} />
+                            <CopyBox label={L.join.label_port} value={L.server.port} onCopy={handleCopy} lang={L.lang_code} />
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4">
