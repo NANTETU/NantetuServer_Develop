@@ -54,7 +54,7 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
             </div>
 
             <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-0 overflow-hidden group rounded-3xl shadow-2xl">
-                <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/Minecraft%20Screenshot.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/Minecraft%20Screenshot.png" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex flex-col justify-end p-8">
                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                         <p className="text-white font-bold text-2xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
@@ -117,7 +117,7 @@ export default function HomePage({ L, serverStatus, quizState, setQuizState, res
             {/* Hero Section */}
             <header className="relative h-[85vh] min-h-[600px] flex items-center justify-center text-center px-4 overflow-hidden">
                 <div className="absolute inset-0 z-0">
-                    <img src="https://images.unsplash.com/photo-1607016284345-c5478694085f?q=80&w=2070&auto=format&fit=crop" alt="Minecraft Landscape" className="w-full h-full object-cover transform scale-105 animate-float" style={{ animationDuration: '20s' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://github.com/NANTETU/Nantetu-Server/blob/main/images/banner.jpg?raw=true"; }} />
+                    <img src="https://images.unsplash.com/photo-1607016284345-c5478694085f?q=80&w=2070&auto=format&fit=crop" alt="Minecraft Landscape" className="w-full h-full object-cover transform scale-105 animate-float" style={{ animationDuration: '20s' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/banner.jpg"; }} />
                     <div className="absolute inset-0 bg-gradient-to-b from-gray-900/60 via-gray-900/50 to-gray-900"></div>
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
                 </div>
