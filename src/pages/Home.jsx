@@ -5,54 +5,60 @@ import { DISCORD_WEBHOOK_URL } from '../data/languages';
 
 // --- Sub-Components specific to Home ---
 
-// JoinSectionを外部からインポートできるようにexportキーワードを追加
 export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
     <section id="join" className="py-24 px-4 relative overflow-hidden animate-fade-in-scale">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-purple-50/50 dark:to-purple-900/10 pointer-events-none"></div>
-        <div className="max-w-6xl mx-auto relative z-10">
-            <div className="text-center mb-16">
-                <span className="inline-block py-1 px-3 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 text-sm font-bold mb-4 animate-bounce">Let's Play Together</span>
-                <h2 className="text-4xl md:text-5xl font-black mb-4 dark:text-white tracking-tight">{L.join.title}</h2>
-                <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-lg">{L.join.subtitle}</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col lg:flex-row">
-                <div className="lg:w-3/5 p-8 md:p-12 flex flex-col justify-center">
-                    <div className="flex items-center gap-4 mb-8">
-                        <span className="bg-black text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-purple-500/20">{L.join.bedrock_tag}</span>
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border ${serverStatus.online ? 'border-green-200 bg-green-50 text-green-700 dark:bg-green-900/20 dark:border-green-900 dark:text-green-400' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                            <span className={`w-2 h-2 rounded-full animate-pulse ${serverStatus.online ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                            {serverStatus.online ? L.join.status_online : L.join.status_offline}
-                        </div>
-                    </div>
-                    <h2 className="text-3xl font-black mb-6 dark:text-white bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">{L.join.info_title}</h2>
-                    <p className="text-gray-600 dark:text-gray-300 mb-10 leading-relaxed text-lg">{L.join.info_desc}</p>
-                    <div className="space-y-6 mb-10">
-                        {/* 修正: App.currentLang を L.lang_code に変更（言語コードはLオブジェクト内にあると仮定） */}
-                        <CopyBox label={L.join.label_gamertag} value={L.server.tag} onCopy={handleCopy} lang={L.lang_code} />
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            <CopyBox label={L.join.label_ip} value={L.server.ip} onCopy={handleCopy} lang={L.lang_code} />
-                            <CopyBox label={L.join.label_port} value={L.server.port} onCopy={handleCopy} lang={L.lang_code} />
-                        </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <a href="https://discord.gg/79H7Jy65nz" target="_blank" rel="noreferrer" className="flex-1 group relative bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-6 rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/30 overflow-hidden">
-                            <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine"></div>
-                            <MessageCircle size={20} className="relative z-10" />
-                            <span className="relative z-10">{L.join.btn_discord}</span>
-                        </a>
-                        <button onClick={() => navigate('guide')} className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
-                            <ExternalLink size={20} />
-                            {L.join.btn_guide}
-                        </button>
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12 items-center relative z-10">
+            <div className="lg:w-1/2">
+                <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+                    <Gamepad2 size={32} />
+                </div>
+                <h2 className="text-4xl font-black mb-6 dark:text-white leading-tight">
+                    {L.join.title}
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                    {L.join.subtitle}
+                </p>
+
+                <div className="space-y-6 mb-10">
+                    {/* ここが修正した箇所: L.lang_code を使用 */}
+                    <CopyBox
+                        label={L.join.label_gamertag}
+                        value={L.server.tag}
+                        onCopy={handleCopy}
+                        lang={L.lang_code}
+                    />
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <CopyBox
+                            label={L.join.label_ip}
+                            value={L.server.ip}
+                            onCopy={handleCopy}
+                            lang={L.lang_code}
+                        />
+                        <CopyBox
+                            label={L.join.label_port}
+                            value={L.server.port}
+                            onCopy={handleCopy}
+                            lang={L.lang_code}
+                        />
                     </div>
                 </div>
-                <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-0 overflow-hidden group">
-                    <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/Minecraft%20Screenshot.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex flex-col justify-end p-8">
-                        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                            <p className="text-white font-bold text-2xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
-                            <div className="w-16 h-1 bg-yellow-400 rounded-full mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100"></div>
-                        </div>
+
+                <div className="flex flex-wrap gap-4">
+                    <a href="https://discord.gg/79H7Jy65nz" target="_blank" rel="noreferrer" className="flex-1 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:-translate-y-1">
+                        <MessageCircle size={20} /> {L.join.btn_discord}
+                    </a>
+                    <button onClick={() => navigate('guide')} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all border border-gray-200 dark:border-gray-700">
+                        <BookOpen size={20} /> {L.join.btn_guide}
+                    </button>
+                </div>
+            </div>
+
+            <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-0 overflow-hidden group rounded-3xl shadow-2xl">
+                <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/Minecraft%20Screenshot.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex flex-col justify-end p-8">
+                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <p className="text-white font-bold text-2xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
+                        <div className="w-16 h-1 bg-yellow-400 rounded-full mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100"></div>
                     </div>
                 </div>
             </div>

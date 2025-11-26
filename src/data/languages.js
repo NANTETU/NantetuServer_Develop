@@ -15,7 +15,8 @@ export const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSH
 export const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW7p_g_HSo409DYL"; 
 
 export const LANGUAGES = {
-  ja: {
+    ja: {
+        lang_code: "ja",
     lang_name: "日本語",
     server: {
       ip: "nantetu123.f5.si",
@@ -285,7 +286,8 @@ export const LANGUAGES = {
       search_result_btn: "詳細を見る",
     }
   },
-  en: {
+    en: {
+        lang_code: "en",
     lang_name: "English",
     server: {
       ip: "nantetu123.f5.si",
