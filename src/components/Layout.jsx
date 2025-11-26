@@ -29,312 +29,319 @@ export const Navbar = ({
 }) => {
     const scrollDirection = useScrollDirection();
 
+    // Utility function to get the current page title for the mobile menu
+    const getCurrentPageTitle = (p) => {
+        // Use optional chaining for safe access
+        switch (p) {
+            case 'news': return L?.news?.title;
+            case 'forum': return L?.forum?.title;
+            case 'guide': return L?.guide?.title;
+            case 'commands': return L?.commands?.title;
+            case 'join': return L?.join?.title;
+            case 'privacy': return L?.privacy?.title;
+            default: return L?.navbar?.title; // Fallback
+        }
+    }
+
+    // Determine if the current page has unread news to show the badge
+    const isNewsPage = page === 'news';
+
     return (
         <div
-            className={`fixed left-0 right-0 z-50 transition-transform duration-300 ${scrollDirection === 'down' && page === 'home' ? '-translate-y-full' : 'translate-y-0'} ${darkMode ? 'bg-gray-900/90 backdrop-blur-lg border-b border-gray-800' : 'bg-white/95 backdrop-blur-lg border-b border-gray-100'} shadow-md`}>
-            {hasUnreadNews && newsData.length > 0 && (
-                <div onClick={() => navigate('news')} className="bg-red-500 text-white text-center py-1.5 text-sm cursor-pointer hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
-                    <Info size={16} /> {L.navbar.unread_news} ({newsData[0].title})
+            className={`fixed left-0 right-0 top-0 z-[100] transition-all duration-300 ${scrollDirection === "down" ? '-translate-y-full shadow-none' : 'translate-y-0 shadow-lg'} ${isMenuOpen ? 'bg-white dark:bg-gray-900 shadow-xl' : 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md'}`}
+        >
+            {/* News Alert Bar */}
+            {hasUnreadNews && !isNewsPage && (
+                <div className="w-full bg-purple-600 text-white text-center py-2 text-sm font-medium animate-slide-down cursor-pointer hover:bg-purple-700 transition-colors"
+                    onClick={() => navigate('news')}
+                >
+                    {L?.navbar?.news_alert}
                 </div>
             )}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+
+            <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center transition-all duration-300 ${hasUnreadNews && !isNewsPage ? 'mt-0' : 'mt-0'}`}>
+
                 {/* Logo and Title */}
-                <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('home')}>
-                    <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Server Icon" className="w-10 h-10 rounded-full" />
-                    <span className="text-xl font-black text-purple-600 dark:text-purple-400">{L.navbar.title}</span>
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('home')}>
+                    <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover shadow-md" />
+                    {/* SAFE ACCESS: L?.navbar?.title */}
+                    <h2 className="text-2xl font-black dark:text-white hidden sm:block">{L?.navbar?.title}</h2>
+                    {/* Show current page title on mobile */}
+                    <h2 className="text-xl font-bold dark:text-white sm:hidden">{getCurrentPageTitle(page)}</h2>
                 </div>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex items-center space-x-6">
-                    <NavItem target="home" current={page} navigate={navigate} L={L} label={L.navbar.home} />
-                    <NavItem target="guide" current={page} navigate={navigate} L={L} label={L.navbar.guide} />
-                    <NavItem target="commands" current={page} navigate={navigate} L={L} label={L.navbar.commands} />
-                    <NavItem target="news" current={page} navigate={navigate} L={L} label={L.navbar.news} isNew={hasUnreadNews} />
-                    <NavItem target="forum" current={page} navigate={navigate} L={L} label={L.navbar.forum} />
+                <nav className="hidden lg:flex items-center space-x-6 text-sm font-medium">
+                    {L?.navbar?.nav_items.map((item) => (
+                        <div
+                            key={item.page}
+                            onClick={() => navigate(item.page)}
+                            className={`relative cursor-pointer py-1 transition-all ${page === item.page ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'}`}
+                        >
+                            {item.title}
+                            {page === item.page && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-[2px] bg-purple-600 dark:bg-purple-400 rounded-full animate-grow-x"></div>}
+                            {item.page === 'news' && hasUnreadNews && (
+                                <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full animate-ping-slow"></span>
+                            )}
+                        </div>
+                    ))}
                 </nav>
 
-                {/* Right side: Search, Theme Toggle, Menu Button */}
+                {/* Utility Icons & Menu Button */}
                 <div className="flex items-center space-x-3">
 
-                    <div className="relative hidden lg:block">
-                        <input type="text" placeholder={L.navbar.search_placeholder} className="pl-10 pr-4 py-2 w-48 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm dark:text-white" value={searchTerm} onChange={handleSearch} />
-                        <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
+                    {/* Server Status Indicator */}
+                    <div className={`w-3 h-3 rounded-full ${serverStatus.online ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500 shadow-red-500/50'} shadow-md animate-pulse hidden sm:block`} title={serverStatus.online ? L?.navbar?.status_online : L?.navbar?.status_offline}></div>
+
+                    {/* Dark Mode Toggle */}
+                    <button
+                        onClick={() => setDarkMode(!darkMode)}
+                        className="p-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                        title={darkMode ? L?.navbar?.toggle_light : L?.navbar?.toggle_dark}
+                    >
+                        {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
+
+                    {/* Search Bar (Mobile/Tablet) */}
+                    <div className="relative block md:hidden">
+                        <input
+                            type="text"
+                            placeholder={L?.navbar?.search_placeholder} // SAFE ACCESS
+                            value={searchTerm}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none text-sm dark:text-white transition-all focus:ring-2 focus:ring-purple-500"
+                        />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                        {searchTerm && (
+                            <button
+                                onClick={() => handleSearch('')}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
                     </div>
 
-                    <select
-                        value={currentLang}
-                        onChange={(e) => setCurrentLang(e.target.value)}
-                        className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 rounded-full text-sm py-2 px-3 transition-colors outline-none focus:ring-2 focus:ring-purple-500 hidden sm:block"
+                    {/* Menu Toggle (Mobile/Tablet) */}
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="p-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm lg:hidden"
+                        title={isMenuOpen ? L?.navbar?.close_menu : L?.navbar?.open_menu} // SAFE ACCESS
                     >
-                        <option value="ja">日本語</option>
-                        <option value="en">English</option>
-                    </select>
-
-                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500">
-                        {darkMode ? <Sun size={24} /> : <Moon size={24} />}
-                    </button>
-
-                    <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 md:hidden">
                         {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
+
                 </div>
             </div>
 
-            {/* Mobile Menu */}
-            <div className={`md:hidden overflow-hidden transition-all duration-300 ${isMenuOpen ? 'max-h-96 opacity-100 py-2' : 'max-h-0 opacity-0'}`}>
-                <nav className="flex flex-col space-y-1 px-4">
-                    <MobileNavItem target="home" current={page} navigate={navigate} L={L} label={L.navbar.home} />
-                    <MobileNavItem target="guide" current={page} navigate={navigate} L={L} label={L.navbar.guide} />
-                    <MobileNavItem target="commands" current={page} navigate={navigate} L={L} label={L.navbar.commands} />
-                    <MobileNavItem target="news" current={page} navigate={navigate} L={L} label={L.navbar.news} isNew={hasUnreadNews} />
-                    <MobileNavItem target="forum" current={page} navigate={navigate} L={L} label={L.navbar.forum} />
-                    <MobileNavItem target="terms" current={page} navigate={navigate} L={L} label={L.footer.terms} />
-                    <MobileNavItem target="privacy" current={page} navigate={navigate} L={L} label={L.footer.privacy} />
-                </nav>
-                <div className="relative px-4 mt-3">
-                    <input type="text" placeholder={L.navbar.search_placeholder} className="pl-10 pr-4 py-2 w-full rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm dark:text-white" value={searchTerm} onChange={handleSearch} />
-                    <Search size={18} className="absolute left-7 top-2.5 text-gray-400" />
+            {/* Mobile/Tablet Menu Overlay */}
+            <div className={`fixed inset-0 top-[68px] lg:hidden bg-white dark:bg-gray-900 z-50 transform transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                <div className="p-4 flex flex-col space-y-3">
+                    {/* Search Bar (Duplicated for better mobile usability inside menu) */}
+                    <div className="relative block">
+                        <input
+                            type="text"
+                            placeholder={L?.navbar?.search_placeholder} // SAFE ACCESS
+                            value={searchTerm}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none text-base dark:text-white transition-all focus:ring-2 focus:ring-purple-500"
+                        />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                        {searchTerm && (
+                            <button
+                                onClick={() => handleSearch('')}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                                <X size={18} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Navigation Links */}
+                    {L?.navbar?.nav_items.map((item) => (
+                        <button
+                            key={item.page}
+                            onClick={() => { navigate(item.page); setIsMenuOpen(false); }}
+                            className={`w-full text-left px-4 py-3 rounded-xl transition-colors flex justify-between items-center ${page === item.page ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-bold' : 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                        >
+                            {item.title}
+                            {item.page === 'news' && hasUnreadNews && (
+                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                            )}
+                        </button>
+                    ))}
+
+                    {/* Language Selector */}
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L?.navbar?.language}</label>
+                        <select
+                            value={currentLang}
+                            onChange={(e) => setCurrentLang(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none text-base dark:text-white"
+                        >
+                            {Object.keys(LANGUAGES).map((langKey) => (
+                                <option key={langKey} value={langKey}>
+                                    {LANGUAGES[langKey].language_name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                 </div>
             </div>
         </div>
     );
 };
 
-// Nav Item Helper
-const NavItem = ({ target, current, navigate, L, label, isNew = false }) => (
-    <div className="relative">
-        <button
-            onClick={() => navigate(target)}
-            className={`text-sm font-medium p-2 rounded-lg transition-colors relative 
-                ${current === target
-                    ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-gray-800'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
-        >
-            {label}
-        </button>
-        {isNew && <span className="absolute top-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500 animate-pulse"></span>}
-    </div>
-);
-
-// Mobile Nav Item Helper
-const MobileNavItem = ({ target, current, navigate, L, label, isNew = false }) => (
-    <button
-        onClick={() => navigate(target)}
-        className={`w-full text-left px-4 py-2 rounded-lg text-base font-medium transition-colors relative flex justify-between items-center
-            ${current === target
-                ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-gray-800'
-                : 'text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-            }`}
-    >
-        {label}
-        {isNew && <span className="h-2 w-2 rounded-full ring-1 ring-white bg-red-500"></span>}
-    </button>
-);
-
-
 // --- Footer Component ---
-export const Footer = ({ L, navigate }) => {
-    return (
-        <footer className="bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 pt-16 pb-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+export const Footer = ({ L, navigate }) => (
+    <footer className="bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-800 py-16 px-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-gray-600 dark:text-gray-400">
 
-                    {/* Column 1: Logo and Social */}
-                    <div className="col-span-2 lg:col-span-1">
-                        <div className="flex items-center space-x-2 mb-4">
-                            <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Server Icon" className="w-10 h-10 rounded-full" />
-                            <span className="text-xl font-black text-purple-600 dark:text-purple-400">{L.navbar.title}</span>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
-                            {L.footer.tagline}
-                        </p>
-                        <div className="flex space-x-3">
-                            <a href={L.social.youtube_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-500 transition-colors">
-                                <Youtube size={24} />
-                            </a>
-                            <a href={L.social.twitter_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 transition-colors">
-                                <Twitter size={24} />
-                            </a>
-                            <a href={L.social.discord_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-indigo-500 transition-colors">
-                                <MessageCircle size={24} />
-                            </a>
-                        </div>
-                    </div>
-
-                    {/* Column 2: Navigation */}
-                    <div>
-                        <h3 className="text-sm font-bold tracking-wider uppercase text-gray-900 dark:text-white mb-4">{L.footer.navigation}</h3>
-                        <ul className="space-y-3">
-                            <li><button onClick={() => navigate('home')} className="text-base text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">{L.navbar.home}</button></li>
-                            <li><button onClick={() => navigate('guide')} className="text-base text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">{L.navbar.guide}</button></li>
-                            <li><button onClick={() => navigate('commands')} className="text-base text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">{L.navbar.commands}</button></li>
-                            <li><button onClick={() => navigate('news')} className="text-base text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">{L.navbar.news}</button></li>
-                            <li><button onClick={() => navigate('forum')} className="text-base text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">{L.navbar.forum}</button></li>
-                        </ul>
-                    </div>
-
-                    {/* Column 3: Legal & Info */}
-                    <div>
-                        <h3 className="text-sm font-bold tracking-wider uppercase text-gray-900 dark:text-white mb-4">{L.footer.info}</h3>
-                        <ul className="space-y-3">
-                            {/* 修正点: navigate関数を呼び出すように変更 */}
-                            <li><button onClick={() => navigate('terms')} className="text-base text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">{L.footer.terms}</button></li>
-                            <li><button onClick={() => navigate('privacy')} className="text-base text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">{L.footer.privacy}</button></li>
-                            <li><a href={L.social.discord_url} target="_blank" rel="noopener noreferrer" className="text-base text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1">{L.footer.contact} <ExternalLink size={14} /></a></li>
-                        </ul>
-                    </div>
-
-                    {/* Column 4: Server Info (Placeholder for more complex structure) */}
-                    <div className="col-span-2 md:col-span-1">
-                        <h3 className="text-sm font-bold tracking-wider uppercase text-gray-900 dark:text-white mb-4">{L.footer.server_info}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                            {L.server.ip}:<span className="font-mono text-purple-600 dark:text-purple-400">{L.server.port}</span>
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                            {L.server.version}
-                        </p>
-                    </div>
-
-                    {/* Column 5: Other links or empty for spacing */}
-                    <div className="hidden lg:block"></div>
-
+            {/* Column 1: Server Info */}
+            <div className="col-span-2 md:col-span-1">
+                <div className="flex items-center gap-2 mb-4">
+                    <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover shadow-md" />
+                    <h3 className="text-xl font-bold dark:text-white">{L?.navbar?.title}</h3> {/* SAFE ACCESS */}
                 </div>
-
-                <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800 text-center">
-                    <p className="text-sm text-gray-400 dark:text-gray-500">
-                        &copy; {new Date().getFullYear()} {L.footer.copyright}. All rights reserved.
-                    </p>
-                </div>
+                <p className="text-sm leading-relaxed mb-4">
+                    {L?.footer?.description} {/* SAFE ACCESS */}
+                </p>
+                <a href={L?.footer?.sns_twitter_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-purple-600 font-medium hover:underline">
+                    <Twitter size={16} />
+                    {L?.footer?.sns_twitter} {/* SAFE ACCESS */}
+                </a>
+                <a href={L?.footer?.sns_youtube_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-purple-600 font-medium hover:underline mt-2">
+                    <Youtube size={16} />
+                    {L?.footer?.sns_youtube} {/* SAFE ACCESS */}
+                </a>
             </div>
-        </footer>
-    );
-};
 
-// --- AI Chat Component (No change) ---
-export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const messagesEndRef = useRef(null);
+            {/* Column 2: Navigation */}
+            <div className="md:w-1/2">
+                <h3 className="text-lg font-bold mb-4 dark:text-white">{L?.footer?.nav_title}</h3> {/* SAFE ACCESS */}
+                <ul className="space-y-2 text-sm">
+                    <li><button onClick={() => navigate('home')} className="hover:text-purple-600 transition-colors">{L?.footer?.nav_home}</button></li> {/* SAFE ACCESS */}
+                    <li><button onClick={() => navigate('news')} className="hover:text-purple-600 transition-colors">{L?.footer?.nav_news}</button></li> {/* SAFE ACCESS */}
+                    <li><button onClick={() => navigate('forum')} className="hover:text-purple-600 transition-colors">{L?.footer?.nav_forum}</button></li> {/* SAFE ACCESS */}
+                    <li><button onClick={() => navigate('guide')} className="hover:text-purple-600 transition-colors">{L?.footer?.nav_guide}</button></li> {/* SAFE ACCESS */}
+                </ul>
+            </div>
 
+            {/* Column 3: Resources */}
+            <div className="md:w-1/2">
+                <h3 className="text-lg font-bold mb-4 dark:text-white">{L?.footer?.resources_title}</h3> {/* SAFE ACCESS */}
+                <ul className="space-y-2 text-sm">
+                    <li><button onClick={() => navigate('commands')} className="hover:text-purple-600 transition-colors">{L?.footer?.resources_commands}</button></li> {/* SAFE ACCESS */}
+                    <li><button onClick={() => navigate('privacy')} className="hover:text-purple-600 transition-colors">{L?.footer?.resources_privacy}</button></li> {/* SAFE ACCESS */}
+                    <li><a href={L?.footer?.resources_status_url} target="_blank" rel="noreferrer" className="hover:text-purple-600 transition-colors">{L?.footer?.resources_status} <ExternalLink size={12} className="inline ml-1" /></a></li> {/* SAFE ACCESS */}
+                </ul>
+            </div>
+
+            {/* Column 4: Contact */}
+            <div>
+                <h3 className="text-lg font-bold mb-4 dark:text-white">{L?.footer?.contact_title}</h3> {/* SAFE ACCESS */}
+                <ul className="space-y-2 text-sm">
+                    <li><a href={`mailto:${L?.footer?.contact_email}`} className="hover:text-purple-600 transition-colors">{L?.footer?.contact_email}</a></li> {/* SAFE ACCESS */}
+                    <li><a href={L?.footer?.contact_discord_url} target="_blank" rel="noreferrer" className="hover:text-purple-600 transition-colors">{L?.footer?.contact_discord} <ExternalLink size={12} className="inline ml-1" /></a></li> {/* SAFE ACCESS */}
+                    <li><a href={L?.footer?.contact_youtube_url} target="_blank" rel="noreferrer" className="hover:text-purple-600 transition-colors">{L?.footer?.contact_youtube} <ExternalLink size={12} className="inline ml-1" /></a></li> {/* SAFE ACCESS */}
+                </ul>
+            </div>
+        </div>
+
+        {/* Copyright */}
+        <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500 dark:text-gray-500">
+            &copy; {new Date().getFullYear()} Nantetu Server. {L?.footer?.copyright}.
+            <p className="mt-1">Built with <Zap size={12} className="inline text-yellow-500" /> by Community.</p>
+        </div>
+    </footer>
+);
+
+
+// --- AI Chat Component ---
+export const AIChat = ({ L, isChatOpen, setIsChatOpen, handleSend, messages, input, setInput, isLoading, handleClearChat }) => {
+    const chatWindowRef = useRef(null);
+
+    // Scroll to the bottom whenever messages change or loading state changes
     useEffect(() => {
-        if (isChatOpen) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (chatWindowRef.current) {
+            chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
         }
-    }, [messages, isChatOpen]);
+    }, [messages, isLoading]);
 
-    useEffect(() => {
-        if (isChatOpen && messages.length === 0) {
-            setMessages([{
-                role: 'system',
-                text: L.footer.chat_welcome
-            }]);
-        }
-    }, [isChatOpen]);
-
-    const handleSend = async (e) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
-
-        const userMessage = { role: 'user', text: input };
-        const newMessages = [...messages, userMessage];
-        setMessages(newMessages);
-        setInput('');
-        setIsLoading(true);
-
-        const systemPrompt = L.footer.chat_system_prompt.replace('{{lang}}', currentLang);
-        const userQuery = input.trim();
-        const apiKey = ""
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-        const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            tools: [{ "google_search": {} }],
-            systemInstruction: {
-                parts: [{ text: systemPrompt }]
-            },
-        };
-
-        try {
-            const response = await fetchWithExponentialBackoff(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-            const candidate = result.candidates?.[0];
-
-            let aiText = L.footer.chat_error;
-            if (candidate && candidate.content?.parts?.[0]?.text) {
-                aiText = candidate.content.parts[0].text;
-            }
-
-            setMessages(p => [...p, { role: 'system', text: aiText }]);
-        } catch (error) {
-            console.error("API Call Error:", error);
-            setMessages(p => [...p, { role: 'system', text: L.footer.chat_error }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Utility for exponential backoff (retry logic)
-    const fetchWithExponentialBackoff = async (url, options, maxRetries = 5) => {
-        for (let i = 0; i < maxRetries; i++) {
-            try {
-                const response = await fetch(url, options);
-                if (response.status !== 429) return response; // Success or non-retryable error
-            } catch (error) {
-                // Network error, try again
-            }
-
-            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-        throw new Error("Max retries exceeded.");
-    };
-
+    if (!isChatOpen) return null;
 
     return (
-        <div
-            className={`fixed bottom-0 right-0 z-[99] w-full max-w-sm h-full max-h-[85%] sm:max-h-[600px] bg-white dark:bg-gray-900 shadow-2xl rounded-t-2xl sm:rounded-2xl flex flex-col transition-transform duration-500 ease-in-out ${isChatOpen ? 'translate-y-0 sm:mr-6 sm:mb-6' : 'translate-y-full sm:translate-y-0 sm:mr-6 sm:mb-6 pointer-events-none'}`}
-        >
-            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800 rounded-t-2xl bg-purple-600 text-white shadow-md">
-                <div className="flex items-center gap-2">
-                    <MessageCircle size={24} />
-                    <h2 className="text-lg font-bold">{L.footer.chat_title}</h2>
+        <div className="fixed bottom-0 right-0 md:bottom-6 md:right-6 z-[95] w-full md:w-[400px] h-full md:h-[550px] bg-white dark:bg-gray-900 md:rounded-2xl shadow-2xl flex flex-col transition-all duration-300 border border-gray-200 dark:border-gray-800 overflow-hidden">
+
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+                {/* SAFE ACCESS: L?.footer?.chat_title */}
+                <h3 className="text-xl font-bold dark:text-white flex items-center gap-2"><MessageCircle size={24} className="text-purple-600" />{L?.footer?.chat_title}</h3>
+                <div className='flex items-center gap-2'>
+                    {/* Clear Chat Button */}
+                    <button
+                        onClick={handleClearChat}
+                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors rounded-full"
+                        title={L?.footer?.chat_clear} // SAFE ACCESS
+                        disabled={isLoading}
+                    >
+                        <Trash2 size={20} />
+                    </button>
+                    {/* Close Button */}
+                    <button
+                        onClick={() => setIsChatOpen(false)}
+                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-purple-600 transition-colors rounded-full"
+                        title={L?.footer?.chat_close} // SAFE ACCESS
+                        disabled={isLoading}
+                    >
+                        <X size={24} />
+                    </button>
                 </div>
-                <button onClick={closeChat} className="p-2 rounded-full hover:bg-purple-700 transition-colors">
-                    <X size={20} />
-                </button>
             </div>
 
-            <div className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-gray-900 custom-scrollbar">
-                {messages.map((msg, index) => (
-                    <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
-                        <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
-                        </div>
+            {/* Info/Warning Area */}
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs border-b border-yellow-200 dark:border-yellow-900 flex items-center gap-2">
+                <Info size={16} />
+                {L?.footer?.chat_disclaimer} {/* SAFE ACCESS */}
+            </div>
+
+            {/* Message Window */}
+            <div ref={chatWindowRef} className="flex-grow p-4 space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-gray-900/70">
+                {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 dark:text-gray-600">
+                        <MessageCircle size={48} className="mb-2" />
+                        <p className="text-sm">{L?.footer?.chat_start}</p> {/* SAFE ACCESS */}
                     </div>
-                ))}
-                {isLoading && <div className="text-xs text-gray-400 ml-4">{L.footer.chat_loading}</div>}
-                <div ref={messagesEndRef} />
+                ) : (
+                    messages.map((msg, index) => (
+                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
+                            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>\
+                                <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+                            </div>
+                        </div>
+                    ))
+                )}
+                {isLoading && <div className="text-xs text-gray-400 ml-4">{L?.footer?.chat_loading}</div>} {/* SAFE ACCESS */}
             </div>
 
+            {/* Input Area */}
             <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
                 <form onSubmit={handleSend} className="flex gap-2 relative">
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder={L.footer.chat_input_placeholder}
+                        placeholder={L?.footer?.chat_input_placeholder} // SAFE ACCESS
                         className="flex-grow pl-5 pr-12 py-4 rounded-xl bg-gray-100 dark:bg-gray-800 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white"
                         disabled={isLoading}
                     />
-                    <button type="submit" disabled={!input.trim() || isLoading} className="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-200 disabled:opacity-50 transition-colors">
-                        {isLoading ? <Zap size={24} className="animate-pulse" /> : <Send size={24} />}
+                    <button
+                        type="submit"
+                        className={`absolute right-0 top-0 h-full w-12 flex items-center justify-center rounded-r-xl transition-all ${isLoading ? 'text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? <Loader2 size={24} className="animate-spin" /> : <Send size={20} />}
                     </button>
                 </form>
             </div>
