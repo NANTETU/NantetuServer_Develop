@@ -19,241 +19,236 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
                     {L.join.subtitle}
                 </p>
 
-                <div className="space-y-6 mb-10">
-                    {/* ここが修正した箇所: L.lang_code を使用 */}
-                    <CopyBox
-                        label={L.join.label_gamertag}
-                        value={L.server.tag}
-                        onCopy={handleCopy}
-                        lang={L.lang_code}
-                    />
-                    <div className="grid sm:grid-cols-2 gap-4">
-                        <CopyBox
-                            label={L.join.label_ip}
-                            value={L.server.ip}
-                            onCopy={handleCopy}
-                            lang={L.lang_code}
-                        />
-                        <CopyBox
-                            label={L.join.label_port}
-                            value={L.server.port}
-                            onCopy={handleCopy}
-                            lang={L.lang_code}
-                        />
-                    </div>
+                <div className="space-y-4 mb-10">
+                    <CopyBox label={L.join.ip} value={L.server.ip} onCopy={handleCopy} />
+                    <CopyBox label={L.join.port} value={L.server.port} onCopy={handleCopy} />
                 </div>
 
-                <div className="flex flex-wrap gap-4">
-                    <a href="https://discord.gg/79H7Jy65nz" target="_blank" rel="noreferrer" className="flex-1 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:-translate-y-1">
-                        <MessageCircle size={20} /> {L.join.btn_discord}
-                    </a>
-                    <button onClick={() => navigate('guide')} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all border border-gray-200 dark:border-gray-700">
-                        <BookOpen size={20} /> {L.join.btn_guide}
+                <a href={L.social.discord_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition-all hover:shadow-xl transform hover:scale-[1.02] active:scale-95">
+                    <MessageCircle size={20} className="mr-3" />
+                    {L.join.discord_link}
+                    <ExternalLink size={16} className="ml-2" />
+                </a>
+            </div>
+
+            {/* Server Status and Players */}
+            <div className="lg:w-1/2 w-full glass-panel p-8 rounded-3xl shadow-xl flex flex-col space-y-6">
+                <h3 className="text-2xl font-bold dark:text-white flex items-center gap-2">
+                    <Server size={24} className="text-purple-500" />
+                    {L.join.status_title}
+                </h3>
+
+                {serverStatus.loading ? (
+                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
+                        <span className="text-lg text-gray-700 dark:text-gray-300">
+                            {L.join.status_loading}
+                        </span>
+                        <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
+                            <span className="text-lg text-gray-700 dark:text-gray-300">
+                                {L.join.status_server}
+                            </span>
+                            <span className={`px-3 py-1 text-sm font-bold rounded-full ${serverStatus.online ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {serverStatus.online ? L.join.status_online : L.join.status_offline}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
+                            <span className="text-lg text-gray-700 dark:text-gray-300">
+                                {L.join.status_players}
+                            </span>
+                            <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                                {serverStatus.players}
+                            </span>
+                        </div>
+                    </>
+                )}
+
+                <div className="pt-4 flex justify-end">
+                    {/* ここもnavigate関数でページ遷移を呼び出す */}
+                    <button onClick={() => navigate('guide')} className="text-purple-600 dark:text-purple-400 font-bold hover:text-purple-700 dark:hover:text-purple-300 transition-colors flex items-center gap-2">
+                        {L.join.button_guide}
+                        <ArrowRight size={18} />
                     </button>
                 </div>
             </div>
+        </div>
 
-            <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-0 overflow-hidden group rounded-3xl shadow-2xl">
-                <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/Minecraft%20Screenshot.png" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex flex-col justify-end p-8">
-                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                        <p className="text-white font-bold text-2xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
-                        <div className="w-16 h-1 bg-yellow-400 rounded-full mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100"></div>
-                    </div>
+        {/* Decorative Grid Pattern */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-50 z-0"></div>
+    </section>
+);
+
+export const FeaturesSection = ({ L }) => (
+    <section id="features" className="py-24 px-4 bg-gray-100 dark:bg-gray-900 animate-fade-in-scale">
+        <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+                <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+                    <CheckCircle size={32} />
                 </div>
+                <h2 className="text-4xl font-black mb-4 dark:text-white">{L.features.title}</h2>
+                <p className="text-lg text-gray-600 dark:text-gray-300">{L.features.subtitle}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <FeatureCard
+                    Icon={Shield}
+                    title={L.features.cards[0].title}
+                    description={L.features.cards[0].description}
+                    color="text-green-500"
+                    L={L}
+                />
+                <FeatureCard
+                    Icon={Users}
+                    title={L.features.cards[1].title}
+                    description={L.features.cards[1].description}
+                    color="text-yellow-500"
+                    L={L}
+                />
+                <FeatureCard
+                    Icon={Zap}
+                    title={L.features.cards[2].title}
+                    description={L.features.cards[2].description}
+                    color="text-blue-500"
+                    L={L}
+                />
+                <FeatureCard
+                    Icon={Clock}
+                    title={L.features.cards[3].title}
+                    description={L.features.cards[3].description}
+                    color="text-purple-500"
+                    L={L}
+                />
+                <FeatureCard
+                    Icon={Terminal}
+                    title={L.features.cards[4].title}
+                    description={L.features.cards[4].description}
+                    color="text-pink-500"
+                    L={L}
+                />
+                <FeatureCard
+                    Icon={BookOpen}
+                    title={L.features.cards[5].title}
+                    description={L.features.cards[5].description}
+                    color="text-red-500"
+                    L={L}
+                />
             </div>
         </div>
     </section>
 );
 
-export default function HomePage({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast }) {
-    const QUIZ_DATA = L.quiz_data;
-
-    // Contact Form Logic with Webhook
-    const handleContactSubmit = async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const name = form.name.value;
-        const email = form.email.value;
-        const message = form.message.value;
-
-        if (!DISCORD_WEBHOOK_URL) {
-            showToast(L.lang_name === "日本語" ? "Webhookが設定されていません (デモ)" : "Webhook not configured (Demo)");
-            return;
-        }
-
-        try {
-            const response = await fetch(DISCORD_WEBHOOK_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    embeds: [{
-                        title: "📬 新しいお問い合わせ",
-                        color: 0x8b5cf6, // Purple
-                        fields: [
-                            { name: "お名前 (MCID)", value: name, inline: true },
-                            { name: "連絡先", value: email, inline: true },
-                            { name: "メッセージ", value: message }
-                        ],
-                        timestamp: new Date().toISOString()
-                    }]
-                })
-            });
-
-            if (response.ok) {
-                showToast(L.lang_name === "日本語" ? "送信しました！" : "Message Sent!");
-                form.reset();
-            } else {
-                throw new Error("Failed");
-            }
-        } catch (error) {
-            console.error(error);
-            showToast(L.lang_name === "日本語" ? "送信に失敗しました" : "Failed to send");
-        }
-    };
-
-    return (
-        <div className="animate-fade-in">
-            {/* Hero Section */}
-            <header className="relative h-[85vh] min-h-[600px] flex items-center justify-center text-center px-4 overflow-hidden">
-                <div className="absolute inset-0 z-0">
-                    <img src="https://images.unsplash.com/photo-1607016284345-c5478694085f?q=80&w=2070&auto=format&fit=crop" alt="Minecraft Landscape" className="w-full h-full object-cover transform scale-105 animate-float" style={{ animationDuration: '20s' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/banner.jpg"; }} />
-                    <div className="absolute inset-0 bg-gradient-to-b from-gray-900/60 via-gray-900/50 to-gray-900"></div>
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
+export const GuideSection = ({ L, navigate, activeAccordion, setActiveAccordion }) => (
+    <section id="guide" className="py-24 px-4 relative animate-fade-in-scale">
+        <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+                <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+                    <HelpCircle size={32} />
                 </div>
-                <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center">
-                    <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700">
-                        {L.home.hero_title.split('\n')[0]}<br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-yellow-300 animate-pulse">{L.home.hero_title.split('\n')[1]}</span>
-                    </h1>
-                    <p className="text-lg md:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto font-medium whitespace-pre-line leading-relaxed animate-fade-in-up" style={{ animationDelay: '200ms' }}>{L.home.hero_subtitle}</p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-                        <button onClick={() => scrollToSection('join')} className="group relative px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 text-lg font-black rounded-full shadow-[0_10px_20px_rgba(245,158,11,0.4)] hover:shadow-[0_20px_30px_rgba(245,158,11,0.6)] transition-all transform hover:-translate-y-1 overflow-hidden">
-                            <span className="relative z-10 flex items-center gap-2"><Gamepad2 size={24} />{L.home.join_now}</span>
-                            <div className="absolute inset-0 bg-white/30 transform -skew-x-12 -translate-x-full group-hover:animate-shine"></div>
-                        </button>
-                        <button onClick={() => scrollToSection('about')} className="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-lg font-bold rounded-full transition-all flex items-center gap-2 hover:scale-105">
-                            <HelpCircle size={24} />{L.home.see_details}
-                        </button>
-                    </div>
-                </div>
-            </header>
+                <h2 className="text-4xl font-black mb-4 dark:text-white">{L.guide.title}</h2>
+                <p className="text-lg text-gray-600 dark:text-gray-300">{L.guide.subtitle}</p>
+            </div>
 
-            {/* Stats Bar */}
-            <div className="relative z-20 -mt-16 max-w-6xl mx-auto px-4">
-                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 dark:border-gray-700 p-8 grid grid-cols-2 md:grid-cols-4 gap-8">
-                    {[
-                        { val: "150+", label: L.home.stat_cumulative_players, icon: Users, color: "text-blue-500" },
-                        { val: "70%", label: L.home.stat_retention_rate, icon: CheckCircle, color: "text-green-500" },
-                        { val: "99.9%", label: L.home.stat_uptime, icon: Server, color: "text-purple-500" },
-                        { val: "15+", label: L.home.stat_max_online, icon: Zap, color: "text-yellow-500" }
-                    ].map((stat, i) => (
-                        <div key={i} className="flex flex-col items-center text-center group">
-                            <stat.icon className={`${stat.color} mb-3 transform group-hover:scale-110 transition-transform`} size={32} />
-                            <div className="text-3xl font-black text-gray-800 dark:text-white mb-1">{stat.val}</div>
-                            <div className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">{stat.label}</div>
-                        </div>
+            <div className="flex flex-col lg:flex-row gap-12">
+                <div className="lg:w-1/2 space-y-6">
+                    {L.guide.faq_items.slice(0, 3).map((item, index) => (
+                        <AccordionItem
+                            key={index}
+                            title={item.title}
+                            content={item.content}
+                            index={`faq-${index}`}
+                            activeAccordion={activeAccordion}
+                            setActiveAccordion={setActiveAccordion}
+                        />
+                    ))}
+                </div>
+                <div className="lg:w-1/2 space-y-6">
+                    {L.guide.faq_items.slice(3).map((item, index) => (
+                        <AccordionItem
+                            key={index + 3}
+                            title={item.title}
+                            content={item.content}
+                            index={`faq-${index + 3}`}
+                            activeAccordion={activeAccordion}
+                            setActiveAccordion={setActiveAccordion}
+                        />
                     ))}
                 </div>
             </div>
 
-            {/* About Section */}
-            <section id="about" className="py-32 px-4 relative">
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid md:grid-cols-2 gap-16 items-center">
-                        <div className="relative z-10">
-                            <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6"><Server size={32} /></div>
-                            <h2 className="text-4xl font-black mb-8 dark:text-white leading-tight">{L.home.what_is_nantetsu}</h2>
-                            <div className="space-y-6 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
-                                <p className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-l-4 border-purple-500">
-                                    <strong className="text-purple-600 dark:text-purple-400 block text-xl mb-2">{L.home.description_p1}</strong>{L.home.description_p2}
-                                </p>
-                                <p>{L.home.description_p3}</p>
-                                <button onClick={() => navigate('news')} className="group flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold mt-4 px-6 py-3 rounded-full bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all w-fit">
-                                    <Bell size={18} className="group-hover:rotate-12 transition-transform" /> {L.home.see_news}
-                                </button>
-                            </div>
-                        </div>
-                        {/* ... (Images omitted for brevity, keeping layout) ... */}
+            <div className="text-center mt-12">
+                {/* ここもnavigate関数でページ遷移を呼び出す */}
+                <button onClick={() => navigate('guide')} className="inline-flex items-center px-8 py-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-xl shadow-md transition-all transform hover:scale-[1.02] active:scale-95">
+                    <BookOpen size={20} className="mr-3" />
+                    {L.guide.button_guide}
+                    <ArrowRight size={16} className="ml-2" />
+                </button>
+            </div>
+        </div>
+    </section>
+);
+
+
+export const ContactSection = ({ L, showToast }) => {
+
+    // Discord Webhookにデータを送信するハンドラ
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        const name = form.elements.name.value;
+        const email = form.elements.email.value;
+        const message = form.elements.message.value;
+
+        const payload = {
+            embeds: [{
+                title: L.home.contact_discord_title,
+                description: message,
+                color: 0x8B5CF6, // Purple
+                fields: [
+                    { name: L.home.contact_discord_name, value: name, inline: true },
+                    { name: L.home.contact_discord_email, value: email, inline: true }
+                ],
+                timestamp: new Date().toISOString(),
+            }]
+        };
+
+        try {
+            const response = await fetch(DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                showToast(L.home.contact_success_message);
+                form.reset();
+            } else {
+                showToast(L.home.contact_error_message);
+                console.error("Discord Webhook Error:", response.status, response.statusText);
+            }
+        } catch (error) {
+            showToast(L.home.contact_error_message);
+            console.error("Contact Form Submission Error:", error);
+        }
+    };
+
+    return (
+        <section id="contact" className="py-24 px-4 bg-gray-100 dark:bg-gray-900 animate-fade-in-scale">
+            <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-16">
+                    <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+                        <User size={32} />
                     </div>
+                    <h2 className="text-4xl font-black mb-4 dark:text-white">{L.home.contact_title}</h2>
+                    <p className="text-lg text-gray-600 dark:text-gray-300">{L.home.contact_subtitle}</p>
                 </div>
-            </section>
 
-            {/* Features Grid */}
-            <section id="features" className="py-32 bg-gray-50 dark:bg-gray-900/50 px-4 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-30"></div>
-                <div className="absolute inset-0 bg-grid-pattern opacity-50 pointer-events-none"></div>
-                <div className="max-w-7xl mx-auto text-center relative z-10">
-                    <h2 className="text-4xl font-black mb-16 inline-block relative dark:text-white">
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400">{L.home.stats_title}</span>
-                        <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-purple-500 rounded-full"></div>
-                    </h2>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-                        <FeatureCard icon={Shield} title={L.home.feature_p1_title} description={L.home.feature_p1_desc} bgClass="bg-orange-500" colorClass="text-orange-500" />
-                        <FeatureCard icon={Clock} title={L.home.feature_p2_title} description={L.home.feature_p2_desc} bgClass="bg-green-500" colorClass="text-green-500" />
-                        <FeatureCard icon={MessageCircle} title={L.home.feature_p3_title} description={L.home.feature_p3_desc} bgClass="bg-indigo-500" colorClass="text-indigo-500" />
-                        <FeatureCard icon={Terminal} title={L.home.feature_p4_title} description={L.home.feature_p4_desc} bgClass="bg-lime-600" colorClass="text-lime-600" onClick={() => navigate('commands')} />
-                        <FeatureCard icon={Server} title={L.home.feature_p5_title} description={L.home.feature_p5_desc} bgClass="bg-yellow-500" colorClass="text-yellow-500" />
-                        <FeatureCard icon={BookOpen} title={L.home.feature_p6_title} description={L.home.feature_p6_desc} bgClass="bg-pink-500" colorClass="text-pink-500" onClick={() => navigate('guide')} />
-                    </div>
-                </div>
-            </section>
-
-            <JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} />
-
-            {/* Rules & Quiz */}
-            <section id="rules" className="py-32 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 relative">
-                <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-black mb-4 dark:text-white">{L.home.rules_title}</h2>
-                        <p className="text-gray-600 dark:text-gray-400 text-lg">{L.home.rules_subtitle}</p>
-                    </div>
-                    <div className="mb-20 space-y-6">
-                        {L.rules_data.map((rule, idx) => (
-                            <AccordionItem key={idx} title={rule.title} content={rule.content} isOpen={activeAccordion === `rules-${idx}`} toggle={() => setActiveAccordion(activeAccordion === `rules-${idx}` ? null : `rules-${idx}`)} />
-                        ))}
-                    </div>
-                    {/* Quiz UI Block */}
-                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 md:p-16 border border-purple-100 dark:border-gray-700 relative overflow-hidden text-center">
-                        {/* Quiz logic rendered here based on quizState prop... */}
-                        {!quizState.started ? (
-                            <div className="animate-fade-in relative z-10">
-                                <h3 className="text-3xl font-black mb-6 dark:text-white">{L.home.quiz_title}</h3>
-                                <button onClick={() => setQuizState({ ...quizState, started: true })} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-12 rounded-full shadow-xl transition-all">{L.home.quiz_start}</button>
-                            </div>
-                        ) : (
-                            // Simplified for brevity in file split, real code follows full logic
-                            <div className="animate-fade-in relative z-10">
-                                {quizState.finished ? (
-                                    <div>
-                                        <h3 className="text-3xl font-black mb-2 dark:text-white">{L.home.quiz_done}</h3>
-                                        <p className="text-2xl font-bold mb-8 text-purple-600 dark:text-purple-400">{L.home.quiz_score(quizState.score, QUIZ_DATA.length)}</p>
-                                        <button onClick={resetQuiz} className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-8 py-3 rounded-xl font-bold">{L.home.quiz_retry}</button>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <h4 className="text-xl md:text-2xl font-bold mb-10 dark:text-white">{QUIZ_DATA[quizState.current].question}</h4>
-                                        <div className="grid gap-4">
-                                            {QUIZ_DATA[quizState.current].options.map((opt, idx) => (
-                                                <button key={idx} onClick={() => !quizState.showResult && handleQuizAnswer(opt)} disabled={quizState.showResult} className={`w-full p-6 rounded-2xl text-left font-bold border-2 transition-all ${quizState.showResult ? opt === QUIZ_DATA[quizState.current].answer ? "bg-green-100 border-green-500" : "opacity-50" : "bg-white dark:bg-gray-700 hover:border-purple-500"}`}>
-                                                    {opt}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </section>
-
-            {/* Contact Section */}
-            <section id="contact" className="py-32 px-4">
-                <div className="max-w-2xl mx-auto relative">
-                    <div className="glass-panel p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 relative z-10">
-                        <h2 className="text-3xl font-black mb-8 text-center dark:text-white">{L.home.contact_title}</h2>
-                        <form className="space-y-6" onSubmit={handleContactSubmit}>
+                <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 p-8 md:p-12 rounded-3xl shadow-2xl">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="group">
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_name}</label>
                                 <div className="relative"><User className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="name" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white" placeholder={L.home.contact_placeholder_name} required /></div>
@@ -262,15 +257,132 @@ export default function HomePage({ L, serverStatus, quizState, setQuizState, res
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_email}</label>
                                 <div className="relative"><MapPin className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="email" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white" placeholder={L.home.contact_placeholder_email} required /></div>
                             </div>
-                            <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_message}</label>
-                                <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none" placeholder={L.home.contact_placeholder_msg} required></textarea>
+                        </div>
+                        <div className="group">
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_message}</label>
+                            <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none" placeholder={L.home.contact_placeholder_msg} required></textarea>
+                        </div>
+                        <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.01] active:scale-95">
+                            <Send size={20} className="inline mr-2" />
+                            {L.home.contact_button}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+// --- Main Page Component ---
+export default function HomePage({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast }) {
+
+    // Quiz Logic (Simplified for Home Page Display)
+    const currentQuiz = L.quiz_data[quizState.current];
+
+    return (
+        <div className="pt-16 pb-24">
+            {/* Hero Section */}
+            <header className="py-20 md:py-32 px-4 relative overflow-hidden">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
+                    <div className="md:w-1/2 z-10 text-center md:text-left">
+                        <h1 className="text-5xl md:text-6xl font-black mb-6 dark:text-white leading-tight">
+                            {L.hero.title_p1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-500">{L.hero.title_p2}</span>
+                        </h1>
+                        <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed">
+                            {L.hero.subtitle}
+                        </p>
+                        <div className="flex justify-center md:justify-start space-x-4">
+                            <button onClick={() => scrollToSection('join')} className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-95">
+                                <Gamepad2 size={20} className="mr-3" />
+                                {L.hero.button_join}
+                            </button>
+                            <button onClick={() => scrollToSection('guide')} className="inline-flex items-center px-8 py-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-xl shadow-md transition-all transform hover:scale-[1.02] active:scale-95">
+                                <HelpCircle size={20} className="mr-3" />
+                                {L.hero.button_guide}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="md:w-1/2 z-10 flex justify-center">
+                        <div className="relative w-72 h-72 md:w-80 md:h-80 bg-white dark:bg-gray-800 rounded-full shadow-2xl flex items-center justify-center border-4 border-purple-300 dark:border-purple-600 animate-float">
+                            <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Server Icon" className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover shadow-lg" />
+                            <div className="absolute inset-0 bg-purple-500/10 rounded-full animate-ping-slow"></div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            {/* Join Section */}
+            <JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} />
+
+            {/* Quiz Section */}
+            <section id="quiz" className="py-24 px-4 relative bg-gray-50 dark:bg-gray-900 animate-fade-in-scale">
+                <div className="max-w-4xl mx-auto text-center">
+                    <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+                        <Zap size={32} />
+                    </div>
+                    <h2 className="text-4xl font-black mb-4 dark:text-white">{L.quiz.title}</h2>
+                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-10">{L.quiz.subtitle}</p>
+
+                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+                        {!quizState.started && (
+                            <button onClick={() => setQuizState(p => ({ ...p, started: true }))} className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.01] active:scale-95">
+                                {L.quiz.start_button}
+                            </button>
+                        )}
+
+                        {quizState.started && !quizState.finished && currentQuiz && (
+                            <div className="space-y-6">
+                                <div className="text-sm font-bold text-purple-600 dark:text-purple-400 mb-2">
+                                    {L.quiz.progress} {quizState.current + 1} / {L.quiz_data.length}
+                                </div>
+                                <h3 className="text-2xl font-bold dark:text-white mb-6 leading-relaxed">{currentQuiz.question}</h3>
+                                <div className="space-y-4">
+                                    {currentQuiz.options.map((option, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => handleQuizAnswer(option)}
+                                            disabled={quizState.showResult}
+                                            className={`w-full text-left px-6 py-4 rounded-xl font-medium transition-all transform hover:scale-[1.01] active:scale-95 disabled:pointer-events-none 
+                                                ${quizState.showResult
+                                                    ? (option === currentQuiz.answer ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : (quizState.isCorrect === false && option === currentQuiz.selection ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'))
+                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-purple-900/30'
+                                                }`}
+                                        >
+                                            {option}
+                                        </button>
+                                    ))}
+                                </div>
+                                {quizState.showResult && (
+                                    <p className={`mt-4 text-lg font-bold ${quizState.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {quizState.isCorrect ? L.quiz.correct : L.quiz.incorrect}
+                                    </p>
+                                )}
                             </div>
-                            <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"><Send size={20} />{L.home.contact_send}</button>
-                        </form>
+                        )}
+
+                        {quizState.finished && (
+                            <div className="space-y-6">
+                                <h3 className="text-3xl font-bold dark:text-white">{L.quiz.result_title}</h3>
+                                <p className="text-xl text-gray-600 dark:text-gray-300">
+                                    {L.quiz.result_score}: <span className="text-purple-600 dark:text-purple-400 font-black text-4xl">{quizState.score}</span> / {L.quiz_data.length}
+                                </p>
+                                <button onClick={resetQuiz} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all">
+                                    {L.quiz.retry_button}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
+
+            {/* Features Section */}
+            <FeaturesSection L={L} />
+
+            {/* Guide/FAQ Section */}
+            <GuideSection L={L} navigate={navigate} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />
+
+            {/* Contact Section */}
+            <ContactSection L={L} showToast={showToast} />
         </div>
     );
 }
