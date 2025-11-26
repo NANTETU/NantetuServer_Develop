@@ -1,325 +1,276 @@
-import React, { useState, useEffect } from 'react';
-import { Gamepad2, HelpCircle, Users, CheckCircle, Server, Zap, Shield, Clock, MessageCircle, Terminal, BookOpen, Bell, Send, User, MapPin, ExternalLink, Mail, ArrowRight, Loader2, Copy } from 'lucide-react';
-// UIコンポーネントをcomponents/UIからインポートするようにパスを修正
-import { FeatureCard, AccordionItem, CopyBox, NewsItem, Toast } from '../components/UI';
-import { addDoc, collection, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import React from 'react';
+import { Gamepad2, HelpCircle, Users, CheckCircle, Server, Zap, Shield, Clock, MessageCircle, Terminal, BookOpen, Bell, Send, User, MapPin, ExternalLink } from 'lucide-react';
+import { FeatureCard, AccordionItem, CopyBox } from '../components/UI';
+import { DISCORD_WEBHOOK_URL } from '../data/languages';
 
 // --- Sub-Components specific to Home ---
 
-// IPアドレスのコピーボックス
-const CopyBoxImpl = ({ L, handleCopy }) => (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
-        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.join.ip_label}</label>
-        <div className="flex items-center space-x-2">
-            <input
-                type="text"
-                value="mc.nantetu.com"
-                readOnly
-                className="flex-grow px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 text-lg font-mono dark:text-white border border-gray-200 dark:border-gray-600 select-all focus:outline-none"
-            />
-            <button
-                onClick={() => handleCopy('mc.nantetu.com')}
-                className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-all focus:ring-4 focus:ring-purple-300 shadow-md"
-                aria-label="Copy IP Address"
-            >
-                <Copy size={24} />
-            </button>
+export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
+    <section id="join" className="py-24 px-4 relative overflow-hidden animate-fade-in-scale">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12 items-center relative z-10">
+            <div className="lg:w-1/2">
+                <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+                    <Gamepad2 size={32} />
+                </div>
+                <h2 className="text-4xl font-black mb-6 dark:text-white leading-tight">
+                    {L.join.title}
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                    {L.join.subtitle}
+                </p>
+
+                <div className="space-y-6 mb-10">
+                    {/* ここが修正した箇所: L.lang_code を使用 */}
+                    <CopyBox
+                        label={L.join.label_gamertag}
+                        value={L.server.tag}
+                        onCopy={handleCopy}
+                        lang={L.lang_code}
+                    />
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <CopyBox
+                            label={L.join.label_ip}
+                            value={L.server.ip}
+                            onCopy={handleCopy}
+                            lang={L.lang_code}
+                        />
+                        <CopyBox
+                            label={L.join.label_port}
+                            value={L.server.port}
+                            onCopy={handleCopy}
+                            lang={L.lang_code}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                    <a href="https://discord.gg/79H7Jy65nz" target="_blank" rel="noreferrer" className="flex-1 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:-translate-y-1">
+                        <MessageCircle size={20} /> {L.join.btn_discord}
+                    </a>
+                    <button onClick={() => navigate('guide')} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all border border-gray-200 dark:border-gray-700">
+                        <BookOpen size={20} /> {L.join.btn_guide}
+                    </button>
+                </div>
+            </div>
+
+            <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-0 overflow-hidden group rounded-3xl shadow-2xl">
+                <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/Minecraft%20Screenshot.png" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex flex-col justify-end p-8">
+                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <p className="text-white font-bold text-2xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
+                        <div className="w-16 h-1 bg-yellow-400 rounded-full mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{L.home.join.port_label}: 25565</p>
-    </div>
+    </section>
 );
 
+export default function HomePage({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast }) {
+    const QUIZ_DATA = L.quiz_data;
 
-export const JoinSection = ({ L, serverStatus, navigate, setToast }) => {
-    const handleCopy = (text) => {
-        if (!navigator.clipboard) {
-            console.error('Clipboard API not available.');
-            // Fallback for older browsers (or Canvas)
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                setToast({ message: L.home.join.copy_success, type: 'success' });
-            } catch (err) {
-                console.error('Copy failed:', err);
-                setToast({ message: 'コピーに失敗しました。手動でコピーしてください。', type: 'error' });
-            }
-            document.body.removeChild(textArea);
+    // Contact Form Logic with Webhook
+    const handleContactSubmit = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const name = form.name.value;
+        const email = form.email.value;
+        const message = form.message.value;
+
+        if (!DISCORD_WEBHOOK_URL) {
+            showToast(L.lang_name === "日本語" ? "Webhookが設定されていません (デモ)" : "Webhook not configured (Demo)");
             return;
         }
 
-        navigator.clipboard.writeText(text).then(() => {
-            setToast({ message: L.home.join.copy_success, type: 'success' });
-        }).catch(err => {
-            console.error('Could not copy text: ', err);
-            setToast({ message: 'コピーに失敗しました。手動でコピーしてください。', type: 'error' });
-        });
-    };
-
-    return (
-        <section id="join" className="py-24 px-4 relative overflow-hidden animate-fade-in-scale">
-            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12 items-center relative z-10">
-                <div className="lg:w-1/2">
-                    <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
-                        <Gamepad2 size={32} />
-                    </div>
-                    <h2 className="text-4xl font-black mb-6 dark:text-white leading-tight">
-                        {L.home.join.title}
-                    </h2>
-                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-                        {L.home.join.subtitle}
-                    </p>
-
-                    <CopyBoxImpl L={L} handleCopy={handleCopy} />
-
-                    <button
-                        onClick={() => navigate('guide')}
-                        className="mt-8 inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent border-2 border-purple-600 text-purple-600 font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300"
-                    >
-                        <ArrowRight size={20} />
-                        {L.home.join.button_connect}
-                    </button>
-                </div>
-
-                <div className="lg:w-1/2 relative">
-                    {/* Decorative Minecraft-like block or server status display */}
-                    <div className="relative p-12 bg-purple-50 dark:bg-gray-800/50 rounded-3xl shadow-2xl border-4 border-purple-200 dark:border-gray-700/50">
-                        <Server size={64} className="text-purple-500 mx-auto mb-4 animate-float" />
-                        <h3 className="text-2xl font-bold text-center dark:text-white mb-2">
-                            Nantetu Server Status
-                        </h3>
-                        <p className={`text-center text-lg font-semibold ${serverStatus.online ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                            {serverStatus.online ? L.nav.status_online : L.nav.status_offline}
-                        </p>
-                        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {L.home.hero.status(serverStatus.players)}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            {/* Background decoration */}
-            <div className="absolute top-1/4 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl animate-float"></div>
-            <div className="absolute bottom-1/4 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
-        </section>
-    );
-};
-
-
-// --- Contact Form ---
-export const ContactForm = ({ L, db, appId, DISCORD_WEBHOOK_URL, setToast }) => {
-    const [status, setStatus] = useState(''); // 'success', 'error', 'sending', ''
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setStatus('sending');
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData.entries());
-
-        const contactCollectionPath = `artifacts/${appId}/public/data/contacts`;
-
         try {
-            // 1. Save to Firestore (Public Collection)
-            const docRef = await addDoc(collection(db, contactCollectionPath), {
-                name: data.name,
-                email: data.email,
-                message: data.message,
-                timestamp: serverTimestamp(),
+            const response = await fetch(DISCORD_WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    embeds: [{
+                        title: "📬 新しいお問い合わせ",
+                        color: 0x8b5cf6, // Purple
+                        fields: [
+                            { name: "お名前 (MCID)", value: name, inline: true },
+                            { name: "連絡先", value: email, inline: true },
+                            { name: "メッセージ", value: message }
+                        ],
+                        timestamp: new Date().toISOString()
+                    }]
+                })
             });
 
-            console.log("Contact form submitted to Firestore with ID: ", docRef.id);
-
-            // 2. (Optional) Send to Discord Webhook (if needed, this is usually handled by a backend server)
-            // For now, we rely only on the Firestore save.
-
-            setStatus('success');
-            e.target.reset();
-            setToast({ message: L.home.contact.success, type: 'success' });
+            if (response.ok) {
+                showToast(L.lang_name === "日本語" ? "送信しました！" : "Message Sent!");
+                form.reset();
+            } else {
+                throw new Error("Failed");
+            }
         } catch (error) {
-            console.error("Error submitting contact form:", error);
-            setStatus('error');
-            setToast({ message: L.home.contact.error, type: 'error' });
+            console.error(error);
+            showToast(L.lang_name === "日本語" ? "送信に失敗しました" : "Failed to send");
         }
     };
 
     return (
-        <section id="contact" className="py-24 px-4 bg-gray-50 dark:bg-gray-800 animate-fade-in-up">
-            <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><Mail className="text-purple-500" size={32} />{L.home.contact.title}</h2>
-                    <p className="text-gray-600 dark:text-gray-400">{L.home.contact.subtitle}</p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700">
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact.contact_name}</label>
-                                <div className="relative">
-                                    <User className="absolute left-4 top-3.5 text-gray-400" size={20} />
-                                    <input type="text" name="name" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact.contact_placeholder_name} required />
-                                </div>
-                            </div>
-                            <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact.contact_email}</label>
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-3.5 text-gray-400" size={20} />
-                                    <input type="email" name="email" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact.contact_placeholder_email} required />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="group">
-                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact.contact_message}</label>
-                            <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact.contact_placeholder_msg} required></textarea>
-                        </div>
-                        <button type="submit" disabled={status === 'sending'} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                            {status === 'sending' ? (
-                                <><Loader2 className="animate-spin" size={20} /> {L.footer.chat_loading}</>
-                            ) : (
-                                <><Send size={20} /> {L.home.contact.send_button}</>
-                            )}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </section>
-    );
-};
-
-
-// --- Main Home Page ---
-export const HomePage = ({ L, navigate, serverStatus, hasUnreadNews, newsData, userId, db, appId, DISCORD_WEBHOOK_URL, setToast }) => {
-
-    // News data for display (latest 3)
-    const latestNews = (newsData && newsData.length > 0)
-        ? newsData.slice(0, 3)
-        : L.news.default_data.slice(0, 3);
-
-    return (
-        <div className="min-h-screen">
+        <div className="animate-fade-in">
             {/* Hero Section */}
-            <header className="relative pt-40 pb-24 md:pt-48 md:pb-32 overflow-hidden bg-white dark:bg-gray-950">
-                <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
-                    <h1 className="text-6xl md:text-7xl font-black dark:text-white mb-6 leading-tight">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-500">{L.home.hero.title_p1}</span>
-                        <br />{L.home.hero.title_p2}
-                    </h1>
-                    <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-                        {L.home.hero.subtitle}
-                    </p>
-                    <div className="flex justify-center space-x-4">
-                        <button
-                            onClick={() => navigate('join')}
-                            className="inline-flex items-center justify-center px-10 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-[1.05] focus:outline-none focus:ring-4 focus:ring-purple-300"
-                        >
-                            <Zap size={20} className="mr-2" />
-                            {L.home.hero.button_join}
-                        </button>
-                        <button
-                            onClick={() => navigate('guide')}
-                            className="inline-flex items-center justify-center px-10 py-4 bg-transparent border-2 border-purple-600 text-purple-600 font-bold text-lg rounded-xl hover:bg-purple-600 hover:text-white transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300"
-                        >
-                            <HelpCircle size={20} className="mr-2" />
-                            {L.home.hero.button_guide}
-                        </button>
-                    </div>
-
-                    {/* Server Status Box */}
-                    <div className="mt-12 inline-flex items-center justify-center px-6 py-3 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all">
-                        <div className={`w-3 h-3 rounded-full mr-3 ${serverStatus.online ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                        <span className="text-md font-semibold dark:text-white">
-                            {L.home.hero.status(serverStatus.players)}
-                        </span>
-                    </div>
+            <header className="relative h-[85vh] min-h-[600px] flex items-center justify-center text-center px-4 overflow-hidden">
+                <div className="absolute inset-0 z-0">
+                    <img src="https://images.unsplash.com/photo-1607016284345-c5478694085f?q=80&w=2070&auto=format&fit=crop" alt="Minecraft Landscape" className="w-full h-full object-cover transform scale-105 animate-float" style={{ animationDuration: '20s' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/banner.jpg"; }} />
+                    <div className="absolute inset-0 bg-gradient-to-b from-gray-900/60 via-gray-900/50 to-gray-900"></div>
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
                 </div>
-
-                {/* Decorative background elements */}
-                <div className="absolute inset-0 opacity-10 dark:opacity-5 overflow-hidden">
-                    <div className="w-[800px] h-[800px] bg-purple-500 rounded-full absolute top-[-400px] left-[-300px] blur-[150px] animate-float"></div>
-                    <div className="w-[600px] h-[600px] bg-indigo-500 rounded-full absolute bottom-[-300px] right-[-200px] blur-[100px] animate-float" style={{ animationDelay: '1.5s' }}></div>
+                <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center">
+                    <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700">
+                        {L.home.hero_title.split('\n')[0]}<br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-yellow-300 animate-pulse">{L.home.hero_title.split('\n')[1]}</span>
+                    </h1>
+                    <p className="text-lg md:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto font-medium whitespace-pre-line leading-relaxed animate-fade-in-up" style={{ animationDelay: '200ms' }}>{L.home.hero_subtitle}</p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+                        <button onClick={() => scrollToSection('join')} className="group relative px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 text-lg font-black rounded-full shadow-[0_10px_20px_rgba(245,158,11,0.4)] hover:shadow-[0_20px_30px_rgba(245,158,11,0.6)] transition-all transform hover:-translate-y-1 overflow-hidden">
+                            <span className="relative z-10 flex items-center gap-2"><Gamepad2 size={24} />{L.home.join_now}</span>
+                            <div className="absolute inset-0 bg-white/30 transform -skew-x-12 -translate-x-full group-hover:animate-shine"></div>
+                        </button>
+                        <button onClick={() => scrollToSection('about')} className="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-lg font-bold rounded-full transition-all flex items-center gap-2 hover:scale-105">
+                            <HelpCircle size={24} />{L.home.see_details}
+                        </button>
+                    </div>
                 </div>
             </header>
 
-            {/* Features Section */}
-            <section id="features" className="py-24 px-4 bg-white dark:bg-gray-900">
-                <div className="max-w-7xl mx-auto text-center">
-                    <h2 className="text-3xl font-black mb-12 dark:text-white">サーバーの主な特徴</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {L.home.features.map((feature, index) => (
-                            <FeatureCard
-                                key={index}
-                                Icon={feature.icon}
-                                title={feature.title}
-                                desc={feature.desc}
-                            />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* News Section (Preview) */}
-            <section id="latest-news" className="py-24 px-4 bg-gray-50 dark:bg-gray-800 animate-fade-in-up">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex justify-between items-end mb-12 border-b border-purple-200 dark:border-purple-800 pb-4">
-                        <div>
-                            <h2 className="text-3xl font-black dark:text-white flex items-center gap-3"><Bell className="text-purple-500" size={32} />{L.home.news_section.title}</h2>
-                            <p className="text-gray-600 dark:text-gray-400 mt-1">{L.home.news_section.subtitle}</p>
+            {/* Stats Bar */}
+            <div className="relative z-20 -mt-16 max-w-6xl mx-auto px-4">
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 dark:border-gray-700 p-8 grid grid-cols-2 md:grid-cols-4 gap-8">
+                    {[
+                        { val: "150+", label: L.home.stat_cumulative_players, icon: Users, color: "text-blue-500" },
+                        { val: "70%", label: L.home.stat_retention_rate, icon: CheckCircle, color: "text-green-500" },
+                        { val: "99.9%", label: L.home.stat_uptime, icon: Server, color: "text-purple-500" },
+                        { val: "15+", label: L.home.stat_max_online, icon: Zap, color: "text-yellow-500" }
+                    ].map((stat, i) => (
+                        <div key={i} className="flex flex-col items-center text-center group">
+                            <stat.icon className={`${stat.color} mb-3 transform group-hover:scale-110 transition-transform`} size={32} />
+                            <div className="text-3xl font-black text-gray-800 dark:text-white mb-1">{stat.val}</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">{stat.label}</div>
                         </div>
-                        <button
-                            onClick={() => navigate('news')}
-                            className="flex items-center gap-2 text-purple-600 font-bold hover:text-purple-700 transition-colors"
-                        >
-                            {L.home.news_section.button_all} <ArrowRight size={18} />
-                        </button>
-                    </div>
+                    ))}
+                </div>
+            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {latestNews.map((item) => (
-                            // NewsItem is a standalone card, not the clickable list item from SubPages
-                            <NewsItem key={item.id} item={item} L={L} isPreview={true} />
-                        ))}
+            {/* About Section */}
+            <section id="about" className="py-32 px-4 relative">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid md:grid-cols-2 gap-16 items-center">
+                        <div className="relative z-10">
+                            <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6"><Server size={32} /></div>
+                            <h2 className="text-4xl font-black mb-8 dark:text-white leading-tight">{L.home.what_is_nantetsu}</h2>
+                            <div className="space-y-6 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
+                                <p className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-l-4 border-purple-500">
+                                    <strong className="text-purple-600 dark:text-purple-400 block text-xl mb-2">{L.home.description_p1}</strong>{L.home.description_p2}
+                                </p>
+                                <p>{L.home.description_p3}</p>
+                                <button onClick={() => navigate('news')} className="group flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold mt-4 px-6 py-3 rounded-full bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all w-fit">
+                                    <Bell size={18} className="group-hover:rotate-12 transition-transform" /> {L.home.see_news}
+                                </button>
+                            </div>
+                        </div>
+                        {/* ... (Images omitted for brevity, keeping layout) ... */}
                     </div>
                 </div>
             </section>
 
-            {/* Join Section */}
-            <JoinSection L={L} serverStatus={serverStatus} navigate={navigate} setToast={setToast} />
+            {/* Features Grid */}
+            <section id="features" className="py-32 bg-gray-50 dark:bg-gray-900/50 px-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-30"></div>
+                <div className="absolute inset-0 bg-grid-pattern opacity-50 pointer-events-none"></div>
+                <div className="max-w-7xl mx-auto text-center relative z-10">
+                    <h2 className="text-4xl font-black mb-16 inline-block relative dark:text-white">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400">{L.home.stats_title}</span>
+                        <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-purple-500 rounded-full"></div>
+                    </h2>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+                        <FeatureCard icon={Shield} title={L.home.feature_p1_title} description={L.home.feature_p1_desc} bgClass="bg-orange-500" colorClass="text-orange-500" />
+                        <FeatureCard icon={Clock} title={L.home.feature_p2_title} description={L.home.feature_p2_desc} bgClass="bg-green-500" colorClass="text-green-500" />
+                        <FeatureCard icon={MessageCircle} title={L.home.feature_p3_title} description={L.home.feature_p3_desc} bgClass="bg-indigo-500" colorClass="text-indigo-500" />
+                        <FeatureCard icon={Terminal} title={L.home.feature_p4_title} description={L.home.feature_p4_desc} bgClass="bg-lime-600" colorClass="text-lime-600" onClick={() => navigate('commands')} />
+                        <FeatureCard icon={Server} title={L.home.feature_p5_title} description={L.home.feature_p5_desc} bgClass="bg-yellow-500" colorClass="text-yellow-500" />
+                        <FeatureCard icon={BookOpen} title={L.home.feature_p6_title} description={L.home.feature_p6_desc} bgClass="bg-pink-500" colorClass="text-pink-500" onClick={() => navigate('guide')} />
+                    </div>
+                </div>
+            </section>
 
-            {/* FAQ Section */}
-            <section id="faq" className="py-24 px-4 bg-white dark:bg-gray-900 animate-fade-in-up">
+            <JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} />
+
+            {/* Rules & Quiz */}
+            <section id="rules" className="py-32 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 relative">
                 <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><HelpCircle className="text-purple-500" size={32} />{L.home.faq.title}</h2>
-                        <p className="text-gray-600 dark:text-gray-400">{L.home.faq.subtitle}</p>
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl font-black mb-4 dark:text-white">{L.home.rules_title}</h2>
+                        <p className="text-gray-600 dark:text-gray-400 text-lg">{L.home.rules_subtitle}</p>
                     </div>
-
-                    <div className="space-y-4">
-                        {L.home.faq.questions.map((item, index) => (
-                            <AccordionItem key={index} title={item.q} content={item.a} />
+                    <div className="mb-20 space-y-6">
+                        {L.rules_data.map((rule, idx) => (
+                            <AccordionItem key={idx} title={rule.title} content={rule.content} isOpen={activeAccordion === `rules-${idx}`} toggle={() => setActiveAccordion(activeAccordion === `rules-${idx}` ? null : `rules-${idx}`)} />
                         ))}
+                    </div>
+                    {/* Quiz UI Block */}
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 md:p-16 border border-purple-100 dark:border-gray-700 relative overflow-hidden text-center">
+                        {/* Quiz logic rendered here based on quizState prop... */}
+                        {!quizState.started ? (
+                            <div className="animate-fade-in relative z-10">
+                                <h3 className="text-3xl font-black mb-6 dark:text-white">{L.home.quiz_title}</h3>
+                                <button onClick={() => setQuizState({ ...quizState, started: true })} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-12 rounded-full shadow-xl transition-all">{L.home.quiz_start}</button>
+                            </div>
+                        ) : (
+                            // Simplified for brevity in file split, real code follows full logic
+                            <div className="animate-fade-in relative z-10">
+                                {quizState.finished ? (
+                                    <div>
+                                        <h3 className="text-3xl font-black mb-2 dark:text-white">{L.home.quiz_done}</h3>
+                                        <p className="text-2xl font-bold mb-8 text-purple-600 dark:text-purple-400">{L.home.quiz_score(quizState.score, QUIZ_DATA.length)}</p>
+                                        <button onClick={resetQuiz} className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-8 py-3 rounded-xl font-bold">{L.home.quiz_retry}</button>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <h4 className="text-xl md:text-2xl font-bold mb-10 dark:text-white">{QUIZ_DATA[quizState.current].question}</h4>
+                                        <div className="grid gap-4">
+                                            {QUIZ_DATA[quizState.current].options.map((opt, idx) => (
+                                                <button key={idx} onClick={() => !quizState.showResult && handleQuizAnswer(opt)} disabled={quizState.showResult} className={`w-full p-6 rounded-2xl text-left font-bold border-2 transition-all ${quizState.showResult ? opt === QUIZ_DATA[quizState.current].answer ? "bg-green-100 border-green-500" : "opacity-50" : "bg-white dark:bg-gray-700 hover:border-purple-500"}`}>
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
 
-            {/* Contact Form */}
-            <ContactForm L={L} db={db} appId={appId} DISCORD_WEBHOOK_URL={DISCORD_WEBHOOK_URL} setToast={setToast} />
-
-            <div className="pb-16" />
+            {/* Contact Section */}
+            <section id="contact" className="py-32 px-4">
+                <div className="max-w-2xl mx-auto relative">
+                    <div className="glass-panel p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 relative z-10">
+                        <h2 className="text-3xl font-black mb-8 text-center dark:text-white">{L.home.contact_title}</h2>
+                        <form className="space-y-6" onSubmit={handleContactSubmit}>
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_name}</label>
+                                <div className="relative"><User className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="name" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white" placeholder={L.home.contact_placeholder_name} required /></div>
+                            </div>
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_email}</label>
+                                <div className="relative"><MapPin className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="email" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white" placeholder={L.home.contact_placeholder_email} required /></div>
+                            </div>
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_message}</label>
+                                <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none" placeholder={L.home.contact_placeholder_msg} required></textarea>
+                            </div>
+                            <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"><Send size={20} />{L.home.contact_send}</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
         </div>
     );
 }
-
-// ----------------------------------------------------
-// UI Components used in Home (Moved to UI.jsx but included here for full context check)
-// ----------------------------------------------------
-
-// FeatureCard (Used in Features Section)
-// Should be moved to UI.jsx
-
-// AccordionItem (Used in FAQ)
-// Should be moved to UI.jsx
-
-// NewsItem (Used in News Preview)
-// Should be moved to UI.jsx

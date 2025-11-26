@@ -4,347 +4,302 @@ import { LANGUAGES } from '../data/languages';
 
 // --- Scroll Hook (Internal) ---
 const useScrollDirection = () => {
-    const [scrollDirection, setScrollDirection] = useState("up");
-    useEffect(() => {
-        let lastScrollY = window.scrollY;
-        const updateScrollDirection = () => {
-            const scrollY = window.scrollY;
-            const direction = scrollY > lastScrollY ? "down" : "up";
-            if (direction !== scrollDirection && (Math.abs(scrollY - lastScrollY) > 10)) {
-                setScrollDirection(direction);
-            }
-            lastScrollY = scrollY > 0 ? scrollY : 0;
-        };
-        window.addEventListener("scroll", updateScrollDirection);
-        return () => window.removeEventListener("scroll", updateScrollDirection);
-    }, [scrollDirection]);
-    return scrollDirection;
+  const [scrollDirection, setScrollDirection] = useState("up");
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    const updateScrollDirection = () => {
+      const scrollY = window.scrollY;
+      const direction = scrollY > lastScrollY ? "down" : "up";
+      if (direction !== scrollDirection && (Math.abs(scrollY - lastScrollY) > 10)) {
+        setScrollDirection(direction);
+      }
+      lastScrollY = scrollY > 0 ? scrollY : 0;
+    };
+    window.addEventListener("scroll", updateScrollDirection);
+    return () => window.removeEventListener("scroll", updateScrollDirection);
+  }, [scrollDirection]);
+  return scrollDirection;
 };
 
 // --- Navbar Component ---
-export const Navbar = ({
-    L, page, navigate, darkMode, setDarkMode,
-    isMenuOpen, setIsMenuOpen, currentLang, setCurrentLang,
-    searchTerm, handleSearch, serverStatus, hasUnreadNews, newsData
+export const Navbar = ({ 
+  L, page, navigate, darkMode, setDarkMode, 
+  isMenuOpen, setIsMenuOpen, currentLang, setCurrentLang, 
+  searchTerm, handleSearch, serverStatus, hasUnreadNews, newsData 
 }) => {
     const scrollDirection = useScrollDirection();
 
-    // Utility function to get the current page title for the mobile menu
-    const getCurrentPageTitle = (p) => {
-        // Use optional chaining for safe access
-        switch (p) {
-            case 'news': return L?.news?.title;
-            case 'forum': return L?.forum?.title;
-            case 'guide': return L?.guide?.title;
-            case 'commands': return L?.commands?.title;
-            case 'join': return L?.join?.title;
-            case 'privacy': return L?.privacy?.title;
-            default: return L?.navbar?.title; // Fallback
-        }
-    }
-
-    // Determine if the current page has unread news to show the badge
-    const isNewsPage = page === 'news';
-
     return (
-        <div
-            className={`fixed left-0 right-0 top-0 z-[100] transition-all duration-300 ${scrollDirection === "down" ? '-translate-y-full shadow-none' : 'translate-y-0 shadow-lg'} ${isMenuOpen ? 'bg-white dark:bg-gray-900 shadow-xl' : 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md'}`}
-        >
-            {/* News Alert Bar */}
-            {hasUnreadNews && !isNewsPage && (
-                <div className="w-full bg-purple-600 text-white text-center py-2 text-sm font-medium animate-slide-down cursor-pointer hover:bg-purple-700 transition-colors"
-                    onClick={() => navigate('news')}
-                >
-                    {L?.navbar?.news_alert}
-                </div>
-            )}
-
-            <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center transition-all duration-300 ${hasUnreadNews && !isNewsPage ? 'mt-0' : 'mt-0'}`}>
-
-                {/* Logo and Title */}
-                <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('home')}>
-                    <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover shadow-md" />
-                    {/* SAFE ACCESS: L?.navbar?.title */}
-                    <h2 className="text-2xl font-black dark:text-white hidden sm:block">{L?.navbar?.title}</h2>
-                    {/* Show current page title on mobile */}
-                    <h2 className="text-xl font-bold dark:text-white sm:hidden">{getCurrentPageTitle(page)}</h2>
+    <div 
+        className={`fixed left-0 right-0 z-[500] flex flex-col shadow-md transition-all duration-300 ease-in-out ${
+          scrollDirection === "down" ? "-top-24" : "top-0"
+        }`}
+    >
+          <nav className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-all relative z-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center h-14">
+                {/* Left: Logo */}
+                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('home')}>
+                  <img 
+                    src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" 
+                    alt="Nantetu Server Icon" 
+                    className="w-9 h-9 rounded-full shadow-lg group-hover:scale-110 transition-transform object-cover"
+                  />
+                  <span className="font-black text-lg tracking-tight text-gray-800 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">なんてつサーバー</span>
                 </div>
 
-                {/* Desktop Navigation */}
-                <nav className="hidden lg:flex items-center space-x-6 text-sm font-medium">
-                    {L?.navbar?.nav_items.map((item) => (
-                        <div
-                            key={item.page}
-                            onClick={() => navigate(item.page)}
-                            className={`relative cursor-pointer py-1 transition-all ${page === item.page ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'}`}
+                {/* Right Container: Nav Links + Search + Actions */}
+                <div className="hidden lg:flex items-center gap-6 ml-auto">
+                  
+                  {/* Nav Links */}
+                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-full">
+                    {['home', 'join', 'news', 'forum', 'commands', 'guide'].map((key) => (
+                        <button 
+                          key={key}
+                          onClick={() => navigate(key)} 
+                          className={`relative px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                              page === key 
+                              ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-300 shadow-sm' 
+                              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
+                          }`}
                         >
-                            {item.title}
-                            {page === item.page && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-[2px] bg-purple-600 dark:bg-purple-400 rounded-full animate-grow-x"></div>}
-                            {item.page === 'news' && hasUnreadNews && (
-                                <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full animate-ping-slow"></span>
-                            )}
-                        </div>
-                    ))}
-                </nav>
-
-                {/* Utility Icons & Menu Button */}
-                <div className="flex items-center space-x-3">
-
-                    {/* Server Status Indicator */}
-                    <div className={`w-3 h-3 rounded-full ${serverStatus.online ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500 shadow-red-500/50'} shadow-md animate-pulse hidden sm:block`} title={serverStatus.online ? L?.navbar?.status_online : L?.navbar?.status_offline}></div>
-
-                    {/* Dark Mode Toggle */}
-                    <button
-                        onClick={() => setDarkMode(!darkMode)}
-                        className="p-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm"
-                        title={darkMode ? L?.navbar?.toggle_light : L?.navbar?.toggle_dark}
-                    >
-                        {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                    </button>
-
-                    {/* Search Bar (Mobile/Tablet) */}
-                    <div className="relative block md:hidden">
-                        <input
-                            type="text"
-                            placeholder={L?.navbar?.search_placeholder} // SAFE ACCESS
-                            value={searchTerm}
-                            onChange={(e) => handleSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none text-sm dark:text-white transition-all focus:ring-2 focus:ring-purple-500"
-                        />
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                        {searchTerm && (
-                            <button
-                                onClick={() => handleSearch('')}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                                <X size={16} />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Menu Toggle (Mobile/Tablet) */}
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="p-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm lg:hidden"
-                        title={isMenuOpen ? L?.navbar?.close_menu : L?.navbar?.open_menu} // SAFE ACCESS
-                    >
-                        {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
-
-                </div>
-            </div>
-
-            {/* Mobile/Tablet Menu Overlay */}
-            <div className={`fixed inset-0 top-[68px] lg:hidden bg-white dark:bg-gray-900 z-50 transform transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                <div className="p-4 flex flex-col space-y-3">
-                    {/* Search Bar (Duplicated for better mobile usability inside menu) */}
-                    <div className="relative block">
-                        <input
-                            type="text"
-                            placeholder={L?.navbar?.search_placeholder} // SAFE ACCESS
-                            value={searchTerm}
-                            onChange={(e) => handleSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none text-base dark:text-white transition-all focus:ring-2 focus:ring-purple-500"
-                        />
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                        {searchTerm && (
-                            <button
-                                onClick={() => handleSearch('')}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                                <X size={18} />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Navigation Links */}
-                    {L?.navbar?.nav_items.map((item) => (
-                        <button
-                            key={item.page}
-                            onClick={() => { navigate(item.page); setIsMenuOpen(false); }}
-                            className={`w-full text-left px-4 py-3 rounded-xl transition-colors flex justify-between items-center ${page === item.page ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-bold' : 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                        >
-                            {item.title}
-                            {item.page === 'news' && hasUnreadNews && (
-                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                            )}
+                          {L.nav[key]}
+                          {key === 'news' && hasUnreadNews && (
+                              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse"></span>
+                          )}
                         </button>
                     ))}
+                  </div>
 
-                    {/* Language Selector */}
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L?.navbar?.language}</label>
-                        <select
-                            value={currentLang}
-                            onChange={(e) => setCurrentLang(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none text-base dark:text-white"
-                        >
-                            {Object.keys(LANGUAGES).map((langKey) => (
-                                <option key={langKey} value={langKey}>
-                                    {LANGUAGES[langKey].language_name}
-                                </option>
-                            ))}
-                        </select>
+                  {/* Search & Toggles & Server Status */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative group">
+                      <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
+                      <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-9 pr-4 py-1.5 w-40 focus:w-56 rounded-full text-sm bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
                     </div>
 
+                    {/* Server Status Indicator */}
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        serverStatus.loading ? 'bg-gray-100 text-gray-400 border-gray-200 dark:bg-gray-800 dark:border-gray-700' :
+                        serverStatus.online 
+                            ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900' 
+                            : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900'
+                    }`}>
+                        <span className={`w-2 h-2 rounded-full ${serverStatus.online ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                        <span>
+                            {serverStatus.loading 
+                                ? L.status.loading 
+                                : serverStatus.online 
+                                    ? L.status.online(serverStatus.players)
+                                    : L.status.offline}
+                        </span>
+                    </div>
+
+                    <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700 transition-colors font-bold text-xs">{currentLang === 'ja' ? 'EN' : 'JP'}</button>
+                    <button onClick={() => setDarkMode(!darkMode)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-purple-100 dark:hover:bg-gray-700 transition-colors">{darkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
+                  </div>
+                </div>
+
+                {/* Mobile Menu Button */}
+                <div className="lg:hidden flex items-center gap-4">
+                  <button onClick={() => setDarkMode(!darkMode)} className="text-gray-600 dark:text-yellow-400">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+                  <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-800 dark:text-white p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">{isMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Nav Dropdown */}
+            <div className={`lg:hidden absolute w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xl transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="px-4 pt-4 pb-6 space-y-2">
+                  <div className="relative mb-6">
+                    <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
+                  </div>
+                  {['home', 'join', 'news', 'forum', 'guide', 'commands'].map((key) => (
+                      <button 
+                            key={key}
+                            onClick={() => navigate(key)} 
+                            className="relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 hover:text-purple-600 rounded-xl transition-colors"
+                        >
+                            {L.nav[key]}
+                            {key === 'news' && hasUnreadNews && (
+                                <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">NEW</span>
+                            )}
+                      </button>
+                  ))}
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                  <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="block w-full text-left px-4 py-4 text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-xl">
+                      🌐 {currentLang === 'ja' ? 'Switch to English' : '日本語に切り替え'}
+                  </button>
                 </div>
             </div>
-        </div>
+          </nav>
+
+          {/* Static News Banner */}
+          {newsData.length > 0 && hasUnreadNews && (
+              <div className="bg-purple-600 text-white text-sm font-bold py-2 px-4 text-center z-10 shadow-md relative animate-fade-in-up">
+                  <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 overflow-hidden whitespace-nowrap">
+                      <Info size={16} className="flex-shrink-0 animate-pulse" />
+                      <span className="opacity-90">NEWS:</span>
+                      <span className="truncate max-w-lg">{newsData[0].title}</span>
+                      <button onClick={() => navigate('news')} className="ml-2 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-xs transition-colors flex-shrink-0">
+                          DETAILS
+                      </button>
+                  </div>
+              </div>
+          )}
+    </div>
     );
 };
 
 // --- Footer Component ---
 export const Footer = ({ L, navigate }) => (
-    <footer className="bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-800 py-16 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-gray-600 dark:text-gray-400">
-
-            {/* Column 1: Server Info */}
-            <div className="col-span-2 md:col-span-1">
-                <div className="flex items-center gap-2 mb-4">
-                    <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover shadow-md" />
-                    <h3 className="text-xl font-bold dark:text-white">{L?.navbar?.title}</h3> {/* SAFE ACCESS */}
+    <footer className="bg-gray-900 text-gray-400 text-center border-t border-gray-800 relative overflow-hidden">
+        <div className="py-20">
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5"></div>
+            <div className="max-w-7xl mx-auto px-4 relative z-10">
+                <div className="mb-12 bg-gradient-to-r from-purple-900 to-indigo-900 rounded-3xl p-10 shadow-2xl max-w-2xl mx-auto border border-white/10 transform hover:scale-[1.02] transition-transform">
+                    <h3 className="text-2xl font-bold text-white mb-4 flex items-center justify-center gap-2"><ExternalLink size={24} className="text-yellow-400" />{L.footer.promotion}</h3>
+                    <p className="text-purple-200 mb-6">Join the community for support, events, and more!</p>
+                    <a href="https://discord.gg/79H7Jy65nz" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-white text-purple-900 font-black px-8 py-3 rounded-full hover:bg-gray-100 transition-all shadow-lg"><MessageCircle size={20} />{L.footer.promotion_link}</a>
                 </div>
-                <p className="text-sm leading-relaxed mb-4">
-                    {L?.footer?.description} {/* SAFE ACCESS */}
-                </p>
-                <a href={L?.footer?.sns_twitter_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-purple-600 font-medium hover:underline">
-                    <Twitter size={16} />
-                    {L?.footer?.sns_twitter} {/* SAFE ACCESS */}
-                </a>
-                <a href={L?.footer?.sns_youtube_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-purple-600 font-medium hover:underline mt-2">
-                    <Youtube size={16} />
-                    {L?.footer?.sns_youtube} {/* SAFE ACCESS */}
-                </a>
-            </div>
 
-            {/* Column 2: Navigation */}
-            <div className="md:w-1/2">
-                <h3 className="text-lg font-bold mb-4 dark:text-white">{L?.footer?.nav_title}</h3> {/* SAFE ACCESS */}
-                <ul className="space-y-2 text-sm">
-                    <li><button onClick={() => navigate('home')} className="hover:text-purple-600 transition-colors">{L?.footer?.nav_home}</button></li> {/* SAFE ACCESS */}
-                    <li><button onClick={() => navigate('news')} className="hover:text-purple-600 transition-colors">{L?.footer?.nav_news}</button></li> {/* SAFE ACCESS */}
-                    <li><button onClick={() => navigate('forum')} className="hover:text-purple-600 transition-colors">{L?.footer?.nav_forum}</button></li> {/* SAFE ACCESS */}
-                    <li><button onClick={() => navigate('guide')} className="hover:text-purple-600 transition-colors">{L?.footer?.nav_guide}</button></li> {/* SAFE ACCESS */}
-                </ul>
-            </div>
-
-            {/* Column 3: Resources */}
-            <div className="md:w-1/2">
-                <h3 className="text-lg font-bold mb-4 dark:text-white">{L?.footer?.resources_title}</h3> {/* SAFE ACCESS */}
-                <ul className="space-y-2 text-sm">
-                    <li><button onClick={() => navigate('commands')} className="hover:text-purple-600 transition-colors">{L?.footer?.resources_commands}</button></li> {/* SAFE ACCESS */}
-                    <li><button onClick={() => navigate('privacy')} className="hover:text-purple-600 transition-colors">{L?.footer?.resources_privacy}</button></li> {/* SAFE ACCESS */}
-                    <li><a href={L?.footer?.resources_status_url} target="_blank" rel="noreferrer" className="hover:text-purple-600 transition-colors">{L?.footer?.resources_status} <ExternalLink size={12} className="inline ml-1" /></a></li> {/* SAFE ACCESS */}
-                </ul>
-            </div>
-
-            {/* Column 4: Contact */}
-            <div>
-                <h3 className="text-lg font-bold mb-4 dark:text-white">{L?.footer?.contact_title}</h3> {/* SAFE ACCESS */}
-                <ul className="space-y-2 text-sm">
-                    <li><a href={`mailto:${L?.footer?.contact_email}`} className="hover:text-purple-600 transition-colors">{L?.footer?.contact_email}</a></li> {/* SAFE ACCESS */}
-                    <li><a href={L?.footer?.contact_discord_url} target="_blank" rel="noreferrer" className="hover:text-purple-600 transition-colors">{L?.footer?.contact_discord} <ExternalLink size={12} className="inline ml-1" /></a></li> {/* SAFE ACCESS */}
-                    <li><a href={L?.footer?.contact_youtube_url} target="_blank" rel="noreferrer" className="hover:text-purple-600 transition-colors">{L?.footer?.contact_youtube} <ExternalLink size={12} className="inline ml-1" /></a></li> {/* SAFE ACCESS */}
-                </ul>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12 text-sm font-bold text-left max-w-4xl mx-auto">
+                    <div>
+                        <h4 className="text-white mb-4 uppercase tracking-wider opacity-50">{L.footer.sitemap}</h4>
+                        <ul className="space-y-2">
+                            <li><button onClick={() => navigate('home')} className="hover:text-purple-400 transition-colors">{L.nav.home}</button></li>
+                            <li><button onClick={() => navigate('news')} className="hover:text-purple-400 transition-colors">{L.nav.news}</button></li>
+                            <li><button onClick={() => navigate('join')} className="hover:text-purple-400 transition-colors">{L.nav.join}</button></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="text-white mb-4 uppercase tracking-wider opacity-50">Support</h4>
+                        <ul className="space-y-2">
+                             <li><button onClick={() => navigate('guide')} className="hover:text-purple-400 transition-colors">{L.nav.guide}</button></li>
+                             <li><button onClick={() => navigate('commands')} className="hover:text-purple-400 transition-colors">{L.nav.commands}</button></li>
+                        </ul>
+                    </div>
+                    <div>
+                         <h4 className="text-white mb-4 uppercase tracking-wider opacity-50">Legal</h4>
+                         <ul className="space-y-2">
+                             <li><button onClick={() => navigate('terms')} className="hover:text-purple-400 transition-colors">{L.footer.terms}</button></li>
+                             <li><button onClick={() => navigate('privacy')} className="hover:text-purple-400 transition-colors">{L.footer.privacy}</button></li>
+                         </ul>
+                    </div>
+                    <div>
+                         <h4 className="text-white mb-4 uppercase tracking-wider opacity-50">Other</h4>
+                         <ul className="space-y-2">
+                             <li><button onClick={() => navigate('home', 'contact')} className="hover:text-purple-400 transition-colors">{L.footer.contact}</button></li>
+                             <li>
+                                <a href="https://www.youtube.com/@なんてつ" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2">
+                                    <Youtube size={14} /> YouTube
+                                </a>
+                             </li>
+                             <li>
+                                <a href="https://twitter.com/nantetu123" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2">
+                                    <Twitter size={14} /> Twitter (X)
+                                </a>
+                             </li>
+                         </ul>
+                    </div>
+                </div>
+                <p className="text-sm opacity-50">&copy; 2025 Nantetu Server. All rights reserved.<br/>Not affiliated with Mojang AB.</p>
             </div>
         </div>
-
-        {/* Copyright */}
-        <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500 dark:text-gray-500">
-            &copy; {new Date().getFullYear()} Nantetu Server. {L?.footer?.copyright}.
-            <p className="mt-1">Built with <Zap size={12} className="inline text-yellow-500" /> by Community.</p>
-        </div>
-    </footer>
+      </footer>
 );
 
-
 // --- AI Chat Component ---
-export const AIChat = ({ L, isChatOpen, setIsChatOpen, handleSend, messages, input, setInput, isLoading, handleClearChat }) => {
-    const chatWindowRef = useRef(null);
+// (API logic is mocked here to keep file size down, but structure is ready)
+const fetchGeminiResponse = async (chatHistory, currentLang) => {
+    // In a real file split, this would be imported from utils/api.js
+    // For now we simulate or use the injected key from environment
+    const apiKey = ""; 
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    
+    // Simplification for the file splitter context:
+    try {
+        const systemPrompt = "You are the Nantetu Server AI."; // Simplify for brevity in Layout
+        const contents = [
+            { role: "user", parts: [{ text: systemPrompt }] },
+            ...chatHistory.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] }))
+        ];
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: contents })
+        });
+        if (!response.ok) throw new Error("API Error");
+        const result = await response.json();
+        return { text: result.candidates?.[0]?.content?.parts?.[0]?.text, error: null };
+    } catch (e) {
+        return { text: null, error: currentLang === 'ja' ? "エラー" : "Error" };
+    }
+};
 
-    // Scroll to the bottom whenever messages change or loading state changes
-    useEffect(() => {
-        if (chatWindowRef.current) {
-            chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
-        }
-    }, [messages, isLoading]);
+export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
+  const [chatHistory, setChatHistory] = useState([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const chatRef = useRef(null);
 
-    if (!isChatOpen) return null;
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [chatHistory]);
 
-    return (
-        <div className="fixed bottom-0 right-0 md:bottom-6 md:right-6 z-[95] w-full md:w-[400px] h-full md:h-[550px] bg-white dark:bg-gray-900 md:rounded-2xl shadow-2xl flex flex-col transition-all duration-300 border border-gray-200 dark:border-gray-800 overflow-hidden">
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    const userMessage = { role: 'user', text: input.trim() };
+    const newHistory = [...chatHistory, userMessage];
+    setChatHistory(newHistory);
+    setInput('');
+    setIsLoading(true);
+    const { text, error } = await fetchGeminiResponse(newHistory, currentLang);
+    setIsLoading(false);
+    if (text) setChatHistory(prev => [...prev, { role: 'model', text: text }]);
+    else setChatHistory(prev => [...prev, { role: 'model', text: error, isError: true }]);
+  };
 
-            {/* Header */}
-            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
-                {/* SAFE ACCESS: L?.footer?.chat_title */}
-                <h3 className="text-xl font-bold dark:text-white flex items-center gap-2"><MessageCircle size={24} className="text-purple-600" />{L?.footer?.chat_title}</h3>
-                <div className='flex items-center gap-2'>
-                    {/* Clear Chat Button */}
-                    <button
-                        onClick={handleClearChat}
-                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors rounded-full"
-                        title={L?.footer?.chat_clear} // SAFE ACCESS
-                        disabled={isLoading}
-                    >
-                        <Trash2 size={20} />
-                    </button>
-                    {/* Close Button */}
-                    <button
-                        onClick={() => setIsChatOpen(false)}
-                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-purple-600 transition-colors rounded-full"
-                        title={L?.footer?.chat_close} // SAFE ACCESS
-                        disabled={isLoading}
-                    >
-                        <X size={24} />
-                    </button>
-                </div>
-            </div>
+  const handleClear = () => setChatHistory([]);
+  if (!isChatOpen) return null;
 
-            {/* Info/Warning Area */}
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs border-b border-yellow-200 dark:border-yellow-900 flex items-center gap-2">
-                <Info size={16} />
-                {L?.footer?.chat_disclaimer} {/* SAFE ACCESS */}
-            </div>
-
-            {/* Message Window */}
-            <div ref={chatWindowRef} className="flex-grow p-4 space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-gray-900/70">
-                {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 dark:text-gray-600">
-                        <MessageCircle size={48} className="mb-2" />
-                        <p className="text-sm">{L?.footer?.chat_start}</p> {/* SAFE ACCESS */}
-                    </div>
-                ) : (
-                    messages.map((msg, index) => (
-                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
-                            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>\
-                                <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
-                            </div>
-                        </div>
-                    ))
-                )}
-                {isLoading && <div className="text-xs text-gray-400 ml-4">{L?.footer?.chat_loading}</div>} {/* SAFE ACCESS */}
-            </div>
-
-            {/* Input Area */}
-            <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-                <form onSubmit={handleSend} className="flex gap-2 relative">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder={L?.footer?.chat_input_placeholder} // SAFE ACCESS
-                        className="flex-grow pl-5 pr-12 py-4 rounded-xl bg-gray-100 dark:bg-gray-800 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white"
-                        disabled={isLoading}
-                    />
-                    <button
-                        type="submit"
-                        className={`absolute right-0 top-0 h-full w-12 flex items-center justify-center rounded-r-xl transition-all ${isLoading ? 'text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? <Loader2 size={24} className="animate-spin" /> : <Send size={20} />}
-                    </button>
-                </form>
-            </div>
+  return (
+    <div className="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm flex items-end justify-end md:justify-center p-0 md:p-8 animate-fade-in">
+      <div className="bg-white dark:bg-gray-900 w-full md:max-w-md h-full md:h-[650px] flex flex-col rounded-t-2xl md:rounded-2xl shadow-2xl transform transition-all duration-300 ease-out animate-slide-in-up border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="p-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center shadow-md">
+          <div><h3 className="text-lg font-black flex items-center gap-2"><Zap size={20} className="text-yellow-300 fill-current" />{L.footer.chat_title}</h3><p className="text-xs text-purple-200 opacity-90">Powered by Gemini</p></div>
+          <div className="flex items-center gap-1">
+            <button onClick={handleClear} disabled={chatHistory.length === 0} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"><Trash2 size={18} /></button>
+            <button onClick={closeChat} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"><X size={24} /></button>
+          </div>
         </div>
-    );
+        <div ref={chatRef} className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-black/20">
+          {chatHistory.length === 0 ? (
+            <div className="text-center p-8 pt-20 text-gray-500 dark:text-gray-400 animate-fade-in-up">
+              <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={36} className="text-purple-500" /></div>
+              <p className="font-bold text-lg mb-2">{L.footer.chat_subtitle}</p>
+            </div>
+          ) : (
+            chatHistory.map((msg, index) => (
+              <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
+                <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+                </div>
+              </div>
+            ))
+          )}
+          {isLoading && <div className="text-xs text-gray-400 ml-4">{L.footer.chat_loading}</div>}
+        </div>
+        <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+          <form onSubmit={handleSend} className="flex gap-2 relative">
+            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={L.footer.chat_input_placeholder} className="flex-grow pl-5 pr-12 py-4 rounded-xl bg-gray-100 dark:bg-gray-800 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white" disabled={isLoading}/>
+            <button type="submit" disabled={!input.trim() || isLoading} className="absolute right-2 top-2 bottom-2 aspect-square bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all flex items-center justify-center shadow-md"><Send size={18} /></button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 };
