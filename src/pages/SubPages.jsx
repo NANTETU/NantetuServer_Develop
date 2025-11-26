@@ -1,46 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Bell, MessageSquare, Terminal, BookOpen, HelpCircle, FileText, Lock, Search, ArrowRight, Loader2, Send, Shield, AlertTriangle, CheckCircle, Info } from 'lucide-react';
-// 修正: UIコンポーネントが同じ階層か親階層から利用可能であることを仮定し、相対パスを調整するか、あるいは外部コンポーネントを直接埋め込む。
-// 今回はエラーログのパスを信じ、App.jsxが親であるとして、UI, utils/firebaseはApp.jsxから相対パスで参照される場所に存在していると仮定し、修正を試みます。
-// SubPages.jsxとHome.jsxが同じディレクトリ階層にあると仮定し、Homeからのインポートは相対パスで修正。
-// UIコンポーネントはcomponents/UI.jsxに存在すると仮定し、パスを修正。
-import { NewsItem, AccordionItem, CopyBox, JoinChatSection } from './UI'; // UI.jsxがApp.jsxと同じ階層にあると仮定し、一時的に修正 (本来は../components/UI)
+import React, { useState, useEffect } from 'react';
+import { Bell, MessageCircle, Terminal, BookOpen, HelpCircle, FileText, Lock, Search, ArrowRight, Loader2, Send, Shield, AlertTriangle, CheckCircle, Info, MapPin, User, ChevronDown, ChevronUp, Clock, Calendar, MessageSquare, Eye, Layers } from 'lucide-react';
+// UIコンポーネントのインポートパスを修正
+import { NewsItem, AccordionItem, CopyBox, PostCard, LinkButton } from '../components/UI';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { db, appId, auth, initializeFirebase } from './firebase'; // firebase.jsが同じ階層にあると仮定し、一時的に修正 (本来は../utils/firebase)
-import { JoinSection } from './Home'; // Home.jsxが同じ階層にあると仮定
+import { JoinSection } from './Home'; // HomeからJoinSectionを正しくインポート
 
-// --- News Page ---\r\n
+// --- News Page ---
 export const NewsPage = ({ L, newsData }) => {
-    // NewsItem コンポーネントが外部から渡されるか、ここで定義されている必要がある。
-    // エラー回避のため、NewsItem, AccordionItem, CopyBoxはUI.jsxで定義されていると仮定する。
-    const NewsItem = ({ item, L }) => (
-        <div
-            className="group relative bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border-b-4 border-purple-500 hover:border-purple-600 cursor-pointer overflow-hidden mb-4"
-        >
-            <div className="flex items-start justify-between">
-                <div className="flex-grow">
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                        <Clock size={16} /> {item.date}
-                    </span>
-                    <h3 className="text-xl font-bold dark:text-white group-hover:text-purple-600 transition-colors">{item.title}</h3>
-                </div>
-                <Bell size={28} className="text-purple-500 flex-shrink-0 ml-4 opacity-70 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <p className="mt-3 text-gray-600 dark:text-gray-300 line-clamp-2">{item.content}</p>
-            {item.url && (
-                <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-4 inline-flex items-center gap-1 text-purple-600 font-bold hover:underline transition-colors text-sm"
-                >
-                    {L.news.read_more} <ArrowRight size={16} />
-                </a>
-            )}
-        </div>
-    );
+    // ニュースデータのリアルタイムリスナー (Firestoreから取得するロジックをシミュレート)
+    const [liveNews, setLiveNews] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const displayData = (newsData && newsData.length > 0) ? newsData : L.news.default_data;
+    // 実際のアプリケーションでは、App.jsxでdbとappIdを取得し、ここで使用します。
+    // 現状は props (db, appId) を使用せず、デフォルトデータで表示します。
+    useEffect(() => {
+        // Firestoreからニュースを取得するロジックのプレースホルダー
+        // const newsRef = collection(db, `artifacts/${appId}/public/data/news`);
+        // const q = query(newsRef, orderBy('date', 'desc'), limit(20));
+        // const unsubscribe = onSnapshot(q, (snapshot) => { ... });
+        // return () => unsubscribe();
+
+        // 開発環境ではデフォルトデータをロード
+        setLiveNews(L.news.default_data.sort((a, b) => new Date(b.date) - new Date(a.date)));
+        setLoading(false);
+    }, [L.news.default_data]);
+
+    const displayData = liveNews.length > 0 ? liveNews : L.news.default_data;
+
+    if (loading) return <div className="text-center py-32 dark:text-white"><Loader2 className="animate-spin mx-auto" size={40} /></div>;
+
     return (
         <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
             <div className="text-center mb-16">
@@ -48,53 +36,9 @@ export const NewsPage = ({ L, newsData }) => {
                 <p className="text-gray-600 dark:text-gray-400">{L.news.subtitle}</p>
             </div>
             <div className="space-y-4">
-                {displayData.map((item, index) => (
-                    <NewsItem key={index} item={item} L={L} />
-                ))}
-            </div>
-        </div>
-    );
-};
-
-// --- Forum Page ---
-export const ForumPage = ({ L, forumData }) => {
-    // AccordionItem コンポーネントが外部から渡されるか、ここで定義されている必要がある。
-    // エラー回避のため、AccordionItemはUI.jsxで定義されていると仮定する。
-    const AccordionItem = ({ title, content, icon: Icon }) => {
-        const [isOpen, setIsOpen] = useState(false);
-        return (
-            <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="w-full text-left p-5 flex justify-between items-center bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                    <div className="flex items-center gap-3">
-                        {Icon && <Icon size={24} className="text-purple-500" />}
-                        <span className="text-lg font-semibold dark:text-white">{title}</span>
-                    </div>
-                    <ArrowRight size={20} className={`text-gray-500 transition-transform ${isOpen ? 'rotate-90' : 'rotate-0'}`} />
-                </button>
-                <div
-                    className={`transition-max-height duration-500 ease-in-out overflow-hidden ${isOpen ? 'max-h-screen p-5 pt-0' : 'max-h-0 p-0'
-                        }`}
-                >
-                    <div className="text-gray-600 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-700 pt-4">
-                        {content}
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    return (
-        <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
-            <div className="text-center mb-16">
-                <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><MessageSquare className="text-purple-500" size={40} />{L.forum.title}</h2>
-                <p className="text-gray-600 dark:text-gray-400">{L.forum.subtitle}</p>
-            </div>
-            <div className="space-y-4">
-                {forumData.map((item, index) => (
-                    <AccordionItem key={index} title={item.q} content={item.a} icon={HelpCircle} />
+                {displayData.map((item) => (
+                    // NewsItem コンポーネントは展開可能なリストアイテムとして再利用
+                    <NewsItem key={item.id} item={item} L={L} isList={true} />
                 ))}
             </div>
         </div>
@@ -102,49 +46,23 @@ export const ForumPage = ({ L, forumData }) => {
 };
 
 // --- Guide Page ---
-export const GuidePage = ({ L, guideData }) => (
+export const GuidePage = ({ L }) => (
     <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
         <div className="text-center mb-16">
             <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><BookOpen className="text-purple-500" size={40} />{L.guide.title}</h2>
             <p className="text-gray-600 dark:text-gray-400">{L.guide.subtitle}</p>
         </div>
-        <div className="space-y-12">
-            {guideData.map((section, sIdx) => (
-                <div key={sIdx}>
-                    <div className="inline-flex items-center mb-6 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                        <span className="text-lg font-bold text-purple-700 dark:text-purple-300">{section.category}</span>
-                    </div>
-                    <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: section.content }}>
-                    </div>
-                </div>
-            ))}
-        </div>
-    </div>
-);
 
-// --- Commands Page ---
-export const CommandsPage = ({ L, commandsData }) => (
-    <div className="max-w-5xl mx-auto py-32 px-4 animate-fade-in-scale">
-        <div className="text-center mb-16">
-            <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><Terminal className="text-purple-500" size={40} />{L.commands.title}</h2>
-            <p className="text-gray-600 dark:text-gray-400">{L.commands.subtitle}</p>
-        </div>
         <div className="space-y-12">
-            {commandsData.map((section, sIdx) => (
-                <div key={sIdx}>
-                    <div className="inline-flex items-center mb-8 px-4 py-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
-                        <span className="text-lg font-bold text-indigo-700 dark:text-indigo-300">{section.category}</span>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-6">
-                        {section.commands.map((cmd, cIdx) => (
-                            <div key={cIdx} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-purple-300 transition-all hover:shadow-md group">
-                                <div className="flex justify-between items-start gap-4 mb-3">
-                                    <code className="px-3 py-1.5 bg-gray-100 dark:bg-gray-900 text-purple-700 dark:text-purple-300 rounded-lg font-mono font-bold text-sm border border-gray-200 dark:border-700">
-                                        {cmd.cmd}
-                                    </code>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{cmd.desc}</p>
-                            </div>
+            {L.guide.sections.map((section, index) => (
+                <div key={index} id={section.id} className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                    <h3 className="text-3xl font-bold mb-6 text-purple-600 dark:text-purple-400 flex items-center gap-3">
+                        <section.icon size={28} />
+                        {section.title}
+                    </h3>
+                    <div className="space-y-4">
+                        {section.content.map((item, qIdx) => (
+                            <AccordionItem key={qIdx} title={item.q} content={item.a} isOpen={qIdx === 0} />
                         ))}
                     </div>
                 </div>
@@ -153,53 +71,188 @@ export const CommandsPage = ({ L, commandsData }) => (
     </div>
 );
 
+// --- Commands Page ---
+export const CommandsPage = ({ L }) => {
+    const [searchTerm, setSearchTerm] = useState('');
 
-// --- Privacy Policy Page ---
+    const filteredSections = L.commands.sections.map(section => ({
+        ...section,
+        commands: section.commands.filter(cmd =>
+            cmd.cmd.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            cmd.desc.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    })).filter(section => section.commands.length > 0);
+
+    return (
+        <div className="max-w-5xl mx-auto py-32 px-4 animate-fade-in-scale">
+            <div className="text-center mb-16">
+                <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><Terminal className="text-purple-500" size={40} />{L.commands.title}</h2>
+                <p className="text-gray-600 dark:text-gray-400">{L.commands.subtitle}</p>
+            </div>
+
+            <div className="mb-12 relative max-w-lg mx-auto">
+                <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder={L.commands.search_placeholder}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all shadow-sm"
+                />
+            </div>
+
+            <div className="space-y-10">
+                {filteredSections.map((section, index) => (
+                    <div key={index} className="animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                        <div className="flex items-center gap-3 mb-6">
+                            <section.icon size={24} className="text-purple-600 dark:text-purple-400" />
+                            <h3 className="text-2xl font-black dark:text-white border-b-2 border-purple-500 pb-1">{section.category}</h3>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {section.commands.map((cmd, cIdx) => (
+                                <div key={cIdx} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-purple-300 transition-all hover:shadow-md group">
+                                    <div className="flex justify-between items-start gap-4 mb-3">
+                                        <code className="px-3 py-1.5 bg-gray-100 dark:bg-gray-900 text-purple-700 dark:text-purple-300 rounded-lg font-mono font-bold text-sm border border-gray-200 dark:border-gray-700">
+                                            {cmd.cmd}
+                                        </code>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{cmd.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+                {filteredSections.length === 0 && (
+                    <div className="text-center text-xl text-gray-500 dark:text-gray-400 py-10">
+                        該当するコマンドは見つかりませんでした。
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// --- Forum Page ---
+export const ForumPage = ({ L }) => {
+    // 掲示板データのリアルタイムリスナー
+    const [posts, setPosts] = useState(L.forum.default_posts);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(false); // 開発時はfalse
+
+    const filteredPosts = posts.filter(post =>
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.author.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // 実際のFirebaseロジックのプレースホルダー
+    useEffect(() => {
+        // const postsRef = collection(db, `artifacts/${appId}/public/data/forum_posts`);
+        // const q = query(postsRef, orderBy('date', 'desc'), limit(50));
+        // const unsubscribe = onSnapshot(q, (snapshot) => {
+        //     setPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        //     setLoading(false);
+        // });
+        // return () => unsubscribe();
+
+        // 開発時はデフォルトデータをソート
+        setPosts(L.forum.default_posts.sort((a, b) => new Date(b.date) - new Date(a.date)));
+    }, [L.forum.default_posts]);
+
+    return (
+        <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
+            <div className="text-center mb-16">
+                <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><MessageCircle className="text-purple-500" size={40} />{L.forum.title}</h2>
+                <p className="text-gray-600 dark:text-gray-400">{L.forum.subtitle}</p>
+            </div>
+
+            <div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
+                <div className="relative flex-grow">
+                    <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder={L.forum.search_placeholder}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all shadow-sm"
+                    />
+                </div>
+                <LinkButton
+                    href="#" // 投稿ページへのリンク
+                    text={L.forum.post_button}
+                    Icon={Send}
+                    className="flex-shrink-0"
+                />
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+                <h3 className="text-xl font-bold dark:text-white mb-6 border-b border-gray-200 dark:border-gray-700 pb-3">{L.forum.latest_posts}</h3>
+
+                {loading ? (
+                    <div className="text-center py-10"><Loader2 className="animate-spin mx-auto text-purple-500" size={32} /></div>
+                ) : filteredPosts.length > 0 ? (
+                    <div className="space-y-4">
+                        {filteredPosts.map((post, index) => (
+                            <PostCard key={post.id} post={post} L={L} style={{ animationDelay: `${index * 50}ms` }} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">
+                        該当する投稿はありません。
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// --- Privacy Page ---
 export const PrivacyPage = ({ L }) => (
     <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
         <div className="text-center mb-16">
-            <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><FileText className="text-purple-500" size={40} />{L.privacy.title}</h2>
+            <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><Lock className="text-purple-500" size={40} />{L.privacy.title}</h2>
             <p className="text-gray-600 dark:text-gray-400">{L.privacy.subtitle}</p>
         </div>
+
         <div className="space-y-10">
             <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in-up">
                 <h3 className="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                     <Info size={20} />
-                    {L.privacy.section1_title}
+                    収集する情報
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {L.privacy.section1_content}
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+                    当サーバーでは、サービス提供および改善のために以下の情報を自動的または任意で収集します。
                 </p>
-                <div className="mt-6 space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-                        <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                        {L.privacy.item1}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-                        <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                        {L.privacy.item2}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-                        <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                        {L.privacy.item3}
-                    </div>
-                </div>
+                <ul className="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
+                    <li>MinecraftユーザーIDとゲーム内での行動ログ (接続/切断時間、チャットログ、ブロックの破壊/設置)</li>
+                    <li>お問い合わせフォームからの情報 (お名前、メールアドレス、メッセージ内容)</li>
+                    <li>ウェブサイトの利用状況に関する匿名化されたデータ (ページビュー、アクセス元IPアドレス*ただし、個人を特定しない範囲)</li>
+                </ul>
+                <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-4 flex items-center gap-2">
+                    <AlertTriangle size={16} />
+                    IPアドレスは、荒らし対策、不正行為の調査以外の目的では利用しません。
+                </p>
             </div>
 
             <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                 <h3 className="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
-                    <Lock size={20} />
-                    {L.privacy.section2_title}
+                    <CheckCircle size={20} />
+                    情報の利用目的
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                    {L.privacy.section2_content}
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
+                    収集した情報は、主に以下の目的で利用されます。
                 </p>
-                <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                        <span className="block font-bold mb-1 dark:text-white">サービス提供</span>
+                        <span className="text-sm text-gray-500">ゲームの進行状況管理のため</span>
+                    </div>
+                    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                         <span className="block font-bold mb-1 dark:text-white">荒らし対策</span>
                         <span className="text-sm text-gray-500">不正行為の調査および処罰のため</span>
                     </div>
-                    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                         <span className="block font-bold mb-1 dark:text-white">サービス改善</span>
                         <span className="text-sm text-gray-500">サーバーのパフォーマンス分析のため</span>
                     </div>
@@ -219,134 +272,11 @@ export const PrivacyPage = ({ L }) => (
     </div>
 );
 
-
 // --- Join Page (Wrapper) ---
-// JoinSection は Home.jsx に定義されていると仮定し、ここでは再利用のためにインポートしている。
-// エラー回避のため、JoinPageはJoinSectionを表示するラッパーとして機能する。
-export const JoinPage = (props) => (
-    <JoinSection {...props} />
+// Home.jsxからJoinSectionを再利用
+export const JoinPage = ({ L, serverStatus, navigate, setToast }) => (
+    <div className="min-h-screen pt-14 dark:bg-gray-950">
+        <JoinSection L={L} serverStatus={serverStatus} navigate={navigate} setToast={setToast} />
+        <div className="pb-24" />
+    </div>
 );
-
-// --- Chat Page (Wrapper) ---
-// チャット機能はAIChatとしてLayout.jsxに実装されていることが多いため、ここでは簡略化。
-// 外部依存を避けるため、簡易なチャットUIをここで定義する。
-export const ChatPage = ({ L, serverStatus }) => {
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const chatRef = useRef(null);
-
-    // CopyBox, JoinChatSection コンポーネントが外部から渡されるか、ここで定義されている必要がある。
-    // エラー回避のため、CopyBoxとJoinChatSectionをここで定義する。
-    const CopyBox = ({ textToCopy, label, icon: Icon, successMessage }) => {
-        const [isCopied, setIsCopied] = useState(false);
-        const handleCopy = useCallback(() => {
-            if (typeof document.execCommand === 'function') {
-                const textarea = document.createElement('textarea');
-                textarea.value = textToCopy;
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    document.execCommand('copy');
-                    setIsCopied(true);
-                    setTimeout(() => setIsCopied(false), 2000);
-                } catch (err) {
-                    console.error('Failed to copy text', err);
-                }
-                document.body.removeChild(textarea);
-            }
-        }, [textToCopy]);
-
-        return (
-            <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl">
-                <div className="flex items-center gap-3">
-                    {Icon && <Icon size={24} className="text-purple-500" />}
-                    <span className="font-mono text-lg font-bold dark:text-white">{label}</span>
-                </div>
-                <button
-                    onClick={handleCopy}
-                    className="p-2 rounded-full transition-all duration-200 flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-semibold"
-                >
-                    {isCopied ? (
-                        <>
-                            <CheckCircle size={18} />
-                            {successMessage}
-                        </>
-                    ) : (
-                        <>
-                            <Copy size={18} />
-                            {L.join.copy_button}
-                        </>
-                    )}
-                </button>
-            </div>
-        );
-    };
-
-    const JoinChatSection = ({ L, serverStatus, handleCopy }) => (
-        <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
-            <div className="text-center mb-16">
-                <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><MessageSquare className="text-purple-500" size={40} />{L.chat.title}</h2>
-                <p className="text-gray-600 dark:text-gray-400">{L.chat.subtitle}</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 space-y-6">
-                <div className="space-y-4">
-                    <h3 className="text-2xl font-bold dark:text-white">{L.join.info_title}</h3>
-                    <CopyBox
-                        textToCopy={L.join.server_ip_value}
-                        label={L.join.server_ip_value}
-                        icon={Terminal}
-                        successMessage={L.join.copied}
-                    />
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center pt-2">
-                        {L.join.copy_tip}
-                    </p>
-                </div>
-            </div>
-            {/* 以下のチャットUIは AIChat の簡易版として機能する */}
-            <div className="mt-12 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 h-[60vh] flex flex-col">
-                <h3 className="text-2xl font-bold dark:text-white mb-4 border-b pb-3 border-gray-100 dark:border-gray-700">{L.chat.live_chat_title}</h3>
-                <div ref={chatRef} className="flex-grow overflow-y-auto space-y-4 p-2 custom-scrollbar">
-                    {/* 初期メッセージ */}
-                    <div className="flex justify-start">
-                        <div className="max-w-[85%] p-4 rounded-2xl shadow-sm bg-purple-100 dark:bg-purple-900/30 text-gray-800 dark:text-gray-100 rounded-bl-none border border-purple-200 dark:border-purple-700">
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed">{L.chat.initial_message}</p>
-                        </div>
-                    </div>
-                    {/* メッセージ表示 */}
-                    {messages.length === 0 && !isLoading && (
-                        <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
-                            {L.chat.no_messages}
-                        </div>
-                    )}
-                    {messages.map((msg, index) => (
-                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
-                            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>
-                                <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
-                            </div>
-                        </div>
-                    ))}
-                    {isLoading && <div className="text-xs text-gray-400 ml-4">{L.chat.loading}</div>}
-                </div>
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                    <form onSubmit={(e) => { e.preventDefault(); /* handleSend(input); */ setInput(''); }} className="flex gap-2 relative">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder={L.chat.input_placeholder}
-                            className="flex-grow pl-5 pr-12 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white"
-                            disabled={isLoading}
-                        />
-                        <button type="submit" disabled={!input.trim() || isLoading} className="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-purple-600 hover:text-purple-700 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed">
-                            {isLoading ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} />}
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
-
-    // 簡易チャットページとして JoinChatSection を利用
-    return <JoinChatSection L={L} serverStatus={serverStatus} />;
-};

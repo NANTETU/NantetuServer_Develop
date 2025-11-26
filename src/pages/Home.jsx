@@ -1,388 +1,325 @@
-import React from 'react';
-import { Gamepad2, HelpCircle, Users, CheckCircle, Server, Zap, Shield, Clock, MessageCircle, Terminal, BookOpen, Bell, Send, User, MapPin, ExternalLink } from 'lucide-react';
-import { FeatureCard, AccordionItem, CopyBox } from '../components/UI';
-import { DISCORD_WEBHOOK_URL } from '../data/languages';
+import React, { useState, useEffect } from 'react';
+import { Gamepad2, HelpCircle, Users, CheckCircle, Server, Zap, Shield, Clock, MessageCircle, Terminal, BookOpen, Bell, Send, User, MapPin, ExternalLink, Mail, ArrowRight, Loader2, Copy } from 'lucide-react';
+// UIコンポーネントをcomponents/UIからインポートするようにパスを修正
+import { FeatureCard, AccordionItem, CopyBox, NewsItem, Toast } from '../components/UI';
+import { addDoc, collection, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 // --- Sub-Components specific to Home ---
 
-export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
-    <section id="join" className="py-24 px-4 relative overflow-hidden animate-fade-in-scale">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12 items-center relative z-10">
-            <div className="lg:w-1/2">
-                <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
-                    <Gamepad2 size={32} />
-                </div>
-                <h2 className="text-4xl font-black mb-6 dark:text-white leading-tight">
-                    {L.join.title}
-                </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-                    {L.join.subtitle}
-                </p>
+// IPアドレスのコピーボックス
+const CopyBoxImpl = ({ L, handleCopy }) => (
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.join.ip_label}</label>
+        <div className="flex items-center space-x-2">
+            <input
+                type="text"
+                value="mc.nantetu.com"
+                readOnly
+                className="flex-grow px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 text-lg font-mono dark:text-white border border-gray-200 dark:border-gray-600 select-all focus:outline-none"
+            />
+            <button
+                onClick={() => handleCopy('mc.nantetu.com')}
+                className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-all focus:ring-4 focus:ring-purple-300 shadow-md"
+                aria-label="Copy IP Address"
+            >
+                <Copy size={24} />
+            </button>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{L.home.join.port_label}: 25565</p>
+    </div>
+);
 
-                <div className="space-y-4 mb-10">
-                    <CopyBox label={L.join.ip} value={L.server.ip} onCopy={handleCopy} />
-                    <CopyBox label={L.join.port} value={L.server.port} onCopy={handleCopy} />
-                </div>
 
-                <a href={L.social.discord_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition-all hover:shadow-xl transform hover:scale-[1.02] active:scale-95">
-                    <MessageCircle size={20} className="mr-3" />
-                    {L.join.discord_link}
-                    <ExternalLink size={16} className="ml-2" />
-                </a>
-            </div>
+export const JoinSection = ({ L, serverStatus, navigate, setToast }) => {
+    const handleCopy = (text) => {
+        if (!navigator.clipboard) {
+            console.error('Clipboard API not available.');
+            // Fallback for older browsers (or Canvas)
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                setToast({ message: L.home.join.copy_success, type: 'success' });
+            } catch (err) {
+                console.error('Copy failed:', err);
+                setToast({ message: 'コピーに失敗しました。手動でコピーしてください。', type: 'error' });
+            }
+            document.body.removeChild(textArea);
+            return;
+        }
 
-            {/* Server Status and Players */}
-            <div className="lg:w-1/2 w-full glass-panel p-8 rounded-3xl shadow-xl flex flex-col space-y-6">
-                <h3 className="text-2xl font-bold dark:text-white flex items-center gap-2">
-                    <Server size={24} className="text-purple-500" />
-                    {L.join.status_title}
-                </h3>
+        navigator.clipboard.writeText(text).then(() => {
+            setToast({ message: L.home.join.copy_success, type: 'success' });
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+            setToast({ message: 'コピーに失敗しました。手動でコピーしてください。', type: 'error' });
+        });
+    };
 
-                {serverStatus.loading ? (
-                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
-                        <span className="text-lg text-gray-700 dark:text-gray-300">
-                            {L.join.status_loading}
-                        </span>
-                        <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+    return (
+        <section id="join" className="py-24 px-4 relative overflow-hidden animate-fade-in-scale">
+            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12 items-center relative z-10">
+                <div className="lg:w-1/2">
+                    <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
+                        <Gamepad2 size={32} />
                     </div>
-                ) : (
-                    <>
-                        <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
-                            <span className="text-lg text-gray-700 dark:text-gray-300">
-                                {L.join.status_server}
-                            </span>
-                            <span className={`px-3 py-1 text-sm font-bold rounded-full ${serverStatus.online ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                {serverStatus.online ? L.join.status_online : L.join.status_offline}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
-                            <span className="text-lg text-gray-700 dark:text-gray-300">
-                                {L.join.status_players}
-                            </span>
-                            <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                                {serverStatus.players}
-                            </span>
-                        </div>
-                    </>
-                )}
+                    <h2 className="text-4xl font-black mb-6 dark:text-white leading-tight">
+                        {L.home.join.title}
+                    </h2>
+                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                        {L.home.join.subtitle}
+                    </p>
 
-                <div className="pt-4 flex justify-end">
-                    {/* ここもnavigate関数でページ遷移を呼び出す */}
-                    <button onClick={() => navigate('guide')} className="text-purple-600 dark:text-purple-400 font-bold hover:text-purple-700 dark:hover:text-purple-300 transition-colors flex items-center gap-2">
-                        {L.join.button_guide}
-                        <ArrowRight size={18} />
+                    <CopyBoxImpl L={L} handleCopy={handleCopy} />
+
+                    <button
+                        onClick={() => navigate('guide')}
+                        className="mt-8 inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent border-2 border-purple-600 text-purple-600 font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300"
+                    >
+                        <ArrowRight size={20} />
+                        {L.home.join.button_connect}
                     </button>
                 </div>
-            </div>
-        </div>
 
-        {/* Decorative Grid Pattern */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-50 z-0"></div>
-    </section>
-);
-
-export const FeaturesSection = ({ L }) => (
-    <section id="features" className="py-24 px-4 bg-gray-100 dark:bg-gray-900 animate-fade-in-scale">
-        <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-                <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
-                    <CheckCircle size={32} />
-                </div>
-                <h2 className="text-4xl font-black mb-4 dark:text-white">{L.features.title}</h2>
-                <p className="text-lg text-gray-600 dark:text-gray-300">{L.features.subtitle}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <FeatureCard
-                    Icon={Shield}
-                    title={L.features.cards[0].title}
-                    description={L.features.cards[0].description}
-                    color="text-green-500"
-                    L={L}
-                />
-                <FeatureCard
-                    Icon={Users}
-                    title={L.features.cards[1].title}
-                    description={L.features.cards[1].description}
-                    color="text-yellow-500"
-                    L={L}
-                />
-                <FeatureCard
-                    Icon={Zap}
-                    title={L.features.cards[2].title}
-                    description={L.features.cards[2].description}
-                    color="text-blue-500"
-                    L={L}
-                />
-                <FeatureCard
-                    Icon={Clock}
-                    title={L.features.cards[3].title}
-                    description={L.features.cards[3].description}
-                    color="text-purple-500"
-                    L={L}
-                />
-                <FeatureCard
-                    Icon={Terminal}
-                    title={L.features.cards[4].title}
-                    description={L.features.cards[4].description}
-                    color="text-pink-500"
-                    L={L}
-                />
-                <FeatureCard
-                    Icon={BookOpen}
-                    title={L.features.cards[5].title}
-                    description={L.features.cards[5].description}
-                    color="text-red-500"
-                    L={L}
-                />
-            </div>
-        </div>
-    </section>
-);
-
-export const GuideSection = ({ L, navigate, activeAccordion, setActiveAccordion }) => (
-    <section id="guide" className="py-24 px-4 relative animate-fade-in-scale">
-        <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-                <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
-                    <HelpCircle size={32} />
-                </div>
-                <h2 className="text-4xl font-black mb-4 dark:text-white">{L.guide.title}</h2>
-                <p className="text-lg text-gray-600 dark:text-gray-300">{L.guide.subtitle}</p>
-            </div>
-
-            <div className="flex flex-col lg:flex-row gap-12">
-                <div className="lg:w-1/2 space-y-6">
-                    {L.guide.faq_items.slice(0, 3).map((item, index) => (
-                        <AccordionItem
-                            key={index}
-                            title={item.title}
-                            content={item.content}
-                            index={`faq-${index}`}
-                            activeAccordion={activeAccordion}
-                            setActiveAccordion={setActiveAccordion}
-                        />
-                    ))}
-                </div>
-                <div className="lg:w-1/2 space-y-6">
-                    {L.guide.faq_items.slice(3).map((item, index) => (
-                        <AccordionItem
-                            key={index + 3}
-                            title={item.title}
-                            content={item.content}
-                            index={`faq-${index + 3}`}
-                            activeAccordion={activeAccordion}
-                            setActiveAccordion={setActiveAccordion}
-                        />
-                    ))}
+                <div className="lg:w-1/2 relative">
+                    {/* Decorative Minecraft-like block or server status display */}
+                    <div className="relative p-12 bg-purple-50 dark:bg-gray-800/50 rounded-3xl shadow-2xl border-4 border-purple-200 dark:border-gray-700/50">
+                        <Server size={64} className="text-purple-500 mx-auto mb-4 animate-float" />
+                        <h3 className="text-2xl font-bold text-center dark:text-white mb-2">
+                            Nantetu Server Status
+                        </h3>
+                        <p className={`text-center text-lg font-semibold ${serverStatus.online ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                            {serverStatus.online ? L.nav.status_online : L.nav.status_offline}
+                        </p>
+                        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {L.home.hero.status(serverStatus.players)}
+                        </p>
+                    </div>
                 </div>
             </div>
-
-            <div className="text-center mt-12">
-                {/* ここもnavigate関数でページ遷移を呼び出す */}
-                <button onClick={() => navigate('guide')} className="inline-flex items-center px-8 py-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-xl shadow-md transition-all transform hover:scale-[1.02] active:scale-95">
-                    <BookOpen size={20} className="mr-3" />
-                    {L.guide.button_guide}
-                    <ArrowRight size={16} className="ml-2" />
-                </button>
-            </div>
-        </div>
-    </section>
-);
+            {/* Background decoration */}
+            <div className="absolute top-1/4 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl animate-float"></div>
+            <div className="absolute bottom-1/4 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+        </section>
+    );
+};
 
 
-export const ContactSection = ({ L, showToast }) => {
+// --- Contact Form ---
+export const ContactForm = ({ L, db, appId, DISCORD_WEBHOOK_URL, setToast }) => {
+    const [status, setStatus] = useState(''); // 'success', 'error', 'sending', ''
 
-    // Discord Webhookにデータを送信するハンドラ
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setStatus('sending');
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
 
-        const form = e.target;
-        const name = form.elements.name.value;
-        const email = form.elements.email.value;
-        const message = form.elements.message.value;
-
-        const payload = {
-            embeds: [{
-                title: L.home.contact_discord_title,
-                description: message,
-                color: 0x8B5CF6, // Purple
-                fields: [
-                    { name: L.home.contact_discord_name, value: name, inline: true },
-                    { name: L.home.contact_discord_email, value: email, inline: true }
-                ],
-                timestamp: new Date().toISOString(),
-            }]
-        };
+        const contactCollectionPath = `artifacts/${appId}/public/data/contacts`;
 
         try {
-            const response = await fetch(DISCORD_WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+            // 1. Save to Firestore (Public Collection)
+            const docRef = await addDoc(collection(db, contactCollectionPath), {
+                name: data.name,
+                email: data.email,
+                message: data.message,
+                timestamp: serverTimestamp(),
             });
 
-            if (response.ok) {
-                showToast(L.home.contact_success_message);
-                form.reset();
-            } else {
-                showToast(L.home.contact_error_message);
-                console.error("Discord Webhook Error:", response.status, response.statusText);
-            }
+            console.log("Contact form submitted to Firestore with ID: ", docRef.id);
+
+            // 2. (Optional) Send to Discord Webhook (if needed, this is usually handled by a backend server)
+            // For now, we rely only on the Firestore save.
+
+            setStatus('success');
+            e.target.reset();
+            setToast({ message: L.home.contact.success, type: 'success' });
         } catch (error) {
-            showToast(L.home.contact_error_message);
-            console.error("Contact Form Submission Error:", error);
+            console.error("Error submitting contact form:", error);
+            setStatus('error');
+            setToast({ message: L.home.contact.error, type: 'error' });
         }
     };
 
     return (
-        <section id="contact" className="py-24 px-4 bg-gray-100 dark:bg-gray-900 animate-fade-in-scale">
-            <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-16">
-                    <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
-                        <User size={32} />
-                    </div>
-                    <h2 className="text-4xl font-black mb-4 dark:text-white">{L.home.contact_title}</h2>
-                    <p className="text-lg text-gray-600 dark:text-gray-300">{L.home.contact_subtitle}</p>
+        <section id="contact" className="py-24 px-4 bg-gray-50 dark:bg-gray-800 animate-fade-in-up">
+            <div className="max-w-4xl mx-auto">
+                <div className="text-center mb-12">
+                    <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><Mail className="text-purple-500" size={32} />{L.home.contact.title}</h2>
+                    <p className="text-gray-600 dark:text-gray-400">{L.home.contact.subtitle}</p>
                 </div>
 
-                <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 p-8 md:p-12 rounded-3xl shadow-2xl">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700">
+                    <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_name}</label>
-                                <div className="relative"><User className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="name" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white" placeholder={L.home.contact_placeholder_name} required /></div>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact.contact_name}</label>
+                                <div className="relative">
+                                    <User className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                                    <input type="text" name="name" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact.contact_placeholder_name} required />
+                                </div>
                             </div>
                             <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_email}</label>
-                                <div className="relative"><MapPin className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="email" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white" placeholder={L.home.contact_placeholder_email} required /></div>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact.contact_email}</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                                    <input type="email" name="email" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact.contact_placeholder_email} required />
+                                </div>
                             </div>
                         </div>
                         <div className="group">
-                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_message}</label>
-                            <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none" placeholder={L.home.contact_placeholder_msg} required></textarea>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact.contact_message}</label>
+                            <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact.contact_placeholder_msg} required></textarea>
                         </div>
-                        <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.01] active:scale-95">
-                            <Send size={20} className="inline mr-2" />
-                            {L.home.contact_button}
+                        <button type="submit" disabled={status === 'sending'} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                            {status === 'sending' ? (
+                                <><Loader2 className="animate-spin" size={20} /> {L.footer.chat_loading}</>
+                            ) : (
+                                <><Send size={20} /> {L.home.contact.send_button}</>
+                            )}
                         </button>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
         </section>
     );
 };
 
-// --- Main Page Component ---
-export default function HomePage({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast }) {
 
-    // Quiz Logic (Simplified for Home Page Display)
-    const currentQuiz = L.quiz_data[quizState.current];
+// --- Main Home Page ---
+export const HomePage = ({ L, navigate, serverStatus, hasUnreadNews, newsData, userId, db, appId, DISCORD_WEBHOOK_URL, setToast }) => {
+
+    // News data for display (latest 3)
+    const latestNews = (newsData && newsData.length > 0)
+        ? newsData.slice(0, 3)
+        : L.news.default_data.slice(0, 3);
 
     return (
-        <div className="pt-16 pb-24">
+        <div className="min-h-screen">
             {/* Hero Section */}
-            <header className="py-20 md:py-32 px-4 relative overflow-hidden">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div className="md:w-1/2 z-10 text-center md:text-left">
-                        <h1 className="text-5xl md:text-6xl font-black mb-6 dark:text-white leading-tight">
-                            {L.hero.title_p1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-500">{L.hero.title_p2}</span>
-                        </h1>
-                        <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed">
-                            {L.hero.subtitle}
-                        </p>
-                        <div className="flex justify-center md:justify-start space-x-4">
-                            <button onClick={() => scrollToSection('join')} className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-95">
-                                <Gamepad2 size={20} className="mr-3" />
-                                {L.hero.button_join}
-                            </button>
-                            <button onClick={() => scrollToSection('guide')} className="inline-flex items-center px-8 py-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-xl shadow-md transition-all transform hover:scale-[1.02] active:scale-95">
-                                <HelpCircle size={20} className="mr-3" />
-                                {L.hero.button_guide}
-                            </button>
-                        </div>
+            <header className="relative pt-40 pb-24 md:pt-48 md:pb-32 overflow-hidden bg-white dark:bg-gray-950">
+                <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+                    <h1 className="text-6xl md:text-7xl font-black dark:text-white mb-6 leading-tight">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-500">{L.home.hero.title_p1}</span>
+                        <br />{L.home.hero.title_p2}
+                    </h1>
+                    <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+                        {L.home.hero.subtitle}
+                    </p>
+                    <div className="flex justify-center space-x-4">
+                        <button
+                            onClick={() => navigate('join')}
+                            className="inline-flex items-center justify-center px-10 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-[1.05] focus:outline-none focus:ring-4 focus:ring-purple-300"
+                        >
+                            <Zap size={20} className="mr-2" />
+                            {L.home.hero.button_join}
+                        </button>
+                        <button
+                            onClick={() => navigate('guide')}
+                            className="inline-flex items-center justify-center px-10 py-4 bg-transparent border-2 border-purple-600 text-purple-600 font-bold text-lg rounded-xl hover:bg-purple-600 hover:text-white transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300"
+                        >
+                            <HelpCircle size={20} className="mr-2" />
+                            {L.home.hero.button_guide}
+                        </button>
                     </div>
-                    <div className="md:w-1/2 z-10 flex justify-center">
-                        <div className="relative w-72 h-72 md:w-80 md:h-80 bg-white dark:bg-gray-800 rounded-full shadow-2xl flex items-center justify-center border-4 border-purple-300 dark:border-purple-600 animate-float">
-                            <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Server Icon" className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover shadow-lg" />
-                            <div className="absolute inset-0 bg-purple-500/10 rounded-full animate-ping-slow"></div>
-                        </div>
+
+                    {/* Server Status Box */}
+                    <div className="mt-12 inline-flex items-center justify-center px-6 py-3 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all">
+                        <div className={`w-3 h-3 rounded-full mr-3 ${serverStatus.online ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span className="text-md font-semibold dark:text-white">
+                            {L.home.hero.status(serverStatus.players)}
+                        </span>
                     </div>
+                </div>
+
+                {/* Decorative background elements */}
+                <div className="absolute inset-0 opacity-10 dark:opacity-5 overflow-hidden">
+                    <div className="w-[800px] h-[800px] bg-purple-500 rounded-full absolute top-[-400px] left-[-300px] blur-[150px] animate-float"></div>
+                    <div className="w-[600px] h-[600px] bg-indigo-500 rounded-full absolute bottom-[-300px] right-[-200px] blur-[100px] animate-float" style={{ animationDelay: '1.5s' }}></div>
                 </div>
             </header>
 
-            {/* Join Section */}
-            <JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} />
-
-            {/* Quiz Section */}
-            <section id="quiz" className="py-24 px-4 relative bg-gray-50 dark:bg-gray-900 animate-fade-in-scale">
-                <div className="max-w-4xl mx-auto text-center">
-                    <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
-                        <Zap size={32} />
-                    </div>
-                    <h2 className="text-4xl font-black mb-4 dark:text-white">{L.quiz.title}</h2>
-                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-10">{L.quiz.subtitle}</p>
-
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
-                        {!quizState.started && (
-                            <button onClick={() => setQuizState(p => ({ ...p, started: true }))} className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.01] active:scale-95">
-                                {L.quiz.start_button}
-                            </button>
-                        )}
-
-                        {quizState.started && !quizState.finished && currentQuiz && (
-                            <div className="space-y-6">
-                                <div className="text-sm font-bold text-purple-600 dark:text-purple-400 mb-2">
-                                    {L.quiz.progress} {quizState.current + 1} / {L.quiz_data.length}
-                                </div>
-                                <h3 className="text-2xl font-bold dark:text-white mb-6 leading-relaxed">{currentQuiz.question}</h3>
-                                <div className="space-y-4">
-                                    {currentQuiz.options.map((option, index) => (
-                                        <button
-                                            key={index}
-                                            onClick={() => handleQuizAnswer(option)}
-                                            disabled={quizState.showResult}
-                                            className={`w-full text-left px-6 py-4 rounded-xl font-medium transition-all transform hover:scale-[1.01] active:scale-95 disabled:pointer-events-none 
-                                                ${quizState.showResult
-                                                    ? (option === currentQuiz.answer ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : (quizState.isCorrect === false && option === currentQuiz.selection ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'))
-                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-purple-900/30'
-                                                }`}
-                                        >
-                                            {option}
-                                        </button>
-                                    ))}
-                                </div>
-                                {quizState.showResult && (
-                                    <p className={`mt-4 text-lg font-bold ${quizState.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                        {quizState.isCorrect ? L.quiz.correct : L.quiz.incorrect}
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
-                        {quizState.finished && (
-                            <div className="space-y-6">
-                                <h3 className="text-3xl font-bold dark:text-white">{L.quiz.result_title}</h3>
-                                <p className="text-xl text-gray-600 dark:text-gray-300">
-                                    {L.quiz.result_score}: <span className="text-purple-600 dark:text-purple-400 font-black text-4xl">{quizState.score}</span> / {L.quiz_data.length}
-                                </p>
-                                <button onClick={resetQuiz} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all">
-                                    {L.quiz.retry_button}
-                                </button>
-                            </div>
-                        )}
+            {/* Features Section */}
+            <section id="features" className="py-24 px-4 bg-white dark:bg-gray-900">
+                <div className="max-w-7xl mx-auto text-center">
+                    <h2 className="text-3xl font-black mb-12 dark:text-white">サーバーの主な特徴</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {L.home.features.map((feature, index) => (
+                            <FeatureCard
+                                key={index}
+                                Icon={feature.icon}
+                                title={feature.title}
+                                desc={feature.desc}
+                            />
+                        ))}
                     </div>
                 </div>
             </section>
 
-            {/* Features Section */}
-            <FeaturesSection L={L} />
+            {/* News Section (Preview) */}
+            <section id="latest-news" className="py-24 px-4 bg-gray-50 dark:bg-gray-800 animate-fade-in-up">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex justify-between items-end mb-12 border-b border-purple-200 dark:border-purple-800 pb-4">
+                        <div>
+                            <h2 className="text-3xl font-black dark:text-white flex items-center gap-3"><Bell className="text-purple-500" size={32} />{L.home.news_section.title}</h2>
+                            <p className="text-gray-600 dark:text-gray-400 mt-1">{L.home.news_section.subtitle}</p>
+                        </div>
+                        <button
+                            onClick={() => navigate('news')}
+                            className="flex items-center gap-2 text-purple-600 font-bold hover:text-purple-700 transition-colors"
+                        >
+                            {L.home.news_section.button_all} <ArrowRight size={18} />
+                        </button>
+                    </div>
 
-            {/* Guide/FAQ Section */}
-            <GuideSection L={L} navigate={navigate} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {latestNews.map((item) => (
+                            // NewsItem is a standalone card, not the clickable list item from SubPages
+                            <NewsItem key={item.id} item={item} L={L} isPreview={true} />
+                        ))}
+                    </div>
+                </div>
+            </section>
 
-            {/* Contact Section */}
-            <ContactSection L={L} showToast={showToast} />
+            {/* Join Section */}
+            <JoinSection L={L} serverStatus={serverStatus} navigate={navigate} setToast={setToast} />
+
+            {/* FAQ Section */}
+            <section id="faq" className="py-24 px-4 bg-white dark:bg-gray-900 animate-fade-in-up">
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-black mb-4 dark:text-white flex justify-center items-center gap-3"><HelpCircle className="text-purple-500" size={32} />{L.home.faq.title}</h2>
+                        <p className="text-gray-600 dark:text-gray-400">{L.home.faq.subtitle}</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        {L.home.faq.questions.map((item, index) => (
+                            <AccordionItem key={index} title={item.q} content={item.a} />
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Contact Form */}
+            <ContactForm L={L} db={db} appId={appId} DISCORD_WEBHOOK_URL={DISCORD_WEBHOOK_URL} setToast={setToast} />
+
+            <div className="pb-16" />
         </div>
     );
 }
+
+// ----------------------------------------------------
+// UI Components used in Home (Moved to UI.jsx but included here for full context check)
+// ----------------------------------------------------
+
+// FeatureCard (Used in Features Section)
+// Should be moved to UI.jsx
+
+// AccordionItem (Used in FAQ)
+// Should be moved to UI.jsx
+
+// NewsItem (Used in News Preview)
+// Should be moved to UI.jsx
