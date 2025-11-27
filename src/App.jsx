@@ -338,7 +338,7 @@ const LANGUAGES = {
             hero_subtitle: "Complete with anti-griefing and high-performance plugins.\nStart your unique survival life in a stable server environment.",
             join_now: "Join Now",
             see_details: "View Details",
-            what_is_nantetsu: "What is the Nantetsu Server?",
+            what_is_nantetsu: "What is the Nantetu Server?",
             description_p1: "A Bedrock server that goes beyond the limits of Bedrock Edition.",
             description_p2: "A community survival server, leveraging Java-like functionality and high quality as its greatest strength.",
             description_p3: "A robust monitoring and protection system powered by custom plugins. Prevents cheating and griefing, allowing you to enjoy free building in a safe and secure environment.",
@@ -392,7 +392,7 @@ const LANGUAGES = {
             link_text: "Open Link",
             default_data: [
                 { id: 1, date: "2025.11.10", title: "Server Stability Improvement Announcement", content: "Adjusted server memory allocation to resolve lag during high player counts.", type: "maintenance" },
-                { id: 2, date: "2025.09.01", title: "Nantetsu Server Official Opening!", content: "The Bedrock survival server 'Nantetsu Server' is finally open! We look forward to your participation.", type: "info" },
+                { id: 2, date: "2025.09.01", title: "Nantetu Server Official Opening!", content: "The Bedrock survival server 'Nantetu Server' is finally open! We look forward to your participation.", type: "info" },
                 { id: 3, date: "2025.08.25", title: "End of Beta Test Announcement", content: "Thank you for your extensive cooperation. We will proceed with final adjustments for the official release.", type: "info" }
             ],
         },
@@ -500,7 +500,7 @@ const LANGUAGES = {
             chapters: [
                 {
                     title: "Chapter 1: General Provisions", articles: [
-                        { title: "Article 1 (Application of These Terms)", content: "These terms apply to all matters concerning the use of all services provided by Nantetsu Server. Users are deemed to have agreed to these terms by using the service." },
+                        { title: "Article 1 (Application of These Terms)", content: "These terms apply to all matters concerning the use of all services provided by Nantetu Server. Users are deemed to have agreed to these terms by using the service." },
                         { title: "Article 2 (Definitions)", content: "“User” refers to an individual using this service, and “Content” refers to data created and published by the user." }
                     ]
                 },
@@ -529,12 +529,12 @@ const LANGUAGES = {
                     ]
                 }
             ],
-            signature: "Nantetsu Server Management"
+            signature: "Nantetu Server Management"
         },
         privacy: {
             title: "Privacy Policy",
             date: "Effective Date: November 9, 2025",
-            intro: "The 'Nantetsu Server' (hereinafter, 'The Server') recognizes the importance of our players' personal information and establishes the following Privacy Policy to ensure its complete protection.",
+            intro: "The 'Nantetu Server' (hereinafter, 'The Server') recognizes the importance of our players' personal information and establishes the following Privacy Policy to ensure its complete protection.",
             section1_title: "1. Information Collected and Its Purpose of Use",
             subsection1_1_title: "1-1. In-Game Information",
             subsection1_1_info: "Information Acquired:",
@@ -592,7 +592,7 @@ const LANGUAGES = {
             not_found_title: "Page Not Found 🚧",
             not_found_desc: "The page you are looking for does not exist or may have been moved.",
             not_found_btn: "Back to Home Page",
-            chat_title: "Nantetsu AI Assistant",
+            chat_title: "Nantetu AI Assistant",
             chat_subtitle: "Ask questions about server rules, commands, and how to play.",
             chat_input_placeholder: "Enter your question...",
             chat_send: "Send",
@@ -1360,7 +1360,7 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
 
             <div className="lg:w-1/2 w-full">
                 <div className="relative aspect-video lg:aspect-auto lg:h-[600px] overflow-hidden group rounded-[2.5rem] shadow-2xl transform rotate-1 hover:rotate-0 transition-all duration-700 border-4 border-white dark:border-gray-800">
-                    <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/Minecraft%20Screenshot.png" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                    <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/join_info.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent flex flex-col justify-end p-10">
                         <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                             <p className="text-white font-black text-3xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
@@ -1527,7 +1527,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         </div>
                          <div className="order-1 md:order-2 relative">
                              <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-all duration-700">
-                                 <img src="https://images.unsplash.com/photo-1599933591969-906cb9603099?q=80&w=2070&auto=format&fit=crop" alt="Server Community" className="w-full h-full object-cover" />
+                                <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" alt="Server Community" className="w-full h-full object-cover" />
                              </div>
                              <div className="absolute inset-0 bg-purple-600 rounded-[3rem] rotate-6 opacity-20 scale-95 blur-2xl -z-10"></div>
                         </div>
