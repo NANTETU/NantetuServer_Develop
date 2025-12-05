@@ -5,7 +5,7 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
     Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck
+    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
@@ -19,6 +19,9 @@ const SPREADSHEET_ID = '1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU';
 const SHEET_GID = '566365801';
 const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
+
+// Gemini API Key (Runtime provided)
+const apiKey = ""; 
 
 const LANGUAGES = {
     ja: {
@@ -1035,17 +1038,62 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    
     const userMessage = { role: 'user', text: input.trim() };
     const newHistory = [...chatHistory, userMessage];
     setChatHistory(newHistory);
     setInput('');
     setIsLoading(true);
     
-    // Mock Response
-    setTimeout(() => {
+    try {
+        const systemPrompt = `
+        あなたは「なんてつサーバー」の公式AIアシスタントです。
+        以下の情報を元に、ユーザーの質問に親切に答えてください。
+        
+        【サーバー情報】
+        - 統合版(Bedrock)専用
+        - IP: ${L.server.ip}
+        - Port: ${L.server.port}
+        - 参加タグ: ${L.server.tag}
+        - 特徴: 土地保護あり、荒らし対策ログ完備、Discord連携、Java版のような機能(/tpa, /home等)
+        
+        【ルール】
+        - 荒らし、窃盗、チート禁止（永久BAN）
+        - 差別発言、ハラスメント禁止
+        - 他人の拠点から5マス以上離れて建築すること
+        
+        【コマンド】
+        - /tpa <プレイヤー>: テレポートリクエスト
+        - /sethome: ホーム設定
+        - /home: ホームへ移動
+        - /tty: 土地保護設定
+        
+        【初心者ガイド】
+        - スポーンしたら混雑していない場所へ移動
+        - 5ブロック離れて建築
+        - /ttyで土地保護
+        - Discordに参加推奨
+        `;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: input.trim() }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            })
+        });
+
+        const data = await response.json();
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "すみません、うまく答えられませんでした。";
+
+        setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
+    } catch (error) {
+        console.error("AI Error:", error);
+        setChatHistory(prev => [...prev, { role: 'model', text: "エラーが発生しました。時間を置いて再試行してください。" }]);
+    } finally {
         setIsLoading(false);
-        setChatHistory(prev => [...prev, { role: 'model', text: currentLang === 'ja' ? "申し訳ありません。現在AI機能はメンテナンス中です。" : "Sorry, AI feature is currently under maintenance." }]);
-    }, 1000);
+    }
   };
 
   const handleClear = () => setChatHistory([]);
@@ -1064,7 +1112,7 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
         <div ref={chatRef} className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-black/20">
           {chatHistory.length === 0 ? (
             <div className="text-center p-8 pt-20 text-gray-500 dark:text-gray-400 animate-fade-in-up">
-              <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={36} className="text-purple-500" /></div>
+              <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><Bot size={36} className="text-purple-500" /></div>
               <p className="font-bold text-lg mb-2">{L.footer.chat_subtitle}</p>
             </div>
           ) : (
@@ -1110,35 +1158,54 @@ export const NewsPage = ({ L, newsData }) => {
     );
 };
 
-export const ForumPage = ({ L, user }) => {
+export const ForumPage = ({ L, user, db, appId }) => {
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState('');
     const [name, setName] = useState('');
     const [isSending, setIsSending] = useState(false);
 
+    // Fetch posts from Firestore (Real)
     useEffect(() => {
-        if (!user) return;
-        // In a real app, this would use Firestore properly. For demo, we simulate with state if firestore fails
-        try {
-            // Note: DB is not globally available in this file structure unless passed as prop or context.
-            // Assuming 'db' is available via closure or context in a real app.
-            // For this single file, we skip the implementation details of DB fetch to avoid errors if config is missing.
-            setPosts([]); 
-        } catch (e) {
-            console.log("Firestore error:", e);
-        }
-    }, [user]);
+        if (!user || !db) return;
+
+        const q = query(
+            collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedPosts = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setPosts(loadedPosts);
+        }, (error) => {
+            console.error("Forum Error:", error);
+        });
+
+        return () => unsubscribe();
+    }, [user, db, appId]);
 
     const handlePost = async (e) => {
         e.preventDefault();
-        if (!newPost.trim()) return;
+        if (!newPost.trim() || !user) return;
         setIsSending(true);
-        // Simulate post for UI feedback
-        setTimeout(() => {
-             setPosts([{id: Date.now(), text: newPost, name: name.trim() || L.forum.anonymous, createdAt: {toDate: () => new Date()}}, ...posts]);
-             setNewPost('');
-             setIsSending(false);
-        }, 800);
+        
+        try {
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'), {
+                text: newPost,
+                name: name.trim() || L.forum.anonymous,
+                uid: user.uid,
+                createdAt: serverTimestamp()
+            });
+            setNewPost('');
+        } catch (error) {
+            console.error("Error posting:", error);
+            alert("投稿に失敗しました。");
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (
@@ -1162,7 +1229,7 @@ export const ForumPage = ({ L, user }) => {
                 </form>
             </div>
             <div className="space-y-6">
-                {posts.length === 0 ? <div className="text-center py-20 text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-dashed border-2 border-gray-200 dark:border-gray-700"><MessageSquare size={48} className="mx-auto mb-4 opacity-20" /><p>{L.forum.no_posts}</p></div> : posts.map(post => (<div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in-up hover:shadow-md transition-all"><div className="flex justify-between items-start mb-3"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-400 flex items-center justify-center text-white font-bold text-xs">{post.name.charAt(0)}</div><span className="font-bold text-purple-900 dark:text-purple-300">{post.name}</span></div><span className="text-xs text-gray-400 font-mono">{post.createdAt?.toDate().toLocaleString() || 'Just now'}</span></div><p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap pl-10 text-lg leading-relaxed">{post.text}</p></div>))}
+                {posts.length === 0 ? <div className="text-center py-20 text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-dashed border-2 border-gray-200 dark:border-gray-700"><MessageSquare size={48} className="mx-auto mb-4 opacity-20" /><p>{L.forum.no_posts}</p></div> : posts.map(post => (<div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in-up hover:shadow-md transition-all"><div className="flex justify-between items-start mb-3"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-400 flex items-center justify-center text-white font-bold text-xs">{post.name.charAt(0)}</div><span className="font-bold text-purple-900 dark:text-purple-300">{post.name}</span></div><span className="text-xs text-gray-400 font-mono">{post.createdAt?.toDate ? post.createdAt.toDate().toLocaleString() : 'Just now'}</span></div><p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap pl-10 text-lg leading-relaxed">{post.text}</p></div>))}
             </div>
         </div>
     );
@@ -1709,17 +1776,22 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState('ja');
   const [searchTerm, setSearchTerm] = useState('');
+  
   // Loading states
   const [isAppLoading, setIsAppLoading] = useState(true); // Splash screen
   const [isPageLoading, setIsPageLoading] = useState(false); // Navigation bar
   
   const [newsData, setNewsData] = useState([]);
   const [hasUnreadNews, setHasUnreadNews] = useState(false);
+  
+  // Firebase State
   const [user, setUser] = useState(null);
+  const [db, setDb] = useState(null);
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
   const L = LANGUAGES[currentLang];
 
-  // --- Initialize Firebase (Safe Mode for Preview) ---
+  // --- Initialize Firebase ---
   useEffect(() => {
     const initAuth = async () => {
         try {
@@ -1727,7 +1799,8 @@ export default function App() {
             if(firebaseConfig) {
                  const app = initializeApp(firebaseConfig);
                  const auth = getAuth(app);
-                 const db = getFirestore(app);
+                 const firestore = getFirestore(app);
+                 setDb(firestore);
                  
                  if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -1741,7 +1814,6 @@ export default function App() {
             }
         } catch (e) {
             console.error("Firebase init failed:", e);
-            setUser({ uid: 'demo-user-fallback' });
         }
     };
     initAuth();
@@ -1757,6 +1829,42 @@ export default function App() {
     const timer = setTimeout(() => setIsAppLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  // --- Router Logic (Hash Router) ---
+  useEffect(() => {
+      const handleHashChange = () => {
+          const hash = window.location.hash.replace('#/', '') || 'home';
+          setPage(hash);
+      };
+
+      // Set initial page from hash
+      handleHashChange();
+
+      window.addEventListener('hashchange', handleHashChange);
+      return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Enhanced Navigation with Loading Bar & Routing
+  const handleNavigate = (targetPage, sectionId = null) => {
+      if (targetPage === page && !sectionId) return;
+
+      setIsPageLoading(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Update URL hash
+      window.location.hash = `/${targetPage}`;
+      
+      // Simulate loading delay for smooth feel
+      setTimeout(() => {
+          setIsPageLoading(false);
+          if (sectionId) {
+             setTimeout(() => {
+                 const element = document.getElementById(sectionId);
+                 if (element) element.scrollIntoView({ behavior: 'smooth' });
+             }, 100);
+          }
+      }, 400);
+  };
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -1795,31 +1903,7 @@ export default function App() {
   };
 
   const handleCopy = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-       // CopyBox handles its own visual feedback, so we don't strictly need a toast here,
-       // but keeping it for global consistency if needed.
-       // showToast(L.footer.copy_success); 
-    });
-  };
-
-  // Enhanced Navigation with Loading Bar
-  const handleNavigate = (targetPage, sectionId = null) => {
-      if (targetPage === page && !sectionId) return;
-
-      setIsPageLoading(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      // Simulate loading delay for smooth feel
-      setTimeout(() => {
-          setPage(targetPage);
-          setIsPageLoading(false);
-          if (sectionId) {
-             setTimeout(() => {
-                 const element = document.getElementById(sectionId);
-                 if (element) element.scrollIntoView({ behavior: 'smooth' });
-             }, 100);
-          }
-      }, 400);
+    navigator.clipboard.writeText(text);
   };
 
   const scrollToSection = (id) => {
@@ -1859,10 +1943,6 @@ export default function App() {
 
   const resetQuiz = () => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null });
   const handleSearch = (e) => setSearchTerm(e.target.value);
-
-  // Filter content based on search
-  // (Simplified for demo: primarily just filtering news or showing simple results)
-  // In a full app, this would route to a Search Results page or filter the current view dynamically.
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
@@ -1911,7 +1991,7 @@ export default function App() {
               />
           )}
           {page === 'news' && <NewsPage L={L} newsData={newsData} />}
-          {page === 'forum' && <ForumPage L={L} user={user} />}
+          {page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
           {page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
           {page === 'commands' && <CommandsPage L={L} />}
           {page === 'terms' && <TermsPage L={L} />}
