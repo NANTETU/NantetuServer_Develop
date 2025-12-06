@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
+import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
     Server, Users, Shield, Clock, MessageCircle, MapPin,
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
@@ -22,12 +22,12 @@ const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
-  authDomain: "nantetu-29158.firebaseapp.com",
-  projectId: "nantetu-29158",
-  storageBucket: "nantetu-29158.firebasestorage.app",
-  messagingSenderId: "971397700888",
-  appId: "1:971397700888:web:3d3b25a0762faad23e926d"
+    apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
+    authDomain: "nantetu-29158.firebaseapp.com",
+    projectId: "nantetu-29158",
+    storageBucket: "nantetu-29158.firebasestorage.app",
+    messagingSenderId: "971397700888",
+    appId: "1:971397700888:web:3d3b25a0762faad23e926d"
 };
 
 const formatCorrectedDate = (dateString) => {
@@ -649,11 +649,11 @@ export const LoadingScreen = () => (
     <div className="fixed inset-0 z-[9999] bg-white dark:bg-gray-950 flex flex-col items-center justify-center animate-fade-out pointer-events-none transition-opacity duration-700">
         <div className="text-center relative">
             <div className="absolute inset-0 bg-purple-500/20 blur-[60px] rounded-full animate-pulse"></div>
-             <div className="relative z-10 w-24 h-24 bg-white dark:bg-gray-900 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl shadow-purple-500/30 ring-1 ring-gray-100 dark:ring-white/10">
+            <div className="relative z-10 w-24 h-24 bg-white dark:bg-gray-900 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl shadow-purple-500/30 ring-1 ring-gray-100 dark:ring-white/10">
                 <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" alt="Loading" className="w-20 h-20 rounded-xl object-cover" />
-             </div>
-             <h1 className="text-gray-900 dark:text-white text-3xl font-black tracking-wider mb-2 animate-fade-in-up">Nantetu Server</h1>
-             <p className="text-purple-600 dark:text-purple-400 font-bold text-sm tracking-[0.2em] animate-pulse">INITIALIZING...</p>
+            </div>
+            <h1 className="text-gray-900 dark:text-white text-3xl font-black tracking-wider mb-2 animate-fade-in-up">Nantetu Server</h1>
+            <p className="text-purple-600 dark:text-purple-400 font-bold text-sm tracking-[0.2em] animate-pulse">INITIALIZING...</p>
         </div>
     </div>
 );
@@ -665,150 +665,161 @@ export const LoadingBar = ({ isLoading }) => (
 );
 
 export const Toast = ({ message }) => (
-  <div className="fixed bottom-20 right-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-fade-in-up z-50 border-l-4 border-purple-500 ring-1 ring-black/5 max-w-sm">
-    <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
-        <CheckCircle size={20} className="text-green-600 dark:text-green-400" />
+    <div className="fixed bottom-20 right-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-fade-in-up z-50 border-l-4 border-purple-500 ring-1 ring-black/5 max-w-sm">
+        <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
+            <CheckCircle size={20} className="text-green-600 dark:text-green-400" />
+        </div>
+        <span className="font-bold text-sm md:text-base">{message}</span>
     </div>
-    <span className="font-bold text-sm md:text-base">{message}</span>
-  </div>
 );
 
 export const FeatureCard = ({ icon: Icon, title, description, colorClass, bgClass, onClick }) => (
-  <div 
-    onClick={onClick}
-    className={`glass-panel p-8 rounded-2xl transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 group relative overflow-hidden ${onClick ? 'cursor-pointer hover:-translate-y-2' : 'hover:-translate-y-1'}`}
-  >
-    <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all duration-500"></div>
-    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 ${bgClass} bg-opacity-10 dark:bg-opacity-20 shadow-inner relative z-10 ring-1 ring-white/10`}>
-      <Icon size={32} className={`${colorClass} transform group-hover:scale-110 transition-transform duration-300`} />
-    </div>
-    <h3 className="text-xl font-black mb-3 text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{title}</h3>
-    <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{description}</p>
-    {onClick && (
-        <div className="mt-4 flex items-center text-sm font-bold text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-            詳細を見る <ArrowRight size={14} className="ml-1" />
+    <div
+        onClick={onClick}
+        className={`glass-panel p-8 rounded-2xl transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 group relative overflow-hidden ${onClick ? 'cursor-pointer hover:-translate-y-2' : 'hover:-translate-y-1'}`}
+    >
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all duration-500"></div>
+        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 ${bgClass} bg-opacity-10 dark:bg-opacity-20 shadow-inner relative z-10 ring-1 ring-white/10`}>
+            <Icon size={32} className={`${colorClass} transform group-hover:scale-110 transition-transform duration-300`} />
         </div>
-    )}
-  </div>
+        <h3 className="text-xl font-black mb-3 text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{title}</h3>
+        <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{description}</p>
+        {onClick && (
+            <div className="mt-4 flex items-center text-sm font-bold text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                詳細を見る <ArrowRight size={14} className="ml-1" />
+            </div>
+        )}
+    </div>
 );
 
 // Improved CopyBox Component
 export const CopyBox = ({ label, value, onCopy, lang }) => {
-  const [isCopied, setIsCopied] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
 
-  const handleCopyClick = () => {
-    onCopy(value);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
+    const handleCopyClick = () => {
+        onCopy(value);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
 
-  return (
-    <div className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm group hover:border-purple-500 dark:hover:border-purple-500 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
-      <div className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-        <div className="text-center sm:text-left w-full overflow-hidden">
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1 flex items-center justify-center sm:justify-start gap-1">
-            {label}
-          </p>
-          <p className="font-mono text-xl sm:text-2xl font-black text-gray-800 dark:text-gray-100 tracking-tight truncate w-full" title={value}>{value}</p>
+    return (
+        <div className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm group hover:border-purple-500 dark:hover:border-purple-500 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
+            <div className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+                <div className="text-center sm:text-left w-full overflow-hidden">
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1 flex items-center justify-center sm:justify-start gap-1">
+                        {label}
+                    </p>
+                    <p className="font-mono text-xl sm:text-2xl font-black text-gray-800 dark:text-gray-100 tracking-tight truncate w-full" title={value}>{value}</p>
+                </div>
+                <button
+                    onClick={handleCopyClick}
+                    className={`flex-shrink-0 font-bold py-3 px-6 rounded-xl transition-all flex items-center gap-2 shadow-sm active:scale-95 border
+            ${isCopied
+                            ? 'bg-green-500 text-white border-green-500 shadow-green-500/30'
+                            : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 border-transparent hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 hover:shadow-purple-500/30'
+                        }`}
+                >
+                    {isCopied ? <CheckCircle size={18} className="animate-bounce" /> : <Copy size={18} />}
+                    <span className="uppercase text-sm">
+                        {isCopied
+                            ? LANGUAGES[lang].join.copy_success
+                            : LANGUAGES[lang].join.copy_action || 'Copy'}
+                    </span>
+                </button>
+            </div>
+            {/* Decorative background element */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/5 to-transparent rounded-bl-full -mr-8 -mt-8 transition-all group-hover:scale-150 group-hover:from-purple-500/10 pointer-events-none"></div>
         </div>
-        <button 
-          onClick={handleCopyClick}
-          className={`flex-shrink-0 font-bold py-3 px-6 rounded-xl transition-all flex items-center gap-2 shadow-sm active:scale-95 border
-            ${isCopied 
-                ? 'bg-green-500 text-white border-green-500 shadow-green-500/30' 
-                : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 border-transparent hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 hover:shadow-purple-500/30'
-            }`}
-        >
-          {isCopied ? <CheckCircle size={18} className="animate-bounce" /> : <Copy size={18} />}
-          <span className="uppercase text-sm">
-             {isCopied 
-                ? LANGUAGES[lang].join.copy_success 
-                : LANGUAGES[lang].join.copy_action || 'Copy'}
-          </span>
-        </button>
-      </div>
-      {/* Decorative background element */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/5 to-transparent rounded-bl-full -mr-8 -mt-8 transition-all group-hover:scale-150 group-hover:from-purple-500/10 pointer-events-none"></div>
-    </div>
-  );
+    );
 };
 
 export const AccordionItem = ({ title, content, isOpen, toggle }) => (
-  <div className={`border rounded-xl mb-4 overflow-hidden transition-all duration-300 ${isOpen ? 'shadow-lg ring-2 ring-purple-500/20 border-purple-500 bg-white dark:bg-gray-800' : 'border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md bg-white/50 dark:bg-gray-800/50'}`}>
-    <button 
-      onClick={toggle}
-      className={`w-full flex items-center justify-between p-5 text-left font-bold text-lg transition-colors ${isOpen ? 'text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/10' : 'text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-750'}`}
-    >
-      <span className="flex items-center gap-3">
-          {isOpen ? <Sparkles size={18} className="text-purple-500 animate-pulse" /> : <HelpCircle size={18} className="text-gray-400" />}
-          {title}
-      </span>
-      {isOpen ? <ChevronUp size={20} className="text-purple-500" /> : <ChevronDown size={20} className="text-gray-400" />}
-    </button>
-    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
-       <div className="p-6 text-gray-700 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-700">
-          {Array.isArray(content) ? (
-             <ul className="space-y-3">
-               {content.map((item, idx) => (
-                 <li key={idx} className="flex items-start gap-3">
-                    <span className="text-purple-500 mt-1 flex-shrink-0 bg-purple-100 dark:bg-purple-900/50 rounded-full p-0.5">
-                        <CheckCircle size={14} />
-                    </span>
-                    <span>{item}</span>
-                 </li>
-               ))}
-             </ul>
-          ) : (
-             <div>{content}</div>
-          )}
-       </div>
+    <div className={`border rounded-xl mb-4 overflow-hidden transition-all duration-300 ${isOpen ? 'shadow-lg ring-2 ring-purple-500/20 border-purple-500 bg-white dark:bg-gray-800' : 'border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md bg-white/50 dark:bg-gray-800/50'}`}>
+        <button
+            onClick={toggle}
+            className={`w-full flex items-center justify-between p-5 text-left font-bold text-lg transition-colors ${isOpen ? 'text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/10' : 'text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-750'}`}
+        >
+            <span className="flex items-center gap-3">
+                {isOpen ? <Sparkles size={18} className="text-purple-500 animate-pulse" /> : <HelpCircle size={18} className="text-gray-400" />}
+                {title}
+            </span>
+            {isOpen ? <ChevronUp size={20} className="text-purple-500" /> : <ChevronDown size={20} className="text-gray-400" />}
+        </button>
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="p-6 text-gray-700 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-700">
+                {Array.isArray(content) ? (
+                    <ul className="space-y-3">
+                        {content.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-3">
+                                <span className="text-purple-500 mt-1 flex-shrink-0 bg-purple-100 dark:bg-purple-900/50 rounded-full p-0.5">
+                                    <CheckCircle size={14} />
+                                </span>
+                                <span>{item}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <div>{content}</div>
+                )}
+            </div>
+        </div>
     </div>
-  </div>
 );
 
 export const NewsItem = ({ item, L }) => {
-  const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
-  return (
-    <div 
-      onClick={() => setIsOpen(!isOpen)}
-      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer group ${isOpen ? 'ring-2 ring-purple-500/20 shadow-lg' : ''}`}
-    >
-       <div className="p-6 md:p-8">
-         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4 justify-between">
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider w-fit border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50'}`}>
-                {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
-              </span>
-              <span className="text-gray-400 text-sm font-bold flex items-center gap-1.5"><Clock size={14} /> {formatCorrectedDate(item.date)}</span>
-            </div>
-            <div className="text-gray-300 group-hover:text-purple-500 transition-colors self-end md:self-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-full">
-                {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-            </div>
-         </div>
-         
-         <h3 className="text-xl md:text-2xl font-bold mb-3 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-tight">{item.title}</h3>
-         
-         <div className={`text-gray-600 dark:text-gray-300 leading-relaxed transition-all duration-300 text-sm md:text-base ${isOpen ? 'line-clamp-none' : 'line-clamp-2'}`}>
-            {item.content}
-         </div>
+    return (
+        <div
+            onClick={() => setIsOpen(!isOpen)}
+            className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer group ${isOpen ? 'ring-2 ring-purple-500/20 shadow-lg' : ''}`}
+        >
+            <div className="p-6 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4 justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center gap-3">
+                        <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider w-fit border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50'}`}>
+                            {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
+                        </span>
+                        <span className="text-gray-400 text-sm font-bold flex items-center gap-1.5"><Clock size={14} /> {formatCorrectedDate(item.date)}</span>
+                    </div>
+                    <div className="text-gray-300 group-hover:text-purple-500 transition-colors self-end md:self-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-full">
+                        {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </div>
+                </div>
 
-         <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-20 opacity-100 mt-5' : 'max-h-0 opacity-0'}`}>
-             {item.url && (
-                 <a 
-                    href={item.url} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    onClick={(e) => e.stopPropagation()} 
-                    className="inline-flex items-center gap-2 text-white font-bold bg-purple-600 hover:bg-purple-700 px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
-                 >
-                     {L.news.link_text} <ExternalLink size={16} />
-                 </a>
-             )}
-         </div>
-       </div>
-    </div>
-  );
+                <h3 className="text-xl md:text-2xl font-bold mb-3 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-tight">{item.title}</h3>
+
+                <div className={`text-gray-600 dark:text-gray-300 leading-relaxed transition-all duration-300 text-sm md:text-base ${isOpen ? 'line-clamp-none' : 'line-clamp-2'}`}>
+                    {item.content}
+                </div>
+
+                <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-20 opacity-100 mt-5' : 'max-h-0 opacity-0'}`}>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                window.location.hash = `/news/${item.id}`;
+                            }}
+                            className="inline-flex items-center gap-2 text-white font-bold bg-purple-600 hover:bg-purple-700 px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
+                        >
+                            詳細を見る <ArrowRight size={16} />
+                        </button>
+                        {item.url && (
+                            <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-2 text-white font-bold bg-purple-600 hover:bg-purple-700 px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
+                            >
+                                {L.news.link_text} <ExternalLink size={16} />
+                            </a>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 // ==========================================
@@ -816,203 +827,197 @@ export const NewsItem = ({ item, L }) => {
 // ==========================================
 
 const useScrollDirection = () => {
-  const [scrollDirection, setScrollDirection] = useState("up");
-  const [scrolledToTop, setScrolledToTop] = useState(true);
+    const [scrollDirection, setScrollDirection] = useState("up");
+    const [scrolledToTop, setScrolledToTop] = useState(true);
 
-  useEffect(() => {
-    let lastScrollY = window.scrollY;
-    const updateScrollDirection = () => {
-      const scrollY = window.scrollY;
-      const direction = scrollY > lastScrollY ? "down" : "up";
-      if (direction !== scrollDirection && (Math.abs(scrollY - lastScrollY) > 5)) {
-        setScrollDirection(direction);
-      }
-      setScrolledToTop(scrollY < 50);
-      lastScrollY = scrollY > 0 ? scrollY : 0;
-    };
-    window.addEventListener("scroll", updateScrollDirection);
-    return () => window.removeEventListener("scroll", updateScrollDirection);
-  }, [scrollDirection]);
-  return { scrollDirection, scrolledToTop };
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+        const updateScrollDirection = () => {
+            const scrollY = window.scrollY;
+            const direction = scrollY > lastScrollY ? "down" : "up";
+            if (direction !== scrollDirection && (Math.abs(scrollY - lastScrollY) > 5)) {
+                setScrollDirection(direction);
+            }
+            setScrolledToTop(scrollY < 50);
+            lastScrollY = scrollY > 0 ? scrollY : 0;
+        };
+        window.addEventListener("scroll", updateScrollDirection);
+        return () => window.removeEventListener("scroll", updateScrollDirection);
+    }, [scrollDirection]);
+    return { scrollDirection, scrolledToTop };
 };
 
-export const Navbar = ({ 
-  L, page, navigate, darkMode, setDarkMode, 
-  isMenuOpen, setIsMenuOpen, currentLang, setCurrentLang, 
-  searchTerm, handleSearch, serverStatus, hasUnreadNews, newsData 
+export const Navbar = ({
+    L, page, navigate, darkMode, setDarkMode,
+    isMenuOpen, setIsMenuOpen, currentLang, setCurrentLang,
+    searchTerm, handleSearch, serverStatus, hasUnreadNews, newsData
 }) => {
     const { scrollDirection, scrolledToTop } = useScrollDirection();
     const isHidden = scrollDirection === "down" && !scrolledToTop && !isMenuOpen;
 
     return (
-    <>
-        <div 
-            className={`fixed left-0 right-0 z-[500] flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              isHidden ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
-            }`}
-        >
-              <nav className={`transition-all duration-500 relative z-20 ${
-                  scrolledToTop && !isMenuOpen ? 'bg-transparent py-4' : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm py-0'
-              }`} role="navigation" aria-label="メインナビゲーション">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="flex justify-between items-center h-16">
-                    {/* Left: Logo */}
-                    <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('home')}>
-                      <div className="relative">
-                          <img 
-                            src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg" 
-                            alt="Nantetu Server Icon" 
-                            className="w-10 h-10 rounded-xl shadow-lg group-hover:scale-110 transition-transform object-cover ring-2 ring-white dark:ring-gray-800"
-                          />
-                          <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white dark:border-gray-900 rounded-full ${serverStatus.online ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                      </div>
-                      <span className={`font-black text-xl tracking-tight group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors hidden sm:block ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white drop-shadow-md' : 'text-gray-800 dark:text-white'}`}>なんてつサーバー</span>
-                    </div>
+        <>
+            <div
+                className={`fixed left-0 right-0 z-[500] flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isHidden ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
+                    }`}
+            >
+                <nav className={`transition-all duration-500 relative z-20 ${scrolledToTop && !isMenuOpen ? 'bg-transparent py-4' : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm py-0'
+                    }`} role="navigation" aria-label="メインナビゲーション">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center h-16">
+                            {/* Left: Logo */}
+                            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('home')}>
+                                <div className="relative">
+                                    <img
+                                        src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/icon.jpg"
+                                        alt="Nantetu Server Icon"
+                                        className="w-10 h-10 rounded-xl shadow-lg group-hover:scale-110 transition-transform object-cover ring-2 ring-white dark:ring-gray-800"
+                                    />
+                                    <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white dark:border-gray-900 rounded-full ${serverStatus.online ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                </div>
+                                <span className={`font-black text-xl tracking-tight group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors hidden sm:block ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white drop-shadow-md' : 'text-gray-800 dark:text-white'}`}>なんてつサーバー</span>
+                            </div>
 
-                    {/* Right Container: Nav Links + Search + Actions */}
-                    <div className="hidden lg:flex items-center gap-6 ml-auto">
-                      
-                      {/* Nav Links */}
-                      <div className="flex items-center gap-1 bg-white/10 dark:bg-black/20 backdrop-blur-md p-1.5 rounded-full border border-white/20 dark:border-white/10 shadow-sm">
-                        {['home', 'articles', 'news', 'commands', 'guide', 'map'].map((key) => {
-                          if (key === 'map') {
-                            return (
-                              <a
-                                key={key}
-                                href="http://map.nantetu123.f5.si:35854/"
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`relative px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1 ${
-                                  scrolledToTop && !darkMode ? 'text-white hover:bg-white/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                }`}
-                              >
-                                <Map size={16} /> マップ
-                              </a>
-                            );
-                          }
-                          return (
-                            <button 
-                              key={key}
-                              onClick={() => navigate(key)} 
-                              className={`relative px-5 py-2 rounded-full text-sm font-bold transition-all ${
-                                  page === key 
-                                  ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-300 shadow-md ring-1 ring-gray-100 dark:ring-gray-600' 
-                                  : scrolledToTop && !darkMode ? 'text-white hover:bg-white/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
-                              }`}
-                            >
-                              {L.nav[key]}
-                              {key === 'news' && hasUnreadNews && (
-                                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse"></span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+                            {/* Right Container: Nav Links + Search + Actions */}
+                            <div className="hidden lg:flex items-center gap-6 ml-auto">
 
-                      {/* Search & Toggles & Server Status */}
-                      <div className={`flex items-center gap-3 border-l pl-6 ${scrolledToTop && !darkMode ? 'border-white/20' : 'border-gray-200 dark:border-gray-700'}`}>
-                        <div className="relative group">
-                          <Search size={16} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors ${scrolledToTop && !darkMode ? 'text-white/70 group-focus-within:text-purple-500' : 'text-gray-400 group-focus-within:text-purple-500'}`} />
-                          <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className={`pl-9 pr-4 py-2 w-32 focus:w-48 rounded-full text-sm border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all ${scrolledToTop && !darkMode ? 'bg-white/20 text-white placeholder-white/70 focus:bg-white focus:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 dark:text-white'}`} />
+                                {/* Nav Links */}
+                                <div className="flex items-center gap-1 bg-white/10 dark:bg-black/20 backdrop-blur-md p-1.5 rounded-full border border-white/20 dark:border-white/10 shadow-sm">
+                                    {['home', 'articles', 'news', 'commands', 'guide', 'map'].map((key) => {
+                                        if (key === 'map') {
+                                            return (
+                                                <a
+                                                    key={key}
+                                                    href="http://map.nantetu123.f5.si:35854/"
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className={`relative px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1 ${scrolledToTop && !darkMode ? 'text-white hover:bg-white/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                        }`}
+                                                >
+                                                    <Map size={16} /> マップ
+                                                </a>
+                                            );
+                                        }
+                                        return (
+                                            <button
+                                                key={key}
+                                                onClick={() => navigate(key)}
+                                                className={`relative px-5 py-2 rounded-full text-sm font-bold transition-all ${page === key
+                                                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-300 shadow-md ring-1 ring-gray-100 dark:ring-gray-600'
+                                                    : scrolledToTop && !darkMode ? 'text-white hover:bg-white/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                    }`}
+                                            >
+                                                {L.nav[key]}
+                                                {key === 'news' && hasUnreadNews && (
+                                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse"></span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Search & Toggles & Server Status */}
+                                <div className={`flex items-center gap-3 border-l pl-6 ${scrolledToTop && !darkMode ? 'border-white/20' : 'border-gray-200 dark:border-gray-700'}`}>
+                                    <div className="relative group">
+                                        <Search size={16} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors ${scrolledToTop && !darkMode ? 'text-white/70 group-focus-within:text-purple-500' : 'text-gray-400 group-focus-within:text-purple-500'}`} />
+                                        <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className={`pl-9 pr-4 py-2 w-32 focus:w-48 rounded-full text-sm border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all ${scrolledToTop && !darkMode ? 'bg-white/20 text-white placeholder-white/70 focus:bg-white focus:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 dark:text-white'}`} />
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all font-bold text-xs border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{currentLang === 'ja' ? 'EN' : 'JP'}</button>
+                                        <button onClick={() => setDarkMode(!darkMode)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{darkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Mobile Menu Button */}
+                            <div className="lg:hidden flex items-center gap-3">
+                                <div className={`flex items-center gap-2 px-2 py-1 rounded-full text-[10px] font-bold border transition-all ${serverStatus.online
+                                    ? 'bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400'
+                                    : 'bg-gray-100 text-gray-400 border-gray-200'
+                                    } ${scrolledToTop && !isMenuOpen && !darkMode ? 'bg-black/30 text-white border-white/20' : ''}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${serverStatus.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                    <span className="hidden xs:inline">{serverStatus.online ? `${serverStatus.players} Online` : 'Offline'}</span>
+                                </div>
+                                <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-full transition-colors ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white hover:bg-white/10' : 'text-gray-600 dark:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-colors ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white hover:bg-white/10' : 'text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}>{isMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
+                            </div>
                         </div>
-
-                        <div className="flex gap-2">
-                            <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all font-bold text-xs border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{currentLang === 'ja' ? 'EN' : 'JP'}</button>
-                            <button onClick={() => setDarkMode(!darkMode)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{darkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
-                        </div>
-                      </div>
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <div className="lg:hidden flex items-center gap-3">
-                      <div className={`flex items-center gap-2 px-2 py-1 rounded-full text-[10px] font-bold border transition-all ${
-                            serverStatus.online 
-                                ? 'bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400' 
-                                : 'bg-gray-100 text-gray-400 border-gray-200'
-                        } ${scrolledToTop && !isMenuOpen && !darkMode ? 'bg-black/30 text-white border-white/20' : ''}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${serverStatus.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                            <span className="hidden xs:inline">{serverStatus.online ? `${serverStatus.players} Online` : 'Offline'}</span>
-                      </div>
-                      <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-full transition-colors ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white hover:bg-white/10' : 'text-gray-600 dark:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
-                      <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-colors ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white hover:bg-white/10' : 'text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}>{isMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
-                    </div>
-                  </div>
-                </div>
+                    {/* Mobile Nav Dropdown */}
+                    <div className={`lg:hidden absolute w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden ${isMenuOpen ? 'max-h-[800px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4'}`}>
+                        <div className="px-4 pt-4 pb-6 space-y-2">
+                            <div className="relative mb-6">
+                                <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
+                            </div>
+                            {['home', 'articles', 'news', 'guide', 'commands', 'map'].map((key) => {
+                                if (key === 'map') {
+                                    return (
+                                        <a
+                                            key={key}
+                                            href="http://map.nantetu123.f5.si:35854/"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                        >
+                                            <span className="flex items-center gap-3">
+                                                <Map size={18} className="opacity-70" />
+                                                マップ
+                                            </span>
+                                            <ExternalLink size={16} className="opacity-50" />
+                                        </a>
+                                    );
+                                }
+                                return (
+                                    <button
+                                        key={key}
+                                        onClick={() => { navigate(key); setIsMenuOpen(false); }}
+                                        className={`relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 ${page === key
+                                            ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                            }`}
+                                    >
+                                        <span className="flex items-center gap-3">
+                                            {key === 'home' && <Home size={18} className="opacity-70" />}
+                                            {key === 'articles' && <FileText size={18} className="opacity-70" />}
+                                            {key === 'news' && <Bell size={18} className="opacity-70" />}
+                                            {key === 'guide' && <BookOpen size={18} className="opacity-70" />}
+                                            {key === 'commands' && <Terminal size={18} className="opacity-70" />}
+                                            {L.nav[key]}
+                                        </span>
+                                        {key === 'news' && hasUnreadNews && (
+                                            <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">NEW</span>
+                                        )}
+                                    </button>
+                                );
+                            })}
 
-                {/* Mobile Nav Dropdown */}
-                <div className={`lg:hidden absolute w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden ${isMenuOpen ? 'max-h-[800px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4'}`}>
-                    <div className="px-4 pt-4 pb-6 space-y-2">
-                      <div className="relative mb-6">
-                        <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
-                      </div>
-                      {['home', 'articles', 'news', 'guide', 'commands', 'map'].map((key) => {
-                          if (key === 'map') {
-                            return (
-                              <a
-                                key={key}
+                            <a
                                 href="http://map.nantetu123.f5.si:35854/"
                                 target="_blank"
                                 rel="noreferrer"
                                 onClick={() => setIsMenuOpen(false)}
-                                className="relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                              >
-                                <span className="flex items-center gap-3">
-                                  <Map size={18} className="opacity-70" />
-                                  マップ
-                                </span>
-                                <ExternalLink size={16} className="opacity-50" />
-                              </a>
-                            );
-                          }
-                          return (
-                            <button 
-                                  key={key}
-                                  onClick={() => { navigate(key); setIsMenuOpen(false); }} 
-                                  className={`relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 ${
-                                      page === key 
-                                      ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400' 
-                                      : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                                  }`}
-                              >
-                                  <span className="flex items-center gap-3">
-                                      {key === 'home' && <Home size={18} className="opacity-70" />}
-                                      {key === 'articles' && <FileText size={18} className="opacity-70" />}
-                                      {key === 'news' && <Bell size={18} className="opacity-70" />}
-                                      {key === 'guide' && <BookOpen size={18} className="opacity-70" />}
-                                      {key === 'commands' && <Terminal size={18} className="opacity-70" />}
-                                      {L.nav[key]}
-                                  </span>
-                                  {key === 'news' && hasUnreadNews && (
-                                      <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">NEW</span>
-                                  )}
-                              </button>
-                          );
-                        })}
-                      
-                      <a 
-                        href="http://map.nantetu123.f5.si:35854/"
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() => setIsMenuOpen(false)}
-                        className="w-full mt-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                      >
-                          <Map size={20} /> マップ
-                      </a>
+                                className="w-full mt-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                            >
+                                <Map size={20} /> マップ
+                            </a>
 
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
-                      <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="block w-full text-left px-4 py-4 text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-xl">
-                          🌐 {currentLang === 'ja' ? 'Switch to English' : '日本語に切り替え'}
-                      </button>
+                            <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
+                            <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="block w-full text-left px-4 py-4 text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-xl">
+                                🌐 {currentLang === 'ja' ? 'Switch to English' : '日本語に切り替え'}
+                            </button>
+                        </div>
                     </div>
-                </div>
-              </nav>
-        </div>
-        {/* Backdrop for Mobile Menu */}
-        {isMenuOpen && (
-            <div className="fixed inset-0 z-[400] bg-black/50 backdrop-blur-sm transition-opacity duration-300" onClick={() => setIsMenuOpen(false)}></div>
-        )}
-    </>
+                </nav>
+            </div>
+            {/* Backdrop for Mobile Menu */}
+            {isMenuOpen && (
+                <div className="fixed inset-0 z-[400] bg-black/50 backdrop-blur-sm transition-opacity duration-300" onClick={() => setIsMenuOpen(false)}></div>
+            )}
+        </>
     );
 };
 
@@ -1024,7 +1029,7 @@ export const Footer = ({ L, navigate }) => (
                 <div className="mb-16 bg-gradient-to-r from-purple-900 to-indigo-900 rounded-3xl p-12 shadow-2xl max-w-4xl mx-auto border border-white/10 transform hover:scale-[1.01] transition-transform relative overflow-hidden group">
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
                     <div className="absolute -right-20 -top-20 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-500/30 transition-all"></div>
-                    
+
                     <h3 className="text-3xl font-black text-white mb-4 flex flex-col md:flex-row items-center justify-center gap-3 relative z-10">
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-yellow-500">{L.footer.promotion}</span>
                     </h3>
@@ -1037,7 +1042,7 @@ export const Footer = ({ L, navigate }) => (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16 text-sm font-bold text-left max-w-5xl mx-auto border-b border-gray-800 pb-12">
                     <div>
                         <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><Map size={14} /> {L.footer.sitemap}</h4>
-                            <ul className="space-y-4">
+                        <ul className="space-y-4">
                             <li><button onClick={() => navigate('home')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.home}</button></li>
                             <li><button onClick={() => navigate('articles')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.articles}</button></li>
                             <li><button onClick={() => navigate('news')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.news}</button></li>
@@ -1047,38 +1052,38 @@ export const Footer = ({ L, navigate }) => (
                     <div>
                         <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><BookOpen size={14} /> Support</h4>
                         <ul className="space-y-4">
-                             <li><button onClick={() => navigate('guide')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.guide}</button></li>
-                             <li><button onClick={() => navigate('commands')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.commands}</button></li>
-                             <li><button onClick={() => navigate('forum')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.forum}</button></li>
+                            <li><button onClick={() => navigate('guide')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.guide}</button></li>
+                            <li><button onClick={() => navigate('commands')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.commands}</button></li>
+                            <li><button onClick={() => navigate('forum')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.forum}</button></li>
                         </ul>
                     </div>
                     <div>
-                         <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><Lock size={14} /> Legal</h4>
-                         <ul className="space-y-4">
-                             <li><button onClick={() => navigate('terms')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.footer.terms}</button></li>
-                             <li><button onClick={() => navigate('privacy')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.footer.privacy}</button></li>
-                         </ul>
+                        <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><Lock size={14} /> Legal</h4>
+                        <ul className="space-y-4">
+                            <li><button onClick={() => navigate('terms')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.footer.terms}</button></li>
+                            <li><button onClick={() => navigate('privacy')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.footer.privacy}</button></li>
+                        </ul>
                     </div>
                     <div>
-                         <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><ExternalLink size={14} /> Other</h4>
-                         <ul className="space-y-4">
-                             <li><button onClick={() => navigate('home', 'contact')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.footer.contact}</button></li>
-                             <li>
+                        <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><ExternalLink size={14} /> Other</h4>
+                        <ul className="space-y-4">
+                            <li><button onClick={() => navigate('home', 'contact')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.footer.contact}</button></li>
+                            <li>
                                 <a href="http://map.nantetu123.f5.si:35854/" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
                                     <Map size={16} className="text-green-500 opacity-80 group-hover:opacity-100" /> マップ
                                 </a>
-                             </li>
-                             <li>
+                            </li>
+                            <li>
                                 <a href="https://www.youtube.com/@なんてつ" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
                                     <Youtube size={16} className="text-red-500 opacity-80 group-hover:opacity-100" /> YouTube
                                 </a>
-                             </li>
-                             <li>
+                            </li>
+                            <li>
                                 <a href="https://twitter.com/nantetu123" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
                                     <Twitter size={16} className="text-blue-400 opacity-80 group-hover:opacity-100" /> Twitter (X)
                                 </a>
-                             </li>
-                         </ul>
+                            </li>
+                        </ul>
                     </div>
                 </div>
                 <div className="flex flex-col md:flex-row justify-between items-center opacity-40 text-xs gap-4">
@@ -1087,126 +1092,125 @@ export const Footer = ({ L, navigate }) => (
                 </div>
             </div>
         </div>
-      </footer>
+    </footer>
 );
 
 export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
-  const [chatHistory, setChatHistory] = useState([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const chatRef = useRef(null);
+    const [chatHistory, setChatHistory] = useState([]);
+    const [input, setInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const chatRef = useRef(null);
 
-  useEffect(() => {
-    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [chatHistory]);
+    useEffect(() => {
+        if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }, [chatHistory]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-    
-    const userMessage = { role: 'user', text: input.trim() };
-    const newHistory = [...chatHistory, userMessage];
-    setChatHistory(newHistory);
-    setInput('');
-    setIsLoading(true);
-    
-    try {
-        // Check API Key availability
-        if (!apiKey || apiKey.trim() === '') {
-            setChatHistory(prev => [...prev, { role: 'model', text: 'APIキーが設定されていません。管理者に連絡してください。' }]);
+    const handleSend = async (e) => {
+        e.preventDefault();
+        if (!input.trim() || isLoading) return;
+
+        const userMessage = { role: 'user', text: input.trim() };
+        const newHistory = [...chatHistory, userMessage];
+        setChatHistory(newHistory);
+        setInput('');
+        setIsLoading(true);
+
+        try {
+            // Check API Key availability
+            // Serverless API call does not require client-side apiKey check
+
+
+            const systemPrompt = `
+            あなたは「なんてつサーバー」の公式AIアシスタントです。
+            以下の情報を元に、ユーザーの質問に親切に答えてください。
+
+            【サーバー情報】
+            - 統合版(Bedrock)専用
+            - IP: ${L.server.ip}
+            - Port: ${L.server.port}
+            - 参加タグ: ${L.server.tag}
+            - 特徴: 土地保護あり、荒らし対策ログ完備、Discord連携、Java版のような機能(/tpa, /home等)
+
+            【ルール】
+            - 荒らし、窃盗、チート禁止（永久BAN）
+            - 差別発言、ハラスメント禁止
+            - 他人の拠点から5マス以上離れて建築すること
+
+            【コマンド】
+            - /tpa <プレイヤー>: テレポートリクエスト
+                - /sethome: ホーム設定
+                - /home: ホームへ移動
+                - /tty: 土地保護設定
+
+                【初心者ガイド】
+                - スポーンしたら混雑していない場所へ移動
+                - 5ブロック離れて建築
+                - /ttyで土地保護
+                - Discordに参加推奨
+                `;
+
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: `
+                System Prompt: ${systemPrompt}
+                User Message: ${input.trim()}
+                `
+                })
+            });
+
+            const data = await response.json();
+            const reply = data.result || "すみません、うまく答えられませんでした。";
+
+            setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
+        } catch (error) {
+            console.error("AI Error:", error);
+            setChatHistory(prev => [...prev, { role: 'model', text: "エラーが発生しました。時間を置いて再試行してください。" }]);
+        } finally {
             setIsLoading(false);
-            return;
         }
+    };
 
-        const systemPrompt = `
-        あなたは「なんてつサーバー」の公式AIアシスタントです。
-        以下の情報を元に、ユーザーの質問に親切に答えてください。
-        
-        【サーバー情報】
-        - 統合版(Bedrock)専用
-        - IP: ${L.server.ip}
-        - Port: ${L.server.port}
-        - 参加タグ: ${L.server.tag}
-        - 特徴: 土地保護あり、荒らし対策ログ完備、Discord連携、Java版のような機能(/tpa, /home等)
-        
-        【ルール】
-        - 荒らし、窃盗、チート禁止（永久BAN）
-        - 差別発言、ハラスメント禁止
-        - 他人の拠点から5マス以上離れて建築すること
-        
-        【コマンド】
-        - /tpa <プレイヤー>: テレポートリクエスト
-        - /sethome: ホーム設定
-        - /home: ホームへ移動
-        - /tty: 土地保護設定
-        
-        【初心者ガイド】
-        - スポーンしたら混雑していない場所へ移動
-        - 5ブロック離れて建築
-        - /ttyで土地保護
-        - Discordに参加推奨
-        `;
+    const handleClear = () => setChatHistory([]);
+    if (!isChatOpen) return null;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: input.trim() }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
-            })
-        });
-
-        const data = await response.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "すみません、うまく答えられませんでした。";
-
-        setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
-    } catch (error) {
-        console.error("AI Error:", error);
-        setChatHistory(prev => [...prev, { role: 'model', text: "エラーが発生しました。時間を置いて再試行してください。" }]);
-    } finally {
-        setIsLoading(false);
-    }
-  };
-
-  const handleClear = () => setChatHistory([]);
-  if (!isChatOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm flex items-end justify-end md:justify-center p-0 md:p-8 animate-fade-in">
-      <div className="bg-white dark:bg-gray-900 w-full md:max-w-md h-full md:h-[650px] flex flex-col rounded-t-2xl md:rounded-2xl shadow-2xl transform transition-all duration-300 ease-out animate-slide-in-up border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center shadow-md">
-          <div><h3 className="text-lg font-black flex items-center gap-2"><Zap size={20} className="text-yellow-300 fill-current" />{L.footer.chat_title}</h3><p className="text-xs text-purple-200 opacity-90">Powered by Gemini</p></div>
-          <div className="flex items-center gap-1">
-            <button onClick={handleClear} disabled={chatHistory.length === 0} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"><Trash2 size={18} /></button>
-            <button onClick={closeChat} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"><X size={24} /></button>
-          </div>
-        </div>
-        <div ref={chatRef} className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-black/20">
-          {chatHistory.length === 0 ? (
-            <div className="text-center p-8 pt-20 text-gray-500 dark:text-gray-400 animate-fade-in-up">
-              <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><Bot size={36} className="text-purple-500" /></div>
-              <p className="font-bold text-lg mb-2">{L.footer.chat_subtitle}</p>
-            </div>
-          ) : (
-            chatHistory.map((msg, index) => (
-              <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
-                <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+    return (
+        <div className="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm flex items-end justify-end md:justify-center p-0 md:p-8 animate-fade-in">
+            <div className="bg-white dark:bg-gray-900 w-full md:max-w-md h-full md:h-[650px] flex flex-col rounded-t-2xl md:rounded-2xl shadow-2xl transform transition-all duration-300 ease-out animate-slide-in-up border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="p-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center shadow-md">
+                    <div><h3 className="text-lg font-black flex items-center gap-2"><Zap size={20} className="text-yellow-300 fill-current" />{L.footer.chat_title}</h3><p className="text-xs text-purple-200 opacity-90">Powered by Gemini</p></div>
+                    <div className="flex items-center gap-1">
+                        <button onClick={handleClear} disabled={chatHistory.length === 0} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"><Trash2 size={18} /></button>
+                        <button onClick={closeChat} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"><X size={24} /></button>
+                    </div>
                 </div>
-              </div>
-            ))
-          )}
-          {isLoading && <div className="text-xs text-gray-400 ml-4">{L.footer.chat_loading}</div>}
+                <div ref={chatRef} className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-black/20">
+                    {chatHistory.length === 0 ? (
+                        <div className="text-center p-8 pt-20 text-gray-500 dark:text-gray-400 animate-fade-in-up">
+                            <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><Bot size={36} className="text-purple-500" /></div>
+                            <p className="font-bold text-lg mb-2">{L.footer.chat_subtitle}</p>
+                        </div>
+                    ) : (
+                        chatHistory.map((msg, index) => (
+                            <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
+                                <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>
+                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                    {isLoading && <div className="text-xs text-gray-400 ml-4">{L.footer.chat_loading}</div>}
+                </div>
+                <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+                    <form onSubmit={handleSend} className="flex gap-2 relative">
+                        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={L.footer.chat_input_placeholder} className="flex-grow pl-5 pr-12 py-4 rounded-xl bg-gray-100 dark:bg-gray-800 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white" disabled={isLoading} />
+                        <button type="submit" disabled={!input.trim() || isLoading} className="absolute right-2 top-2 bottom-2 aspect-square bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all flex items-center justify-center shadow-md"><Send size={18} /></button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-          <form onSubmit={handleSend} className="flex gap-2 relative">
-            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={L.footer.chat_input_placeholder} className="flex-grow pl-5 pr-12 py-4 rounded-xl bg-gray-100 dark:bg-gray-800 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white" disabled={isLoading}/>
-            <button type="submit" disabled={!input.trim() || isLoading} className="absolute right-2 top-2 bottom-2 aspect-square bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all flex items-center justify-center shadow-md"><Send size={18} /></button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 // ==========================================
@@ -1225,6 +1229,48 @@ export const NewsPage = ({ L, newsData }) => {
                 {displayData.map((item) => (
                     <NewsItem key={item.id} item={item} L={L} />
                 ))}
+            </div>
+        </div>
+    );
+};
+
+export const NewsDetail = ({ L, id, newsData, navigate }) => {
+    const [item, setItem] = useState(null);
+
+    useEffect(() => {
+        if (newsData) {
+            const found = newsData.find(i => String(i.id) === String(id));
+            setItem(found);
+        }
+    }, [newsData, id]);
+
+    if (!item) return <div className="max-w-4xl mx-auto py-32 px-4 text-center">お知らせが見つかりません。</div>;
+
+    return (
+        <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
+            <div className="mb-8">
+                <button onClick={() => navigate('news')} className="flex items-center gap-2 text-gray-500 hover:text-purple-600 transition-colors font-bold">
+                    <ArrowRight size={18} className="rotate-180" /> {L.news.title}に戻る
+                </button>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100 dark:border-gray-700">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-gray-100 dark:border-gray-700 pb-6">
+                    <span className={`px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider w-fit border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50'}`}>
+                        {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
+                    </span>
+                    <span className="text-gray-400 font-bold flex items-center gap-2"><Clock size={16} /> {formatCorrectedDate(item.date)}</span>
+                </div>
+                <h1 className="text-3xl md:text-4xl font-black mb-8 dark:text-white leading-tight">{item.title}</h1>
+                <div className="prose prose-lg dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {item.content}
+                </div>
+                {item.url && (
+                    <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
+                        <a href={item.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-white font-bold bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
+                            {L.news.link_text} <ExternalLink size={20} />
+                        </a>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -1263,7 +1309,7 @@ export const ForumPage = ({ L, user, db, appId }) => {
         e.preventDefault();
         if (!newPost.trim() || !user) return;
         setIsSending(true);
-        
+
         try {
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'), {
                 text: newPost,
@@ -1292,7 +1338,7 @@ export const ForumPage = ({ L, user, db, appId }) => {
                         </div>
                         <textarea value={newPost} onChange={(e) => setNewPost(e.target.value)} placeholder={L.forum.input_message} rows="3" className="w-full px-5 py-4 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none focus:ring-2 focus:ring-purple-500 transition-all text-lg" />
                         <div className="flex justify-between items-center">
-                             <p className="text-xs text-gray-400">※不適切な投稿は削除される場合があります。</p>
+                            <p className="text-xs text-gray-400">※不適切な投稿は削除される場合があります。</p>
                             <button type="submit" disabled={isSending || !newPost.trim()} className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md flex items-center gap-2 hover:-translate-y-0.5">
                                 {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}{isSending ? L.forum.sending : L.forum.send}
                             </button>
@@ -1409,8 +1455,8 @@ export const NotFoundPage = ({ L, navigate }) => (
             <div className="mb-8 text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">404</div>
             <h2 className="text-4xl font-black mb-4 dark:text-white">{L.footer.not_found_title}</h2>
             <p className="text-gray-600 dark:text-gray-400 text-lg mb-10 max-w-md mx-auto">{L.footer.not_found_desc}</p>
-            <button 
-                onClick={() => navigate('home')} 
+            <button
+                onClick={() => navigate('home')}
                 className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-all hover:-translate-y-1"
             >
                 <Home size={20} /> {L.footer.not_found_btn}
@@ -1451,20 +1497,20 @@ export const ArticlesPage = ({ L, db, navigate }) => {
                     const text = doc.body.innerText;
                     const lines = text.split('\n').filter(l => l.trim());
                     const preview = lines.slice(0, 2).join('\n');
-                    
+
                     return (
-                    <div key={a.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1">
-                                <h3 className="font-bold text-xl dark:text-white">{a.title}</h3>
-                                <div className="text-xs text-gray-500 mb-3">{a.date} • {a.type}</div>
-                                <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{preview}</div>
-                            </div>
-                            <div>
-                                <button onClick={() => { window.location.hash = `/articles/${a.id}`; }} className="px-4 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap transition-colors">続きを読む</button>
+                        <div key={a.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div className="flex justify-between items-start gap-4">
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-xl dark:text-white">{a.title}</h3>
+                                    <div className="text-xs text-gray-500 mb-3">{a.date} • {a.type}</div>
+                                    <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{preview}</div>
+                                </div>
+                                <div>
+                                    <button onClick={() => { window.location.hash = `/articles/${a.id}`; }} className="px-4 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap transition-colors">続きを読む</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
                     );
                 })}
                 {articles.length === 0 && <div className="text-gray-500 text-center py-8">記事がありません。</div>}
@@ -1529,10 +1575,10 @@ export const PrivacyPage = ({ L }) => {
 
             <div className="space-y-8">
                 <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                     <p className="text-gray-700 dark:text-gray-300 mb-6">{L.privacy?.intro}</p>
-                     
-                     <h3 className="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 border-b border-gray-200 dark:border-gray-700 pb-2">{L.privacy?.section1_title}</h3>
-                     <div className="grid md:grid-cols-2 gap-6 mb-8">
+                    <p className="text-gray-700 dark:text-gray-300 mb-6">{L.privacy?.intro}</p>
+
+                    <h3 className="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 border-b border-gray-200 dark:border-gray-700 pb-2">{L.privacy?.section1_title}</h3>
+                    <div className="grid md:grid-cols-2 gap-6 mb-8">
                         <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-xl">
                             <h4 className="font-bold mb-2 dark:text-white">{L.privacy?.subsection1_1_title}</h4>
                             <p className="text-sm text-gray-500 mb-1">{L.privacy?.subsection1_1_info}</p>
@@ -1542,18 +1588,18 @@ export const PrivacyPage = ({ L }) => {
                         </div>
                         <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-xl">
                             <h4 className="font-bold mb-2 dark:text-white">{L.privacy?.subsection1_2_title}</h4>
-                             <p className="text-sm text-gray-500 mb-1">{L.privacy?.subsection1_1_info}</p>
-                             <p className="mb-3 text-gray-700 dark:text-gray-300">{L.privacy?.subsection1_2_data}</p>
-                             <p className="text-sm text-gray-500 mb-1">{L.privacy?.subsection1_1_purpose}</p>
-                             <p className="text-gray-700 dark:text-gray-300">{L.privacy?.subsection1_2_usage}</p>
+                            <p className="text-sm text-gray-500 mb-1">{L.privacy?.subsection1_1_info}</p>
+                            <p className="mb-3 text-gray-700 dark:text-gray-300">{L.privacy?.subsection1_2_data}</p>
+                            <p className="text-sm text-gray-500 mb-1">{L.privacy?.subsection1_1_purpose}</p>
+                            <p className="text-gray-700 dark:text-gray-300">{L.privacy?.subsection1_2_usage}</p>
                         </div>
-                     </div>
+                    </div>
 
-                     <h3 className="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 border-b border-gray-200 dark:border-gray-700 pb-2">{L.privacy?.section2_title}</h3>
-                     <p className="text-gray-700 dark:text-gray-300 mb-8">{L.privacy?.section2_content}</p>
+                    <h3 className="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 border-b border-gray-200 dark:border-gray-700 pb-2">{L.privacy?.section2_title}</h3>
+                    <p className="text-gray-700 dark:text-gray-300 mb-8">{L.privacy?.section2_content}</p>
 
-                     <h3 className="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 border-b border-gray-200 dark:border-gray-700 pb-2">{L.privacy?.section3_title}</h3>
-                     <p className="text-gray-700 dark:text-gray-300">{L.privacy?.section3_content} <a href={`mailto:${L.privacy?.email}`} className="text-purple-500 underline font-bold">{L.privacy?.email}</a></p>
+                    <h3 className="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 border-b border-gray-200 dark:border-gray-700 pb-2">{L.privacy?.section3_title}</h3>
+                    <p className="text-gray-700 dark:text-gray-300">{L.privacy?.section3_content} <a href={`mailto:${L.privacy?.email}`} className="text-purple-500 underline font-bold">{L.privacy?.email}</a></p>
                 </div>
             </div>
         </div>
@@ -1585,11 +1631,11 @@ export const AdminPage = ({ L, user, db, showToast }) => {
             setLoading(false);
             return;
         }
-        
+
         const articlesRef = collection(db, 'articles');
         // 記事の閲覧ページ（Admin以外も見れるページ）で同じロジックを使えば公開されます。
         const q = query(articlesRef, orderBy('createdAt', 'desc'));
-        
+
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const articlesData = snapshot.docs.map(doc => ({
                 id: doc.id,
@@ -1607,7 +1653,7 @@ export const AdminPage = ({ L, user, db, showToast }) => {
     }, [db, loggedIn, L, showToast]);
 
     const [title, setTitle] = useState('');
-    const [date, setDate] = useState(() => new Date().toISOString().slice(0,10));
+    const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
     const [type, setType] = useState('info');
     const [md, setMd] = useState('');
     const [editingId, setEditingId] = useState(null);
@@ -1622,27 +1668,27 @@ export const AdminPage = ({ L, user, db, showToast }) => {
         // escape
         let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         // code blocks
-        html = html.replace(/```([\s\S]*?)```/g, (m, code) => `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g,'&lt;')}</pre>`);
+        html = html.replace(/```([\s\S]*?)```/g, (m, code) => `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g, '&lt;')}</pre>`);
         // headings
-        html = html.replace(/^###### (.*$)/gim,'<h6>$1</h6>');
-        html = html.replace(/^##### (.*$)/gim,'<h5>$1</h5>');
-        html = html.replace(/^#### (.*$)/gim,'<h4>$1</h4>');
-        html = html.replace(/^### (.*$)/gim,'<h3>$1</h3>');
-        html = html.replace(/^## (.*$)/gim,'<h2>$1</h2>');
-        html = html.replace(/^# (.*$)/gim,'<h1>$1</h1>');
+        html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+        html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+        html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
         // bold / italic
-        html = html.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-        html = html.replace(/\*(.*?)\*/g,'<em>$1</em>');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
         // images
         html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-md my-3" loading="lazy" />');
         // links
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-purple-600 dark:text-purple-400 underline">$1</a>');
         // paragraphs / line breaks
-        html = html.replace(/\n/g, '<br/>');
+        html = html.replace(/\n/g, '<br />');
         return html;
     }, []);
 
-const handleLogin = async () => {
+    const handleLogin = async () => {
         // 🚨 サーバーレスAPIに認証処理を完全に移行するため、
         // 古い ADMIN_KEY や warningAck に関するクライアント認証ロジックはすべて削除します。
 
@@ -1650,7 +1696,7 @@ const handleLogin = async () => {
             alert('管理キーを入力してください。');
             return;
         }
-        
+
         try {
             // 1. サーバーレスAPIエンドポイントを呼び出す
             const response = await fetch('/api/admin-login', {
@@ -1668,7 +1714,7 @@ const handleLogin = async () => {
             // 2. HTTPステータスが正常 (200) で、かつAPIが success: true を返した場合
             if (response.ok && data.success) {
                 // 認証成功
-                localStorage.setItem('admin_logged_in','1');
+                localStorage.setItem('admin_logged_in', '1');
                 setLoggedIn(true);
                 if (showToast) showToast('ログインに成功しました');
             } else {
@@ -1704,7 +1750,7 @@ const handleLogin = async () => {
     };
 
     const clearForm = () => {
-        setTitle(''); setDate(new Date().toISOString().slice(0,10)); setType('info'); setMd(''); setEditingId(null);
+        setTitle(''); setDate(new Date().toISOString().slice(0, 10)); setType('info'); setMd(''); setEditingId(null);
     };
 
     const handleSave = async () => {
@@ -1756,21 +1802,21 @@ const handleLogin = async () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-const handleDelete = async (id) => {
-    if (!confirm('この記事を削除してよいですか？')) return;
-    
-    // 1. Firestoreから削除
-    try {
-        await deleteDoc(doc(db, 'articles', id));
-        
-        // 2. 成功した場合のみローカルステートを更新
-        setArticles(prev => prev.filter(a => a.id !== id));
-        if (showToast) showToast('Firestore から記事を削除しました');
-    } catch (e) {
-        console.error("Firestore deletion failed:", e);
-        alert('Firestoreからの削除に失敗しました。');
-    }
-};
+    const handleDelete = async (id) => {
+        if (!confirm('この記事を削除してよいですか？')) return;
+
+        // 1. Firestoreから削除
+        try {
+            await deleteDoc(doc(db, 'articles', id));
+
+            // 2. 成功した場合のみローカルステートを更新
+            setArticles(prev => prev.filter(a => a.id !== id));
+            if (showToast) showToast('Firestore から記事を削除しました');
+        } catch (e) {
+            console.error("Firestore deletion failed:", e);
+            alert('Firestoreからの削除に失敗しました。');
+        }
+    };
 
     const handleExport = async () => {
         try {
@@ -1917,108 +1963,108 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
 );
 
 export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
-  const searchResults = [];
-  const lowerSearchTerm = searchTerm.toLowerCase();
-  
-  // Search in news
-  const newsData = L.news.default_data || [];
-  newsData.forEach(item => {
-    if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
-      searchResults.push({
-        id: `news-${item.id}`,
-        category: L.footer.search_category_news,
-        title: item.title,
-        description: item.content.substring(0, 100) + '...',
-        action: () => navigate('news')
-      });
-    }
-  });
+    const searchResults = [];
+    const lowerSearchTerm = searchTerm.toLowerCase();
+
+    // Search in news
+    const newsData = L.news.default_data || [];
+    newsData.forEach(item => {
+        if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
+            searchResults.push({
+                id: `news-${item.id}`,
+                category: L.footer.search_category_news,
+                title: item.title,
+                description: item.content.substring(0, 100) + '...',
+                action: () => navigate('news')
+            });
+        }
+    });
 
 
-  // Search in commands
-  const commands = L.commands.sections || [];
-  commands.forEach(section => {
-    section.commands?.forEach(cmd => {
-      if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
-        searchResults.push({
-          id: `cmd-${cmd.cmd}`,
-          category: L.footer.search_category_command,
-          title: cmd.cmd,
-          description: cmd.desc,
-          action: () => navigate('commands')
+    // Search in commands
+    const commands = L.commands.sections || [];
+    commands.forEach(section => {
+        section.commands?.forEach(cmd => {
+            if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
+                searchResults.push({
+                    id: `cmd-${cmd.cmd}`,
+                    category: L.footer.search_category_command,
+                    title: cmd.cmd,
+                    description: cmd.desc,
+                    action: () => navigate('commands')
+                });
+            }
         });
-      }
     });
-  });
-  
-  // Search in FAQ
-  const faqs = L.guide.faq_data || [];
-  faqs.forEach((faq, i) => {
-    if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
-      searchResults.push({
-        id: `faq-${i}`,
-        category: L.footer.search_category_guide,
-        title: faq.q,
-        description: faq.a.substring(0, 100) + '...',
-        action: () => navigate('guide')
-      });
-    }
-  });
-  
-  // Search in terms and privacy
-  const termsChapters = L.terms?.chapters || [];
-  termsChapters.forEach((chapter, idx) => {
-    if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
-      searchResults.push({
-        id: `terms-${idx}`,
-        category: L.footer.search_category_terms,
-        title: chapter.title,
-        description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
-        action: () => navigate('terms')
-      });
-    }
-  });
-  
-  if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
-    searchResults.push({
-      id: 'privacy',
-      category: L.footer.search_category_privacy,
-      title: L.privacy.title,
-      description: L.privacy.intro?.substring(0, 100) || '',
-      action: () => navigate('privacy')
+
+    // Search in FAQ
+    const faqs = L.guide.faq_data || [];
+    faqs.forEach((faq, i) => {
+        if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
+            searchResults.push({
+                id: `faq-${i}`,
+                category: L.footer.search_category_guide,
+                title: faq.q,
+                description: faq.a.substring(0, 100) + '...',
+                action: () => navigate('guide')
+            });
+        }
     });
-  }
-  
-  return (
-    <div className="space-y-6">
-      {searchResults.length === 0 ? (
-        <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-          <Search size={48} className="mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-500 dark:text-gray-400 text-lg">{L.footer.search_no_results(searchTerm)}</p>
+
+    // Search in terms and privacy
+    const termsChapters = L.terms?.chapters || [];
+    termsChapters.forEach((chapter, idx) => {
+        if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
+            searchResults.push({
+                id: `terms-${idx}`,
+                category: L.footer.search_category_terms,
+                title: chapter.title,
+                description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
+                action: () => navigate('terms')
+            });
+        }
+    });
+
+    if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
+        searchResults.push({
+            id: 'privacy',
+            category: L.footer.search_category_privacy,
+            title: L.privacy.title,
+            description: L.privacy.intro?.substring(0, 100) || '',
+            action: () => navigate('privacy')
+        });
+    }
+
+    return (
+        <div className="space-y-6">
+            {searchResults.length === 0 ? (
+                <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                    <Search size={48} className="mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">{L.footer.search_no_results(searchTerm)}</p>
+                </div>
+            ) : (
+                <>
+                    <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-6">{L.footer.search_found(searchResults.length)}</p>
+                    {searchResults.map((result) => (
+                        <div
+                            key={result.id}
+                            onClick={result.action}
+                            className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
+                        >
+                            <div className="flex justify-between items-start gap-4 mb-3">
+                                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
+                            </div>
+                            <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
+                            <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                {L.footer.search_result_btn} <ArrowRight size={14} />
+                            </div>
+                        </div>
+                    ))}
+                </>
+            )}
         </div>
-      ) : (
-        <>
-          <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-6">{L.footer.search_found(searchResults.length)}</p>
-          {searchResults.map((result) => (
-            <div 
-              key={result.id}
-              onClick={result.action}
-              className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
-            >
-              <div className="flex justify-between items-start gap-4 mb-3">
-                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
-              </div>
-              <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
-              <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                {L.footer.search_result_btn} <ArrowRight size={14} />
-              </div>
-            </div>
-))}
-        </>
-      )}
-    </div>          
-  );
+    );
 };
 
 
@@ -2135,7 +2181,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
 
             {/* Latest News Section (New) */}
             <section className="py-24 px-4 bg-gray-50 dark:bg-gray-900/50">
-                 <div className="max-w-6xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                     <div className="flex justify-between items-end mb-10">
                         <div>
                             <h2 className="text-3xl font-black dark:text-white mb-2">{L.home.latest_news_title || "最新のお知らせ"}</h2>
@@ -2147,21 +2193,21 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                     </div>
                     <div className="grid md:grid-cols-3 gap-6">
                         {latestNews.map((item) => (
-                             <div key={item.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 flex flex-col group cursor-pointer" onClick={() => navigate('news')}>
-                                 <div className="flex items-center justify-between mb-4">
-                                     <span className={`text-[10px] font-black uppercase px-2 py-1 rounded border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.type === 'maintenance' ? L.news.maintenance : L.news.info}</span>
-                                     <span className="text-xs text-gray-400 font-bold">{item.date}</span>
-                                 </div>
-                                 <h3 className="font-bold text-lg mb-3 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{item.title}</h3>
-                                 <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mb-4 flex-grow">{item.content}</p>
-                                 <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform mt-auto">Read More <ArrowRight size={14}/></div>
-                             </div>
+                            <div key={item.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 flex flex-col group cursor-pointer" onClick={() => navigate('news')}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.type === 'maintenance' ? L.news.maintenance : L.news.info}</span>
+                                    <span className="text-xs text-gray-400 font-bold">{item.date}</span>
+                                </div>
+                                <h3 className="font-bold text-lg mb-3 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{item.title}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mb-4 flex-grow">{item.content}</p>
+                                <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform mt-auto">Read More <ArrowRight size={14} /></div>
+                            </div>
                         ))}
                     </div>
                     <button onClick={() => navigate('news')} className="md:hidden w-full mt-6 py-4 bg-white dark:bg-gray-800 text-purple-600 font-bold rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex justify-center items-center gap-2">
                         {L.home.see_news} <ArrowRight size={18} />
                     </button>
-                 </div>
+                </div>
             </section>
 
             {/* About Section */}
@@ -2173,18 +2219,18 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                             <h2 className="text-5xl font-black mb-8 dark:text-white leading-tight">{L.home.what_is_nantetsu}</h2>
                             <div className="space-y-8 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
                                 <div className="p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg border-l-8 border-purple-500 relative overflow-hidden">
-                                     <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles size={80} className="text-purple-500"/></div>
+                                    <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles size={80} className="text-purple-500" /></div>
                                     <strong className="text-purple-600 dark:text-purple-400 block text-2xl font-black mb-4">{L.home.description_p1}</strong>
                                     {L.home.description_p2}
                                 </div>
                                 <p className="text-xl">{L.home.description_p3}</p>
                             </div>
                         </div>
-                         <div className="order-1 md:order-2 relative">
-                             <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-all duration-700">
+                        <div className="order-1 md:order-2 relative">
+                            <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-all duration-700">
                                 <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" alt="Server Community" className="w-full h-full object-cover" loading="lazy" />
-                             </div>
-                             <div className="absolute inset-0 bg-purple-600 rounded-[3rem] rotate-6 opacity-20 scale-95 blur-2xl -z-10"></div>
+                            </div>
+                            <div className="absolute inset-0 bg-purple-600 rounded-[3rem] rotate-6 opacity-20 scale-95 blur-2xl -z-10"></div>
                         </div>
                     </div>
                 </div>
@@ -2224,13 +2270,13 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                             <AccordionItem key={idx} title={rule.title} content={rule.content} isOpen={activeAccordion === `rules-${idx}`} toggle={() => setActiveAccordion(activeAccordion === `rules-${idx}` ? null : `rules-${idx}`)} />
                         ))}
                     </div>
-                    
+
                     {/* Quiz UI Block */}
                     <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl p-8 md:p-16 border border-purple-100 dark:border-gray-700 relative overflow-hidden text-center group">
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500"></div>
                         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"></div>
                         <div className="absolute -right-10 -top-10 w-40 h-40 bg-yellow-500/10 rounded-full blur-3xl"></div>
-                        
+
                         {!quizState.started ? (
                             <div className="animate-fade-in relative z-10">
                                 <div className="inline-block p-4 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6"><Sparkles size={32} /></div>
@@ -2265,17 +2311,16 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                                         <h4 className="text-2xl font-bold mb-10 dark:text-white leading-relaxed">{QUIZ_DATA[quizState.current].question}</h4>
                                         <div className="grid gap-4">
                                             {QUIZ_DATA[quizState.current].options.map((opt, idx) => (
-                                                <button 
-                                                    key={idx} 
-                                                    onClick={() => !quizState.showResult && handleQuizAnswer(opt)} 
-                                                    disabled={quizState.showResult} 
-                                                    className={`w-full p-6 rounded-2xl text-left font-bold border-2 transition-all relative overflow-hidden ${
-                                                        quizState.showResult 
-                                                            ? opt === QUIZ_DATA[quizState.current].answer 
-                                                                ? "bg-green-50 dark:bg-green-900/20 border-green-500 text-green-700 dark:text-green-400" 
-                                                                : "opacity-50 border-transparent bg-gray-50 dark:bg-gray-800" 
-                                                            : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-500 dark:hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5"
-                                                    }`}
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => !quizState.showResult && handleQuizAnswer(opt)}
+                                                    disabled={quizState.showResult}
+                                                    className={`w-full p-6 rounded-2xl text-left font-bold border-2 transition-all relative overflow-hidden ${quizState.showResult
+                                                        ? opt === QUIZ_DATA[quizState.current].answer
+                                                            ? "bg-green-50 dark:bg-green-900/20 border-green-500 text-green-700 dark:text-green-400"
+                                                            : "opacity-50 border-transparent bg-gray-50 dark:bg-gray-800"
+                                                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-500 dark:hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5"
+                                                        }`}
                                                 >
                                                     <span className="relative z-10 flex justify-between items-center">
                                                         {opt}
@@ -2329,7 +2374,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
 // ==========================================
 
 const CustomStyles = () => (
-  <style>{`
+    <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
     :root { --font-sans: 'Noto Sans JP', sans-serif; }
     body { font-family: var(--font-sans); }
@@ -2354,363 +2399,370 @@ const CustomStyles = () => (
 );
 
 export default function App() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [page, setPage] = useState('home'); 
-  const [serverStatus, setServerStatus] = useState({ online: false, players: 0, loading: true });
-  const [toastMessage, setToastMessage] = useState(null);
-  const [quizState, setQuizState] = useState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null });
-  const [activeAccordion, setActiveAccordion] = useState(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState('ja');
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  // Loading states
-  const [isAppLoading, setIsAppLoading] = useState(true); // Splash screen
-  const [isPageLoading, setIsPageLoading] = useState(false); // Navigation bar
-  
-  const [newsData, setNewsData] = useState([]);
-  const [hasUnreadNews, setHasUnreadNews] = useState(false);
-  
-  // Firebase State
-  const [user, setUser] = useState(null);
-  const [db, setDb] = useState(null);
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const [darkMode, setDarkMode] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [page, setPage] = useState('home');
+    const [serverStatus, setServerStatus] = useState({ online: false, players: 0, loading: true });
+    const [toastMessage, setToastMessage] = useState(null);
+    const [quizState, setQuizState] = useState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null });
+    const [activeAccordion, setActiveAccordion] = useState(null);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [currentLang, setCurrentLang] = useState('ja');
+    const [searchTerm, setSearchTerm] = useState('');
 
-  const L = LANGUAGES[currentLang];
+    // Loading states
+    const [isAppLoading, setIsAppLoading] = useState(true); // Splash screen
+    const [isPageLoading, setIsPageLoading] = useState(false); // Navigation bar
 
-  const handleGeminiCall = useCallback(async (userPrompt) => {
-    const apiEndpoint = '/api/generate'; 
+    const [newsData, setNewsData] = useState([]);
+    const [hasUnreadNews, setHasUnreadNews] = useState(false);
 
-    try {
-        const response = await fetch(apiEndpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ prompt: userPrompt }), 
-        });
+    // Firebase State
+    const [user, setUser] = useState(null);
+    const [db, setDb] = useState(null);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+    const L = LANGUAGES[currentLang];
 
-        const data = await response.json();
-        
-        console.log("Gemini Result:", data.result);
-        return data.result;
+    const handleGeminiCall = useCallback(async (userPrompt) => {
+        const apiEndpoint = '/api/generate';
 
-    } catch (error) {
-        console.error("API Call Error:", error);
-    }
-}, []);
-
-  // --- Initialize Firebase ---
-  useEffect(() => {
-    const initAuth = async () => {
         try {
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-            if(firebaseConfig) {
-                 const app = initializeApp(firebaseConfig);
-                 const auth = getAuth(app);
-                 const firestore = getFirestore(app);
-                 setDb(firestore);
-                 
-                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                 } else {
-                    await signInAnonymously(auth);
-                 }
-                 onAuthStateChanged(auth, setUser);
-            } else {
-                console.warn("Firebase config not found. Running in demo mode.");
-                setUser({ uid: 'demo-user' });
+            const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: userPrompt }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        } catch (e) {
-            console.error("Firebase init failed:", e);
+
+            const data = await response.json();
+
+            console.log("Gemini Result:", data.result);
+            return data.result;
+
+        } catch (error) {
+            console.error("API Call Error:", error);
         }
-    };
-    initAuth();
-  }, []);
+    }, []);
 
-  // Enhanced dark mode management with localStorage persistence
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode !== null) {
-      const isDark = JSON.parse(savedDarkMode);
-      setDarkMode(isDark);
-      if (isDark) document.documentElement.classList.add('dark');
-      else document.documentElement.classList.remove('dark');
-    } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDarkMode(prefersDark);
-      if (prefersDark) document.documentElement.classList.add('dark');
-    }
-  }, []);
+    // --- Initialize Firebase ---
+    useEffect(() => {
+        const initAuth = async () => {
+            try {
+                // Use global config if available, otherwise fall back to local const firebaseConfig
+                const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+                if (config) {
+                    const app = initializeApp(config);
+                    const auth = getAuth(app);
+                    const firestore = getFirestore(app);
+                    setDb(firestore);
 
-  useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.style.colorScheme = 'light';
-    }
-  }, [darkMode]);
-
-  // Initial Splash Screen Timer
-  useEffect(() => {
-    const timer = setTimeout(() => setIsAppLoading(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // --- Router Logic (Hash Router) ---
-  useEffect(() => {
-      const handleHashChange = () => {
-          const hash = window.location.hash.replace('#/', '') || 'home';
-          setPage(hash);
-      };
-
-      // Set initial page from hash
-      handleHashChange();
-
-      window.addEventListener('hashchange', handleHashChange);
-      return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // --- Router Logic (Hash Router) ---
-  useEffect(() => {
-      const handleHashChange = () => {
-          const hash = window.location.hash.replace('#/', '') || 'home';
-          setPage(hash);
-      };
-
-      // Set initial page from hash
-      handleHashChange();
-
-      window.addEventListener('hashchange', handleHashChange);
-      return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // Enhanced Navigation with Loading Bar & Routing (Memoized)
-  const handleNavigate = useCallback((targetPage, sectionId = null) => {
-      if (targetPage === page && !sectionId) return;
-
-      setIsPageLoading(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      // Update URL hash
-      window.location.hash = `/${targetPage}`;
-      
-      // Simulate loading delay for smooth feel
-      setTimeout(() => {
-          setIsPageLoading(false);
-          if (sectionId) {
-             setTimeout(() => {
-                 const element = document.getElementById(sectionId);
-                 if (element) element.scrollIntoView({ behavior: 'smooth' });
-             }, 100);
-          }
-      }, 400);
-  }, [page]);
-
-  useEffect(() => {
-    const fetchStatus = async () => {
-        try {
-            const res = await fetch(`https://api.mcsrvstat.us/bedrock/2/${L.server.ip}:${L.server.port}`);
-            const data = await res.json();
-            setServerStatus({ online: data.online, players: data.online ? data.players.online : 0, loading: false });
-        } catch { setServerStatus({ online: false, players: 0, loading: false }); }
-    };
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 60000);
-
-    const fetchNews = async () => {
-        try {
-            const res = await fetch(NEWS_SHEET_URL);
-            if (res.ok) {
-                const text = await res.text();
-                // Google Sheets API returns JSONP, strip function call
-                const json = JSON.parse(text.substring(text.indexOf('(') + 1, text.lastIndexOf(')')));
-                if (json.table?.rows) {
-                    const parsed = json.table.rows.map((row, i) => {
-                        let dateStr = row.c[0]?.v || '';
-                        // Handle numeric date format from Google Sheets (serial format)
-                        if (typeof dateStr === 'number') {
-                          const excelEpoch = new Date(1899, 11, 30);
-                          const dateObj = new Date(excelEpoch.getTime() + dateStr * 86400000);
-                          dateStr = dateObj.toLocaleDateString('ja-JP').replace(/\\//g, '.');
-                        }
-                        return {
-                            id: i + 100,
-                            date: dateStr,
-                            title: row.c[1]?.v || '',
-                            content: row.c[2]?.v || '',
-                            url: row.c[3]?.v,
-                            type: row.c[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info'
-                        };
-                    }).filter(i => i.title);
-                    setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    onAuthStateChanged(auth, setUser);
+                } else {
+                    console.warn("Firebase config not found. Running in demo mode.");
+                    setUser({ uid: 'demo-user' });
                 }
+            } catch (e) {
+                console.error("Firebase init failed:", e);
             }
-        } catch (e) { console.error("News fetch error", e); }
-    };
-    fetchNews();
-    return () => clearInterval(interval);
-  }, []);
+        };
+        initAuth();
+    }, []);
 
-  const showToast = useCallback((msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  }, []);
+    // Enhanced dark mode management with localStorage persistence
+    useEffect(() => {
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode !== null) {
+            const isDark = JSON.parse(savedDarkMode);
+            setDarkMode(isDark);
+            if (isDark) document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+        } else {
+            // Check system preference
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setDarkMode(prefersDark);
+            if (prefersDark) document.documentElement.classList.add('dark');
+        }
+    }, []);
 
-  const handleCopy = useCallback((text) => {
-    navigator.clipboard.writeText(text).catch(err => {
-      console.error('Failed to copy:', err);
-      showToast('コピーに失敗しました');
-    });
-  }, [showToast]);
+    useEffect(() => {
+        localStorage.setItem('darkMode', JSON.stringify(darkMode));
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+        }
+    }, [darkMode]);
 
-  const scrollToSection = useCallback((id) => {
-      const element = document.getElementById(id);
-      if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-      }
-  }, []);
+    // Initial Splash Screen Timer
+    useEffect(() => {
+        const timer = setTimeout(() => setIsAppLoading(false), 2000);
+        return () => clearTimeout(timer);
+    }, []);
 
-  const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
-  
-  // Debounced search (500ms delay)
-  const searchTimeoutRef = useRef(null);
-  const handleSearch = useCallback((e) => {
-    const value = e.target.value;
-    clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => {
-      setSearchTerm(value);
-    }, 500);
-  }, []);
+    // --- Router Logic (Hash Router) ---
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace('#/', '') || 'home';
+            setPage(hash);
+        };
 
-  // Handle Quiz (Memoized with error handling)
-  const handleQuizAnswer = useCallback((selectedOption) => {
-    try {
-      const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
-      setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
+        // Set initial page from hash
+        handleHashChange();
 
-      setTimeout(() => {
-          if (isCorrect) {
-              setQuizState(prev => {
-                  const nextIdx = prev.current + 1;
-                  if (nextIdx < L.quiz_data.length) {
-                      return { ...prev, current: nextIdx, score: prev.score + 1, showResult: false, isCorrect: null };
-                  } else {
-                      return { ...prev, score: prev.score + 1, finished: true, showResult: false };
-                  }
-              });
-          } else {
-               setQuizState(prev => {
-                  const nextIdx = prev.current + 1;
-                  if (nextIdx < L.quiz_data.length) {
-                       return { ...prev, current: nextIdx, showResult: false, isCorrect: null };
-                  } else {
-                       return { ...prev, finished: true, showResult: false };
-                  }
-               });
-          }
-      }, 1500);
-    } catch (err) {
-      console.error('Quiz error:', err);
-      showToast('クイズ処理中にエラーが発生しました');
-    }
-  }, [L.quiz_data, quizState.current, showToast]);
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
 
-  return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
-      <CustomStyles />
-      
-      {/* 1. Global Loading Overlays */}
-      {isAppLoading && <LoadingScreen />}
-      <LoadingBar isLoading={isPageLoading} />
-      
-      {/* 2. Navigation */}
-      <Navbar 
-        L={L} 
-        page={page} 
-        navigate={handleNavigate} 
-        darkMode={darkMode} 
-        setDarkMode={setDarkMode} 
-        isMenuOpen={isMenuOpen} 
-        setIsMenuOpen={setIsMenuOpen}
-        currentLang={currentLang}
-        setCurrentLang={setCurrentLang}
-        searchTerm={searchTerm}
-        handleSearch={handleSearch}
-        serverStatus={serverStatus}
-        hasUnreadNews={hasUnreadNews}
-        newsData={newsData}
-      />
+    // --- Router Logic (Hash Router) ---
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace('#/', '') || 'home';
+            setPage(hash);
+        };
 
-      {/* 3. Main Content Router */}
-      <main className="relative z-10 min-h-screen">
-          {searchTerm && (
-              <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
-                <h2 className="text-4xl font-black mb-8 dark:text-white">{L.footer.search_results_title}</h2>
-                <SearchResultsPage L={L} searchTerm={searchTerm} navigate={handleNavigate} />
-              </div>
-          )}
-          {!searchTerm && page === 'home' && (
-              <HomePage 
-                L={L} 
-                serverStatus={serverStatus} 
-                quizState={quizState} 
-                setQuizState={setQuizState} 
-                resetQuiz={resetQuiz} 
-                handleQuizAnswer={handleQuizAnswer} 
-                handleCopy={handleCopy} 
-                scrollToSection={scrollToSection}
+        // Set initial page from hash
+        handleHashChange();
+
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
+
+    // Enhanced Navigation with Loading Bar & Routing (Memoized)
+    const handleNavigate = useCallback((targetPage, sectionId = null) => {
+        if (targetPage === page && !sectionId) return;
+
+        setIsPageLoading(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Update URL hash
+        window.location.hash = `/${targetPage}`;
+
+        // Simulate loading delay for smooth feel
+        setTimeout(() => {
+            setIsPageLoading(false);
+            if (sectionId) {
+                setTimeout(() => {
+                    const element = document.getElementById(sectionId);
+                    if (element) element.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        }, 400);
+    }, [page]);
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const res = await fetch(`https://api.mcsrvstat.us/bedrock/2/${L.server.ip}:${L.server.port}`);
+                const data = await res.json();
+                setServerStatus({ online: data.online, players: data.online ? data.players.online : 0, loading: false });
+            } catch { setServerStatus({ online: false, players: 0, loading: false }); }
+        };
+        fetchStatus();
+        const interval = setInterval(fetchStatus, 60000);
+
+        const fetchNews = async () => {
+            try {
+                const res = await fetch(NEWS_SHEET_URL);
+                if (res.ok) {
+                    const text = await res.text();
+                    // Google Sheets API returns JSONP, strip function call
+                    const json = JSON.parse(text.substring(text.indexOf('(') + 1, text.lastIndexOf(')')));
+                    if (json.table?.rows) {
+                        const parsed = json.table.rows.map((row, i) => {
+                            let dateStr = row.c[0]?.v || '';
+                            // Handle numeric date format from Google Sheets (serial format)
+                            if (typeof dateStr === 'number') {
+                                const excelEpoch = new Date(1899, 11, 30);
+                                const dateObj = new Date(excelEpoch.getTime() + dateStr * 86400000);
+                                dateStr = dateObj.toLocaleDateString('ja-JP').replace(/\\/ / g, '.');
+                            }
+                            return {
+                                id: i + 100,
+                                date: dateStr,
+                                title: row.c[1]?.v || '',
+                                content: row.c[2]?.v || '',
+                                url: row.c[3]?.v,
+                                type: row.c[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info'
+                            };
+                        }).filter(i => i.title);
+                        setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
+                    }
+                }
+            } catch (e) { console.error("News fetch error", e); }
+        };
+        fetchNews();
+        return () => clearInterval(interval);
+    }, []);
+
+    const showToast = useCallback((msg) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), 3000);
+    }, []);
+
+    const handleCopy = useCallback((text) => {
+        navigator.clipboard.writeText(text).catch(err => {
+            console.error('Failed to copy:', err);
+            showToast('コピーに失敗しました');
+        });
+    }, [showToast]);
+
+    const scrollToSection = useCallback((id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, []);
+
+    const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
+
+    // Debounced search (500ms delay)
+    const searchTimeoutRef = useRef(null);
+    const handleSearch = useCallback((e) => {
+        const value = e.target.value;
+        clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = setTimeout(() => {
+            setSearchTerm(value);
+        }, 500);
+    }, []);
+
+    // Handle Quiz (Memoized with error handling)
+    const handleQuizAnswer = useCallback((selectedOption) => {
+        try {
+            const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
+            setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
+
+            setTimeout(() => {
+                if (isCorrect) {
+                    setQuizState(prev => {
+                        const nextIdx = prev.current + 1;
+                        if (nextIdx < L.quiz_data.length) {
+                            return { ...prev, current: nextIdx, score: prev.score + 1, showResult: false, isCorrect: null };
+                        } else {
+                            return { ...prev, score: prev.score + 1, finished: true, showResult: false };
+                        }
+                    });
+                } else {
+                    setQuizState(prev => {
+                        const nextIdx = prev.current + 1;
+                        if (nextIdx < L.quiz_data.length) {
+                            return { ...prev, current: nextIdx, showResult: false, isCorrect: null };
+                        } else {
+                            return { ...prev, finished: true, showResult: false };
+                        }
+                    });
+                }
+            }, 1500);
+        } catch (err) {
+            console.error('Quiz error:', err);
+            showToast('クイズ処理中にエラーが発生しました');
+        }
+    }, [L.quiz_data, quizState.current, showToast]);
+
+    return (
+        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
+            <CustomStyles />
+
+            {/* 1. Global Loading Overlays */}
+            {isAppLoading && <LoadingScreen />}
+            <LoadingBar isLoading={isPageLoading} />
+
+            {/* 2. Navigation */}
+            <Navbar
+                L={L}
+                page={page}
                 navigate={handleNavigate}
-                activeAccordion={activeAccordion}
-                setActiveAccordion={setActiveAccordion}
-                showToast={showToast}
-                newsData={newsData}
+                darkMode={darkMode}
+                setDarkMode={setDarkMode}
+                isMenuOpen={isMenuOpen}
+                setIsMenuOpen={setIsMenuOpen}
+                currentLang={currentLang}
+                setCurrentLang={setCurrentLang}
+                searchTerm={searchTerm}
+                handleSearch={handleSearch}
+                serverStatus={serverStatus}
                 hasUnreadNews={hasUnreadNews}
-              />
-          )}
-          {!searchTerm && page === 'news' && <NewsPage L={L} newsData={newsData} />}
-          {!searchTerm && page === 'articles' && <ArticlesPage L={L} db={db} navigate={handleNavigate} />}
-          {!searchTerm && page.startsWith && page.startsWith('articles/') && (
-              (() => {
-                  const id = page.split('/')[1];
-                  return <ArticleDetail L={L} id={id} db={db} navigate={handleNavigate} />;
-              })()
-          )}
-          {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
-          {!searchTerm && page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
-          {!searchTerm && page === 'commands' && <CommandsPage L={L} />}
-          {!searchTerm && page === 'terms' && <TermsPage L={L} />}
-          {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
-          {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
-          {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} showToast={showToast} />}
-          {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && <NotFoundPage L={L} navigate={handleNavigate} />}
-      </main>
+                newsData={newsData}
+            />
 
-      {/* 4. Footer */}
-      <Footer L={L} navigate={handleNavigate} />
-      
-      {/* 5. Global Overlays */}
-      {toastMessage && <Toast message={toastMessage} />}
-      
-      {/* Chat Button */}
-      <button 
-        onClick={() => setIsChatOpen(true)} 
-        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform hover:shadow-purple-500/50 group"
-      >
-        <MessageCircle size={28} className="group-hover:animate-pulse" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
-      </button>
+            {/* 3. Main Content Router */}
+            <main className="relative z-10 min-h-screen">
+                {searchTerm && (
+                    <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
+                        <h2 className="text-4xl font-black mb-8 dark:text-white">{L.footer.search_results_title}</h2>
+                        <SearchResultsPage L={L} searchTerm={searchTerm} navigate={handleNavigate} />
+                    </div>
+                )}
+                {!searchTerm && page === 'home' && (
+                    <HomePage
+                        L={L}
+                        serverStatus={serverStatus}
+                        quizState={quizState}
+                        setQuizState={setQuizState}
+                        resetQuiz={resetQuiz}
+                        handleQuizAnswer={handleQuizAnswer}
+                        handleCopy={handleCopy}
+                        scrollToSection={scrollToSection}
+                        navigate={handleNavigate}
+                        activeAccordion={activeAccordion}
+                        setActiveAccordion={setActiveAccordion}
+                        showToast={showToast}
+                        newsData={newsData}
+                        hasUnreadNews={hasUnreadNews}
+                    />
+                )}
+                {!searchTerm && page === 'news' && <NewsPage L={L} newsData={newsData} />}
+                {!searchTerm && page.startsWith && page.startsWith('news/') && (
+                    (() => {
+                        const id = page.split('/')[1];
+                        return <NewsDetail L={L} id={id} newsData={newsData} navigate={handleNavigate} />;
+                    })()
+                )}
+                {!searchTerm && page === 'articles' && <ArticlesPage L={L} db={db} navigate={handleNavigate} />}
+                {!searchTerm && page.startsWith && page.startsWith('articles/') && (
+                    (() => {
+                        const id = page.split('/')[1];
+                        return <ArticleDetail L={L} id={id} db={db} navigate={handleNavigate} />;
+                    })()
+                )}
+                {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
+                {!searchTerm && page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
+                {!searchTerm && page === 'commands' && <CommandsPage L={L} />}
+                {!searchTerm && page === 'terms' && <TermsPage L={L} />}
+                {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
+                {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
+                {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} showToast={showToast} />}
+                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && <NotFoundPage L={L} navigate={handleNavigate} />}
+            </main>
 
-      <AIChat L={L} isChatOpen={isChatOpen} closeChat={() => setIsChatOpen(false)} currentLang={currentLang} />
-    </div>
-  );
+            {/* 4. Footer */}
+            <Footer L={L} navigate={handleNavigate} />
+
+            {/* 5. Global Overlays */}
+            {toastMessage && <Toast message={toastMessage} />}
+
+            {/* Chat Button */}
+            <button
+                onClick={() => setIsChatOpen(true)}
+                className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform hover:shadow-purple-500/50 group"
+            >
+                <MessageCircle size={28} className="group-hover:animate-pulse" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
+            </button>
+
+            <AIChat L={L} isChatOpen={isChatOpen} closeChat={() => setIsChatOpen(false)} currentLang={currentLang} />
+        </div>
+    );
 }
