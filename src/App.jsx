@@ -2673,7 +2673,23 @@ export default function App() {
                 const res = await fetch(NEWS_SHEET_URL);
                 if (res.ok) {
                     const text = await res.text();
-                    const json = JSON.parse(text.substring(text.indexOf('(') + 1, text.lastIndexOf(')')));
+                    // Google Sheets API returns JSONP with 'new Date(...)' which breaks JSON.parse
+                    // 1. Strip the function call: google.visualization.Query.setResponse(...)
+                    const startRaw = text.indexOf('(');
+                    const endRaw = text.lastIndexOf(')');
+                    if (startRaw === -1 || endRaw === -1) throw new Error("Invalid format");
+
+                    let jsonString = text.substring(startRaw + 1, endRaw);
+
+                    // 2. Replace 'new Date(y, m, d)' with '"Date(y, m, d)"' to make it valid JSON strings
+                    // Regex: new Date\(  ->  "Date(
+                    //        \d+,\d+,\d+ -> capture args
+                    //        \)          ->  )"
+                    // Actually simpler: just replace `new Date(` with `"Date(` and `)` with `)"`? 
+                    // No, `)` is common. We need to match the specific date pattern.
+                    jsonString = jsonString.replace(/new Date\((.*?)\)/g, '"Date($1)"');
+
+                    const json = JSON.parse(jsonString);
                     if (json.table?.rows) {
                         const parsed = json.table.rows.map((row, i) => {
                             let rawDate = row.c[0]?.v;
