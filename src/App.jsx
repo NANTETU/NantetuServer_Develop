@@ -21,7 +21,7 @@ import remarkGfm from 'remark-gfm';
 
 const SPREADSHEET_ID = '1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU';
 const SHEET_GID = '566365801';
-const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit?gid=566365801#gid=${SHEET_GID}`;
+const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
 
 const firebaseConfig = {
@@ -2673,31 +2673,25 @@ export default function App() {
                 const res = await fetch(NEWS_SHEET_URL);
                 if (res.ok) {
                     const text = await res.text();
-                    // Google Sheets API returns JSONP, strip function call
                     const json = JSON.parse(text.substring(text.indexOf('(') + 1, text.lastIndexOf(')')));
                     if (json.table?.rows) {
                         const parsed = json.table.rows.map((row, i) => {
-                            // Google Sheets might return "Date(2025,11,3)" where month is 0-indexed
-                            console.log("Raw date from sheet:", row.c[0]?.v);  // Debug log
                             let rawDate = row.c[0]?.v;
+                            let dateStr = rawDate; // Default
 
                             if (typeof rawDate === 'string' && rawDate.startsWith('Date(')) {
                                 const parts = rawDate.match(/\d+/g);
                                 if (parts && parts.length >= 3) {
-                                    // Year, Month (0-11), Day
                                     const y = parseInt(parts[0]);
-                                    const m = parseInt(parts[1]) + 1; // Display month is +1
+                                    const m = parseInt(parts[1]) + 1;
                                     const d = parseInt(parts[2]);
                                     dateStr = `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`;
                                 }
                             } else if (typeof rawDate === 'number') {
-                                // Excel Serial Date
                                 const excelEpoch = new Date(1899, 11, 30);
                                 const dateObj = new Date(excelEpoch.getTime() + rawDate * 86400000);
                                 dateStr = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
                             } else {
-                                // String like "2025/12/03"
-                                // If it's already a string, try to parse it safely or just use it if it looks like a date
                                 try {
                                     const d = new Date(rawDate);
                                     if (!isNaN(d.getTime())) {
@@ -2727,7 +2721,10 @@ export default function App() {
                         setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
                     }
                 }
-            } catch (e) { console.error("News fetch error", e); }
+            } catch (e) {
+                console.error("News fetch error", e);
+                // Cannot access showToast here because it is defined below
+            }
         };
         fetchNews();
         return () => clearInterval(interval);
