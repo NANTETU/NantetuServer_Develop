@@ -2029,24 +2029,6 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
   );
 };
 
-export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
-  const searchResults = [];
-  const lowerSearchTerm = searchTerm.toLowerCase();
-  
-  // Search in news
-  const newsData = L.news.default_data || [];
-  newsData.forEach(item => {
-    if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
-      searchResults.push({
-        id: `news-${item.id}`,
-        category: L.footer.search_category_news,
-        title: item.title,
-        description: item.content.substring(0, 100) + '...',
-        action: () => navigate('news')
-      });
-    }
-  });
-  
   // Search in commands
   const commands = L.commands.sections || [];
   commands.forEach(section => {
