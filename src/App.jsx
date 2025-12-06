@@ -22,6 +22,8 @@ const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/143708534821067571
 
 // Gemini API Key (Runtime provided)
 const apiKey = ""; 
+// 管理者用キー (空文字列だと未設定扱いになります。運用時はここに管理キーを設定してください)
+const ADMIN_KEY = "mv(wP|tn#MR9";
 
 const LANGUAGES = {
     ja: {
@@ -1440,6 +1442,197 @@ export const PrivacyPage = ({ L }) => {
     );
 };
 
+// =====================
+// Admin: Markdown記事作成GUI
+// 管理者向けのシンプルなエディタ。画像はローカルファイルをBase64として埋め込み可能。
+// 永続化はローカルストレージ(`admin_articles_v1`)を使用します。運用時はここをFirestoreやSheetsへの書き込みに置き換えてください。
+export const AdminPage = ({ L }) => {
+    const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem('admin_logged_in'));
+    const [keyInput, setKeyInput] = useState('');
+    const [warningAck, setWarningAck] = useState(false);
+
+    const [articles, setArticles] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('admin_articles_v1') || '[]'); }
+        catch { return []; }
+    });
+
+    const [title, setTitle] = useState('');
+    const [date, setDate] = useState(() => new Date().toISOString().slice(0,10));
+    const [type, setType] = useState('info');
+    const [md, setMd] = useState('');
+    const [editingId, setEditingId] = useState(null);
+    const fileRef = useRef(null);
+
+    useEffect(() => {
+        localStorage.setItem('admin_articles_v1', JSON.stringify(articles));
+    }, [articles]);
+
+    const simpleRenderMarkdown = useCallback((text) => {
+        if (!text) return '';
+        // escape
+        let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // code blocks
+        html = html.replace(/```([\s\S]*?)```/g, (m, code) => `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g,'&lt;')}</pre>`);
+        // headings
+        html = html.replace(/^###### (.*$)/gim,'<h6>$1</h6>');
+        html = html.replace(/^##### (.*$)/gim,'<h5>$1</h5>');
+        html = html.replace(/^#### (.*$)/gim,'<h4>$1</h4>');
+        html = html.replace(/^### (.*$)/gim,'<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gim,'<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gim,'<h1>$1</h1>');
+        // bold / italic
+        html = html.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g,'<em>$1</em>');
+        // images
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-md my-3" loading="lazy" />');
+        // links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-purple-600 dark:text-purple-400 underline">$1</a>');
+        // paragraphs / line breaks
+        html = html.replace(/\n/g, '<br/>');
+        return html;
+    }, []);
+
+    const handleLogin = () => {
+        if (typeof ADMIN_KEY !== 'undefined' && ADMIN_KEY && keyInput !== ADMIN_KEY) {
+            alert('管理キーが違います');
+            return;
+        }
+        if (!ADMIN_KEY) {
+            if (!warningAck) {
+                alert('管理キーが未設定です。運用時はコード内の ADMIN_KEY を設定してください。続行する場合は確認にチェックを入れてください。');
+                return;
+            }
+        }
+        localStorage.setItem('admin_logged_in','1');
+        setLoggedIn(true);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('admin_logged_in');
+        setLoggedIn(false);
+    };
+
+    const handleFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const dataUrl = reader.result;
+            setMd(prev => prev + `\n\n![${file.name}](${dataUrl})\n\n`);
+        };
+        reader.readAsDataURL(file);
+        // reset input
+        e.target.value = '';
+    };
+
+    const clearForm = () => {
+        setTitle(''); setDate(new Date().toISOString().slice(0,10)); setType('info'); setMd(''); setEditingId(null);
+    };
+
+    const handleSave = () => {
+        if (!title.trim()) { alert('タイトルを入力してください'); return; }
+        const id = editingId || Date.now();
+        const obj = { id, title: title.trim(), date, type, md, html: simpleRenderMarkdown(md) };
+        setArticles(prev => {
+            const others = prev.filter(a => a.id !== id);
+            return [obj, ...others];
+        });
+        clearForm();
+        alert('保存しました (ローカルストレージ)');
+    };
+
+    const handleEdit = (a) => {
+        setEditingId(a.id); setTitle(a.title); setDate(a.date); setType(a.type); setMd(a.md || '');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDelete = (id) => {
+        if (!confirm('この記事を削除してよいですか？')) return;
+        setArticles(prev => prev.filter(a => a.id !== id));
+    };
+
+    const handleExport = async () => {
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(articles, null, 2));
+            alert('記事データをクリップボードにコピーしました（JSON）');
+        } catch (e) { console.error(e); alert('クリップボードへのコピーに失敗しました'); }
+    };
+
+    return (
+        <div className="max-w-6xl mx-auto py-16 px-4 animate-fade-in-scale">
+            <div className="mb-8 flex items-center justify-between">
+                <h2 className="text-3xl font-black dark:text-white">管理者ダッシュボード — 記事作成</h2>
+                {!loggedIn ? (
+                    <div className="flex items-center gap-3">
+                        <input value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder="管理キー" className="px-3 py-2 rounded border" />
+                        <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={warningAck} onChange={e => setWarningAck(e.target.checked)} /> 管理キー未設定を了承</label>
+                        <button onClick={handleLogin} className="bg-purple-600 text-white px-4 py-2 rounded">ログイン</button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3">
+                        <button onClick={handleExport} className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800">エクスポート</button>
+                        <button onClick={handleLogout} className="px-3 py-2 rounded bg-red-600 text-white">ログアウト</button>
+                    </div>
+                )}
+            </div>
+
+            {!loggedIn ? (
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md">
+                    <p className="text-gray-600 dark:text-gray-300">管理者ログインが必要です。運用時はコード内の <code>ADMIN_KEY</code> を設定し、ここに入力してください。現在はローカル保存のみ対応しています。</p>
+                </div>
+            ) : (
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm space-y-4">
+                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="タイトル" className="w-full px-4 py-3 rounded border" />
+                            <div className="flex gap-3">
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded border" />
+                                <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded border">
+                                    <option value="info">お知らせ</option>
+                                    <option value="maintenance">メンテナンス</option>
+                                </select>
+                                <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="px-3 py-2 rounded border" />
+                            </div>
+                            <textarea value={md} onChange={e => setMd(e.target.value)} rows={12} placeholder="Markdownで記事を記述してください。画像はアップロードで埋め込まれます。" className="w-full px-4 py-3 rounded border font-mono"></textarea>
+                            <div className="flex gap-3">
+                                <button onClick={handleSave} className="bg-purple-600 text-white px-4 py-2 rounded">保存</button>
+                                <button onClick={clearForm} className="px-4 py-2 rounded border">クリア</button>
+                            </div>
+                        </div>
+                        <div className="mt-6">
+                            <h3 className="font-bold mb-3 dark:text-white">プレビュー</h3>
+                            <div className="prose max-w-full bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: simpleRenderMarkdown(md) }} />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+                            <h3 className="font-bold mb-4 dark:text-white">保存済み記事 ({articles.length})</h3>
+                            <div className="space-y-4 max-h-[60vh] overflow-auto pr-2">
+                                {articles.map(a => (
+                                    <div key={a.id} className="p-3 rounded border border-gray-100 dark:border-gray-700">
+                                        <div className="flex justify-between items-start gap-3">
+                                            <div>
+                                                <div className="font-bold dark:text-white">{a.title}</div>
+                                                <div className="text-xs text-gray-500">{a.date} • {a.type}</div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => handleEdit(a)} className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-900">編集</button>
+                                                <button onClick={() => handleDelete(a.id)} className="px-3 py-1 rounded bg-red-600 text-white">削除</button>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: a.html }} />
+                                    </div>
+                                ))}
+                                {articles.length === 0 && <div className="text-gray-500">記事がありません。新規作成してください。</div>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
     <section id="join" className="py-24 px-4 relative overflow-hidden animate-fade-in-scale">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 items-center relative z-10">
@@ -2228,7 +2421,8 @@ export default function App() {
           {!searchTerm && page === 'terms' && <TermsPage L={L} />}
           {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
           {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
-          {!searchTerm && ['home', 'news', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join'].includes(page) === false && <NotFoundPage L={L} navigate={handleNavigate} />}
+          {!searchTerm && page === 'admin' && <AdminPage L={L} />}
+          {!searchTerm && ['home', 'news', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) === false && <NotFoundPage L={L} navigate={handleNavigate} />}
       </main>
 
       {/* 4. Footer */}
