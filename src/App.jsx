@@ -852,7 +852,7 @@ export const Navbar = ({
                       
                       {/* Nav Links */}
                       <div className="flex items-center gap-1 bg-white/10 dark:bg-black/20 backdrop-blur-md p-1.5 rounded-full border border-white/20 dark:border-white/10 shadow-sm">
-                        {['home', 'news', 'forum', 'commands', 'guide', 'map'].map((key) => {
+                        {['home', 'articles', 'news', 'commands', 'guide', 'map'].map((key) => {
                           if (key === 'map') {
                             return (
                               <a
@@ -924,7 +924,7 @@ export const Navbar = ({
                         <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
                       </div>
-                      {['home', 'news', 'forum', 'guide', 'commands', 'map'].map((key) => {
+                      {['home', 'articles', 'news', 'guide', 'commands', 'map'].map((key) => {
                           if (key === 'map') {
                             return (
                               <a
@@ -955,8 +955,8 @@ export const Navbar = ({
                               >
                                   <span className="flex items-center gap-3">
                                       {key === 'home' && <Home size={18} className="opacity-70" />}
+                                      {key === 'articles' && <FileText size={18} className="opacity-70" />}
                                       {key === 'news' && <Bell size={18} className="opacity-70" />}
-                                      {key === 'articles' && <ArticlesPage size={18} className="opacity-70" />}
                                       {key === 'guide' && <BookOpen size={18} className="opacity-70" />}
                                       {key === 'commands' && <Terminal size={18} className="opacity-70" />}
                                       {L.nav[key]}
@@ -1422,21 +1422,30 @@ export const ArticlesPage = ({ L, db, navigate }) => {
         <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
             <h2 className="text-4xl font-black mb-6 dark:text-white">{L.nav.articles}</h2>
             <div className="space-y-6">
-                {articles.map(a => (
+                {articles.map(a => {
+                    // Extract first 2 lines of text from HTML
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(a.html || a.content || '', 'text/html');
+                    const text = doc.body.innerText;
+                    const lines = text.split('\n').filter(l => l.trim());
+                    const preview = lines.slice(0, 2).join('\n');
+                    
+                    return (
                     <div key={a.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex justify-between items-start">
-                            <div>
+                        <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1">
                                 <h3 className="font-bold text-xl dark:text-white">{a.title}</h3>
-                                <div className="text-xs text-gray-500">{a.date} • {a.type}</div>
+                                <div className="text-xs text-gray-500 mb-3">{a.date} • {a.type}</div>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{preview}</div>
                             </div>
                             <div>
-                                <button onClick={() => { window.location.hash = `/articles/${a.id}`; }} className="px-3 py-2 rounded bg-purple-600 text-white">続きを読む</button>
+                                <button onClick={() => { window.location.hash = `/articles/${a.id}`; }} className="px-4 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap transition-colors">続きを読む</button>
                             </div>
                         </div>
-                        <div className="mt-4 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: a.html || (a.content || '') }} />
                     </div>
-                ))}
-                {articles.length === 0 && <div className="text-gray-500">記事がありません。</div>}
+                    );
+                })}
+                {articles.length === 0 && <div className="text-gray-500 text-center py-8">記事がありません。</div>}
             </div>
         </div>
     );
@@ -1987,7 +1996,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         {serverStatus.loading ? L.status.loading : serverStatus.online ? L.status.online(serverStatus.players) : L.status.offline}
                     </div>
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700 tracking-tight">
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700 tracking-tight">
                         {L.home.hero_title.split('\n')[0]}<br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-yellow-300 animate-pulse">{L.home.hero_title.split('\n')[1]}</span>
                     </h1>
