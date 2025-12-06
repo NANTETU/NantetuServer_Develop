@@ -39,6 +39,7 @@ const LANGUAGES = {
             join: "参加方法",
             guide: "ガイド",
             commands: "コマンド",
+            articles: "記事",
             news: "お知らせ",
             forum: "フォーラム",
         },
@@ -1014,8 +1015,9 @@ export const Footer = ({ L, navigate }) => (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16 text-sm font-bold text-left max-w-5xl mx-auto border-b border-gray-800 pb-12">
                     <div>
                         <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><Map size={14} /> {L.footer.sitemap}</h4>
-                        <ul className="space-y-4">
+                            <ul className="space-y-4">
                             <li><button onClick={() => navigate('home')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.home}</button></li>
+                            <li><button onClick={() => navigate('articles')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.articles}</button></li>
                             <li><button onClick={() => navigate('news')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.news}</button></li>
                             <li><button onClick={() => navigate('join')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.join}</button></li>
                         </ul>
@@ -1395,6 +1397,91 @@ export const NotFoundPage = ({ L, navigate }) => (
     </div>
 );
 
+export const ArticlesPage = ({ L, db, navigate }) => {
+    const [articles, setArticles] = useState([]);
+    useEffect(() => {
+        let unsub = null;
+        if (db) {
+            try {
+                const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'));
+                unsub = onSnapshot(q, snap => {
+                    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setArticles(items);
+                });
+            } catch (e) { console.error('articles fetch error', e); }
+        } else {
+            try {
+                const local = JSON.parse(localStorage.getItem('admin_articles_v1') || '[]');
+                setArticles(local.map(a => ({ id: a.id, ...a })));
+            } catch { setArticles([]); }
+        }
+        return () => { if (unsub) unsub(); };
+    }, [db]);
+
+    return (
+        <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
+            <h2 className="text-4xl font-black mb-6 dark:text-white">{L.nav.articles}</h2>
+            <div className="space-y-6">
+                {articles.map(a => (
+                    <div key={a.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h3 className="font-bold text-xl dark:text-white">{a.title}</h3>
+                                <div className="text-xs text-gray-500">{a.date} • {a.type}</div>
+                            </div>
+                            <div>
+                                <button onClick={() => { window.location.hash = `/articles/${a.id}`; }} className="px-3 py-2 rounded bg-purple-600 text-white">続きを読む</button>
+                            </div>
+                        </div>
+                        <div className="mt-4 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: a.html || (a.content || '') }} />
+                    </div>
+                ))}
+                {articles.length === 0 && <div className="text-gray-500">記事がありません。</div>}
+            </div>
+        </div>
+    );
+};
+
+export const ArticleDetail = ({ L, id, db, navigate }) => {
+    const [article, setArticle] = useState(null);
+    useEffect(() => {
+        let unsub = null;
+        if (db) {
+            try {
+                const docRef = collection(db, 'articles');
+                // Firestore doc id may be string; get by query
+                const q = query(collection(db, 'articles'));
+                unsub = onSnapshot(q, snap => {
+                    const found = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(x => x.id === id || String(x.id) === String(id) || String(x.id) === String(Number(id)));
+                    setArticle(found || null);
+                });
+            } catch (e) { console.error('article detail fetch error', e); }
+        } else {
+            try {
+                const local = JSON.parse(localStorage.getItem('admin_articles_v1') || '[]');
+                const found = local.find(a => String(a.id) === String(id));
+                setArticle(found || null);
+            } catch { setArticle(null); }
+        }
+        return () => { if (unsub) unsub(); };
+    }, [db, id]);
+
+    if (!article) return (
+        <div className="max-w-4xl mx-auto py-24 px-4 text-center">記事が見つかりません。</div>
+    );
+
+    return (
+        <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
+            <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
+            <div className="text-sm text-gray-500 mb-6">{article.date} • {article.type}</div>
+            <div className="prose bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: article.html || article.content || '' }} />
+            <div className="mt-6">
+                <button onClick={() => navigate('articles')} className="px-4 py-2 rounded border">一覧に戻る</button>
+            </div>
+        </div>
+    );
+};
+
 export const PrivacyPage = ({ L }) => {
     const title = L.privacy?.title || "プライバシーポリシー";
     const subtitle = L.privacy?.subtitle || "個人情報の取り扱いについて";
@@ -1446,7 +1533,7 @@ export const PrivacyPage = ({ L }) => {
 // Admin: Markdown記事作成GUI
 // 管理者向けのシンプルなエディタ。画像はローカルファイルをBase64として埋め込み可能。
 // 永続化はローカルストレージ(`admin_articles_v1`)を使用します。運用時はここをFirestoreやSheetsへの書き込みに置き換えてください。
-export const AdminPage = ({ L }) => {
+export const AdminPage = ({ L, db, user, showToast }) => {
     const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem('admin_logged_in'));
     const [keyInput, setKeyInput] = useState('');
     const [warningAck, setWarningAck] = useState(false);
@@ -1529,16 +1616,41 @@ export const AdminPage = ({ L }) => {
         setTitle(''); setDate(new Date().toISOString().slice(0,10)); setType('info'); setMd(''); setEditingId(null);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!title.trim()) { alert('タイトルを入力してください'); return; }
         const id = editingId || Date.now();
         const obj = { id, title: title.trim(), date, type, md, html: simpleRenderMarkdown(md) };
-        setArticles(prev => {
-            const others = prev.filter(a => a.id !== id);
-            return [obj, ...others];
-        });
+
+        // If Firestore is available, save to collection 'articles'
+        if (db) {
+            try {
+                await addDoc(collection(db, 'articles'), {
+                    title: obj.title,
+                    date: obj.date,
+                    type: obj.type,
+                    md: obj.md,
+                    html: obj.html,
+                    author: user?.uid || 'admin',
+                    createdAt: serverTimestamp()
+                });
+                if (showToast) showToast('Firestore に保存しました');
+            } catch (e) {
+                console.error('Firestore save failed', e);
+                alert('Firestoreへの保存に失敗しました。ローカルに保存します。');
+                setArticles(prev => {
+                    const others = prev.filter(a => a.id !== id);
+                    return [obj, ...others];
+                });
+            }
+        } else {
+            setArticles(prev => {
+                const others = prev.filter(a => a.id !== id);
+                return [obj, ...others];
+            });
+            if (showToast) showToast('ローカルに保存しました');
+        }
+
         clearForm();
-        alert('保存しました (ローカルストレージ)');
     };
 
     const handleEdit = (a) => {
@@ -2415,13 +2527,20 @@ export default function App() {
               />
           )}
           {!searchTerm && page === 'news' && <NewsPage L={L} newsData={newsData} />}
+          {!searchTerm && page === 'articles' && <ArticlesPage L={L} db={db} navigate={handleNavigate} />}
+          {!searchTerm && page.startsWith && page.startsWith('articles/') && (
+              (() => {
+                  const id = page.split('/')[1];
+                  return <ArticleDetail L={L} id={id} db={db} navigate={handleNavigate} />;
+              })()
+          )}
           {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
           {!searchTerm && page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
           {!searchTerm && page === 'commands' && <CommandsPage L={L} />}
           {!searchTerm && page === 'terms' && <TermsPage L={L} />}
           {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
           {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
-          {!searchTerm && page === 'admin' && <AdminPage L={L} />}
+          {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} showToast={showToast} />}
           {!searchTerm && ['home', 'news', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) === false && <NotFoundPage L={L} navigate={handleNavigate} />}
       </main>
 
