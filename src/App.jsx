@@ -30,6 +30,23 @@ const firebaseConfig = {
   appId: "1:971397700888:web:3d3b25a0762faad23e926d"
 };
 
+const formatCorrectedDate = (dateString) => {
+    // スプレッドシートからの形式 (例: "2025/12/03 22:44:25") をそのまま Dateオブジェクトに渡す
+    const d = new Date(dateString);
+
+    // Dateオブジェクトが有効な日付を生成できなかった場合、元の文字列をそのまま返す
+    if (isNaN(d.getTime())) {
+        return dateString;
+    }
+
+    // 月を 0-11 から 1-12 に修正 (+1)
+    const correctMonth = d.getMonth() + 1;
+    const correctDay = d.getDate();
+
+    // 表示形式を YYYY.MM.DD に整形して返す（時間情報は省略）
+    return `${d.getFullYear()}.${String(correctMonth).padStart(2, '0')}.${String(correctDay).padStart(2, '0')}`;
+};
+
 const handleGeminiCall = useCallback(async (userPrompt) => {
     const apiEndpoint = '/api/generate'; 
 
@@ -789,7 +806,7 @@ export const NewsItem = ({ item, L }) => {
               <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider w-fit border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50'}`}>
                 {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
               </span>
-              <span className="text-gray-400 text-sm font-bold flex items-center gap-1.5"><Clock size={14} /> {item.date}</span>
+              <span className="text-gray-400 text-sm font-bold flex items-center gap-1.5"><Clock size={14} /> {formatCorrectedDate(item.date)}</span>
             </div>
             <div className="text-gray-300 group-hover:text-purple-500 transition-colors self-end md:self-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-full">
                 {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -2111,9 +2128,8 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
           ))}
         </>
       )}
-    </div>
+    </div>          
   );
-};
 
 export const JoinPage = ({ L, serverStatus, handleCopy, navigate }) => (
     <div className="pt-24"><JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} /></div>
