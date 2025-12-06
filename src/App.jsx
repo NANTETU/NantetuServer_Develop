@@ -47,32 +47,6 @@ const formatCorrectedDate = (dateString) => {
     return `${d.getFullYear()}.${String(correctMonth).padStart(2, '0')}.${String(correctDay).padStart(2, '0')}`;
 };
 
-const handleGeminiCall = useCallback(async (userPrompt) => {
-    const apiEndpoint = '/api/generate'; 
-
-    try {
-        const response = await fetch(apiEndpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ prompt: userPrompt }), 
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        console.log("Gemini Result:", data.result);
-        return data.result;
-
-    } catch (error) {
-        console.error("API Call Error:", error);
-    }
-}, []);
-
 const LANGUAGES = {
     ja: {
         lang_code: "ja",
@@ -1173,7 +1147,7 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
         - Discordに参加推奨
         `;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2404,6 +2378,32 @@ export default function App() {
   const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
   const L = LANGUAGES[currentLang];
+
+  const handleGeminiCall = useCallback(async (userPrompt) => {
+    const apiEndpoint = '/api/generate'; 
+
+    try {
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt: userPrompt }), 
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        console.log("Gemini Result:", data.result);
+        return data.result;
+
+    } catch (error) {
+        console.error("API Call Error:", error);
+    }
+}, []);
 
   // --- Initialize Firebase ---
   useEffect(() => {
