@@ -8,11 +8,8 @@ import {
     Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
-<<<<<<< HEAD
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
 import { doc, deleteDoc } from 'firebase/firestore'
-=======
->>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
 
 // ==========================================
@@ -23,10 +20,6 @@ const SPREADSHEET_ID = '1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU';
 const SHEET_GID = '566365801';
 const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
-
-<<<<<<< HEAD
-=======
-
 const apiKey = ""; 
 const ADMIN_KEY = "mv(wP|tn#MR9";
 
@@ -40,7 +33,6 @@ const firebaseConfig = {
   appId: "1:971397700888:web:3d3b25a0762faad23e926d"
 };
 
-<<<<<<< HEAD
 const handleGeminiCall = useCallback(async (userPrompt) => {
     const apiEndpoint = '/api/generate'; 
 
