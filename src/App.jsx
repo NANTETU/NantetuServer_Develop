@@ -1996,7 +1996,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         {serverStatus.loading ? L.status.loading : serverStatus.online ? L.status.online(serverStatus.players) : L.status.offline}
                     </div>
-                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700 tracking-tight">
+                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700 tracking-tight">
                         {L.home.hero_title.split('\n')[0]}<br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-yellow-300 animate-pulse">{L.home.hero_title.split('\n')[1]}</span>
                     </h1>
@@ -2550,7 +2550,7 @@ export default function App() {
           {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
           {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
           {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} showToast={showToast} />}
-          {!searchTerm && ['home', 'news', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) === false && <NotFoundPage L={L} navigate={handleNavigate} />}
+          {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && <NotFoundPage L={L} navigate={handleNavigate} />}
       </main>
 
       {/* 4. Footer */}
