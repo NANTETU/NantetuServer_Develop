@@ -1493,13 +1493,13 @@ export const NotFoundPage = ({ L, navigate }) => (
     </div>
 );
 
-export const ArticlesPage = ({ L, db, navigate }) => {
+export const ArticlesPage = ({ L, db, appId, navigate }) => {
     const [articles, setArticles] = useState([]);
     useEffect(() => {
         let unsub = null;
         if (db) {
             try {
-                const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'));
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'articles'), orderBy('createdAt', 'desc'));
                 unsub = onSnapshot(q, snap => {
                     const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     setArticles(items);
@@ -1547,15 +1547,15 @@ export const ArticlesPage = ({ L, db, navigate }) => {
     );
 };
 
-export const ArticleDetail = ({ L, id, db, navigate }) => {
+export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     const [article, setArticle] = useState(null);
     useEffect(() => {
         let unsub = null;
         if (db) {
             try {
-                const docRef = collection(db, 'articles');
+                const docRef = collection(db, 'artifacts', appId, 'public', 'data', 'articles');
                 // Firestore doc id may be string; get by query
-                const q = query(collection(db, 'articles'));
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'articles'));
                 unsub = onSnapshot(q, snap => {
                     const found = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(x => x.id === id || String(x.id) === String(id) || String(x.id) === String(Number(id)));
                     setArticle(found || null);
@@ -1639,7 +1639,7 @@ export const PrivacyPage = ({ L }) => {
 // 管理者向けのシンプルなエディタ。画像はローカルファイルをBase64として埋め込み可能。
 // Firestoreを使用して記事データを永続化します
 // =====================
-export const AdminPage = ({ L, user, db, showToast }) => {
+export const AdminPage = ({ L, user, db, appId, showToast }) => {
     const [loggedIn, setLoggedIn] = useState(false);
     const [keyInput, setKeyInput] = useState('');
     const [warningAck, setWarningAck] = useState(false);
@@ -1660,7 +1660,7 @@ export const AdminPage = ({ L, user, db, showToast }) => {
             return;
         }
 
-        const articlesRef = collection(db, 'articles');
+        const articlesRef = collection(db, 'artifacts', appId, 'public', 'data', 'articles');
         // 記事の閲覧ページ（Admin以外も見れるページ）で同じロジックを使えば公開されます。
         const q = query(articlesRef, orderBy('createdAt', 'desc'));
 
@@ -1790,7 +1790,7 @@ export const AdminPage = ({ L, user, db, showToast }) => {
         if (db) {
             try {
                 // ドキュメントIDを自動生成で新規追加します
-                const docRef = await addDoc(collection(db, 'articles'), {
+                const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'articles'), {
                     title: obj.title,
                     date: obj.date,
                     type: obj.type,
@@ -1835,7 +1835,7 @@ export const AdminPage = ({ L, user, db, showToast }) => {
 
         // 1. Firestoreから削除
         try {
-            await deleteDoc(doc(db, 'articles', id));
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'articles', id));
 
             // 2. 成功した場合のみローカルステートを更新
             setArticles(prev => prev.filter(a => a.id !== id));
@@ -2765,11 +2765,11 @@ export default function App() {
                         return <NewsDetail L={L} id={id} newsData={newsData} navigate={handleNavigate} />;
                     })()
                 )}
-                {!searchTerm && page === 'articles' && <ArticlesPage L={L} db={db} navigate={handleNavigate} />}
+                {!searchTerm && page === 'articles' && <ArticlesPage L={L} db={db} appId={appId} navigate={handleNavigate} />}
                 {!searchTerm && page.startsWith && page.startsWith('articles/') && (
                     (() => {
                         const id = page.split('/')[1];
-                        return <ArticleDetail L={L} id={id} db={db} navigate={handleNavigate} />;
+                        return <ArticleDetail L={L} id={id} db={db} appId={appId} navigate={handleNavigate} />;
                     })()
                 )}
                 {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
@@ -2778,7 +2778,7 @@ export default function App() {
                 {!searchTerm && page === 'terms' && <TermsPage L={L} />}
                 {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
                 {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
-                {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} showToast={showToast} />}
+                {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} appId={appId} showToast={showToast} />}
                 {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && <NotFoundPage L={L} navigate={handleNavigate} />}
             </main>
 
