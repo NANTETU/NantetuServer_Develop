@@ -828,7 +828,7 @@ export const Navbar = ({
         >
               <nav className={`transition-all duration-500 relative z-20 ${
                   scrolledToTop && !isMenuOpen ? 'bg-transparent py-4' : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm py-0'
-              }`}>
+              }`} role="navigation" aria-label="メインナビゲーション">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="flex justify-between items-center h-16">
                     {/* Left: Logo */}
@@ -1085,6 +1085,13 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
     setIsLoading(true);
     
     try {
+        // Check API Key availability
+        if (!apiKey || apiKey.trim() === '') {
+            setChatHistory(prev => [...prev, { role: 'model', text: 'APIキーが設定されていません。管理者に連絡してください。' }]);
+            setIsLoading(false);
+            return;
+        }
+
         const systemPrompt = `
         あなたは「なんてつサーバー」の公式AIアシスタントです。
         以下の情報を元に、ユーザーの質問に親切に答えてください。
@@ -1482,7 +1489,7 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
 
             <div className="lg:w-1/2 w-full">
                 <div className="relative aspect-video lg:aspect-auto lg:h-[600px] overflow-hidden group rounded-[2.5rem] shadow-2xl transform rotate-1 hover:rotate-0 transition-all duration-700 border-4 border-white dark:border-gray-800">
-                    <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/join_info.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                    <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/join_info.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" loading="lazy" />
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent flex flex-col justify-end p-10">
                         <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                             <p className="text-white font-black text-3xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
@@ -1612,13 +1619,19 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
     const QUIZ_DATA = L.quiz_data;
     const latestNews = newsData && newsData.length > 0 ? newsData.slice(0, 3) : L.news.default_data;
 
-    // Contact Form Logic
+    // Contact Form Logic (Enhanced with validation)
     const handleContactSubmit = async (e) => {
         e.preventDefault();
         const form = e.target;
-        const name = form.name.value;
-        const email = form.email.value;
-        const message = form.message.value;
+        const name = form.name.value?.trim();
+        const email = form.email.value?.trim();
+        const message = form.message.value?.trim();
+
+        // Validation
+        if (!name || !email || !message) {
+            showToast('すべてのフィールドに入力してください');
+            return;
+        }
 
         if (!DISCORD_WEBHOOK_URL) {
             showToast(L.lang_name === "日本語" ? "Webhookが設定されていません (デモ)" : "Webhook not configured (Demo)");
@@ -1634,9 +1647,9 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         title: "📬 新しいお問い合わせ",
                         color: 0x8b5cf6, // Purple
                         fields: [
-                            { name: "お名前 (MCID)", value: name, inline: true },
-                            { name: "連絡先", value: email, inline: true },
-                            { name: "メッセージ", value: message }
+                            { name: "お名前 (MCID)", value: name || "未入力", inline: true },
+                            { name: "連絡先", value: email || "未入力", inline: true },
+                            { name: "メッセージ", value: message || "未入力" }
                         ],
                         timestamp: new Date().toISOString()
                     }]
@@ -1647,11 +1660,11 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                 showToast(L.lang_name === "日本語" ? "送信しました！" : "Message Sent!");
                 form.reset();
             } else {
-                throw new Error("Failed");
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
         } catch (error) {
-            console.error(error);
-            showToast(L.lang_name === "日本語" ? "送信に失敗しました" : "Failed to send");
+            console.error('Contact form error:', error);
+            showToast(L.lang_name === "日本語" ? "送信に失敗しました。後ほど再度お試しください。" : "Failed to send. Please try again later.");
         }
     };
 
@@ -1753,7 +1766,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         </div>
                          <div className="order-1 md:order-2 relative">
                              <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-all duration-700">
-                                <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" alt="Server Community" className="w-full h-full object-cover" />
+                                <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" alt="Server Community" className="w-full h-full object-cover" loading="lazy" />
                              </div>
                              <div className="absolute inset-0 bg-purple-600 rounded-[3rem] rotate-6 opacity-20 scale-95 blur-2xl -z-10"></div>
                         </div>
@@ -2025,8 +2038,8 @@ export default function App() {
       return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Enhanced Navigation with Loading Bar & Routing
-  const handleNavigate = (targetPage, sectionId = null) => {
+  // Enhanced Navigation with Loading Bar & Routing (Memoized)
+  const handleNavigate = useCallback((targetPage, sectionId = null) => {
       if (targetPage === page && !sectionId) return;
 
       setIsPageLoading(true);
@@ -2045,7 +2058,7 @@ export default function App() {
              }, 100);
           }
       }, 400);
-  };
+  }, [page]);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -2092,26 +2105,42 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const showToast = (msg) => {
+  const showToast = useCallback((msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
-  };
+  }, []);
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
-  };
+  const handleCopy = useCallback((text) => {
+    navigator.clipboard.writeText(text).catch(err => {
+      console.error('Failed to copy:', err);
+      showToast('コピーに失敗しました');
+    });
+  }, [showToast]);
 
-  const scrollToSection = (id) => {
+  const scrollToSection = useCallback((id) => {
       const element = document.getElementById(id);
       if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
       }
-  };
+  }, []);
 
-  // Handle Quiz
-  const handleQuizAnswer = (selectedOption) => {
+  const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
+  
+  // Debounced search (500ms delay)
+  const searchTimeoutRef = useRef(null);
+  const handleSearch = useCallback((e) => {
+    const value = e.target.value;
+    clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchTerm(value);
+    }, 500);
+  }, []);
+
+  // Handle Quiz (Memoized with error handling)
+  const handleQuizAnswer = useCallback((selectedOption) => {
+    try {
       const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
-      setQuizState({ ...quizState, showResult: true, isCorrect });
+      setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
 
       setTimeout(() => {
           if (isCorrect) {
@@ -2134,10 +2163,11 @@ export default function App() {
                });
           }
       }, 1500);
-  };
-
-  const resetQuiz = () => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null });
-  const handleSearch = (e) => setSearchTerm(e.target.value);
+    } catch (err) {
+      console.error('Quiz error:', err);
+      showToast('クイズ処理中にエラーが発生しました');
+    }
+  }, [L.quiz_data, quizState.current, showToast]);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
