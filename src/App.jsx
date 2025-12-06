@@ -7,7 +7,7 @@ import {
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
     Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot
 } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
+import { initializeApp } from "firebase/app";
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
@@ -20,10 +20,18 @@ const SHEET_GID = '566365801';
 const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
 
-// Gemini API Key (Runtime provided)
+
 const apiKey = ""; 
-// 管理者用キー (空文字列だと未設定扱いになります。運用時はここに管理キーを設定してください)
 const ADMIN_KEY = "mv(wP|tn#MR9";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
+  authDomain: "nantetu-29158.firebaseapp.com",
+  projectId: "nantetu-29158",
+  storageBucket: "nantetu-29158.firebasestorage.app",
+  messagingSenderId: "971397700888",
+  appId: "1:971397700888:web:3d3b25a0762faad23e926d"
+};
 
 const LANGUAGES = {
     ja: {
@@ -1541,16 +1549,39 @@ export const PrivacyPage = ({ L }) => {
 // =====================
 // Admin: Markdown記事作成GUI
 // 管理者向けのシンプルなエディタ。画像はローカルファイルをBase64として埋め込み可能。
-// 永続化はローカルストレージ(`admin_articles_v1`)を使用します。運用時はここをFirestoreやSheetsへの書き込みに置き換えてください。
-export const AdminPage = ({ L, db, user, showToast }) => {
-    const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem('admin_logged_in'));
+// Firestoreを使用して記事データを永続化します
+export const AdminPage = ({ L, user, showToast }) => {
+    const [loggedIn, setLoggedIn] = useState(false);
     const [keyInput, setKeyInput] = useState('');
     const [warningAck, setWarningAck] = useState(false);
+    const [articles, setArticles] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const [articles, setArticles] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('admin_articles_v1') || '[]'); }
-        catch { return []; }
-    });
+    // Firestoreから記事データを読み込み
+    useEffect(() => {
+        if (!db || !loggedIn) {
+            setLoading(false);
+            return;
+        }
+        
+        const articlesRef = collection(db, 'articles');
+        const q = query(articlesRef, orderBy('createdAt', 'desc'));
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const articlesData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setArticles(articlesData);
+            setLoading(false);
+        }, (error) => {
+            console.error('Failed to load articles:', error);
+            showToast?.(L?.errorLoadingArticles || 'Failed to load articles', 'error');
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [db, loggedIn, L, showToast]);
 
     const [title, setTitle] = useState('');
     const [date, setDate] = useState(() => new Date().toISOString().slice(0,10));
