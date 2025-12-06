@@ -5,11 +5,12 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
     Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck
+    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot
 } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
+import { doc, deleteDoc } from 'firebase/firestore'
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 // ==========================================
 // 1. Configuration & Data (languages.js)
@@ -19,6 +20,41 @@ const SPREADSHEET_ID = '1v-AIHan-UcPqSOJoG2mtNKI8ZvkL-UJV9JbewnoUXdU';
 const SHEET_GID = '566365801';
 const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
+  authDomain: "nantetu-29158.firebaseapp.com",
+  projectId: "nantetu-29158",
+  storageBucket: "nantetu-29158.firebasestorage.app",
+  messagingSenderId: "971397700888",
+  appId: "1:971397700888:web:3d3b25a0762faad23e926d"
+};
+
+const handleGeminiCall = useCallback(async (userPrompt) => {
+    const apiEndpoint = '/api/generate'; 
+
+    try {
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt: userPrompt }), 
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        console.log("Gemini Result:", data.result);
+        return data.result;
+
+    } catch (error) {
+        console.error("API Call Error:", error);
+    }
+}, []);
 
 const LANGUAGES = {
     ja: {
@@ -34,6 +70,7 @@ const LANGUAGES = {
             join: "参加方法",
             guide: "ガイド",
             commands: "コマンド",
+            articles: "記事",
             news: "お知らせ",
             forum: "フォーラム",
         },
@@ -825,7 +862,7 @@ export const Navbar = ({
         >
               <nav className={`transition-all duration-500 relative z-20 ${
                   scrolledToTop && !isMenuOpen ? 'bg-transparent py-4' : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm py-0'
-              }`}>
+              }`} role="navigation" aria-label="メインナビゲーション">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="flex justify-between items-center h-16">
                     {/* Left: Logo */}
@@ -846,7 +883,23 @@ export const Navbar = ({
                       
                       {/* Nav Links */}
                       <div className="flex items-center gap-1 bg-white/10 dark:bg-black/20 backdrop-blur-md p-1.5 rounded-full border border-white/20 dark:border-white/10 shadow-sm">
-                        {['home', 'news', 'forum', 'commands', 'guide'].map((key) => (
+                        {['home', 'articles', 'news', 'commands', 'guide', 'map'].map((key) => {
+                          if (key === 'map') {
+                            return (
+                              <a
+                                key={key}
+                                href="http://map.nantetu123.f5.si:35854/"
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`relative px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1 ${
+                                  scrolledToTop && !darkMode ? 'text-white hover:bg-white/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                }`}
+                              >
+                                <Map size={16} /> マップ
+                              </a>
+                            );
+                          }
+                          return (
                             <button 
                               key={key}
                               onClick={() => navigate(key)} 
@@ -861,17 +914,9 @@ export const Navbar = ({
                                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse"></span>
                               )}
                             </button>
-                        ))}
+                          );
+                        })}
                       </div>
-
-                      {/* Join Button (Primary CTA) */}
-                      <button 
-                        onClick={() => navigate('join')}
-                        className="bg-white text-purple-600 hover:bg-purple-50 font-bold py-2.5 px-6 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center gap-2 ring-2 ring-purple-600/10 active:scale-95"
-                      >
-                          <Gamepad2 size={18} />
-                          {L.nav.join}
-                      </button>
 
                       {/* Search & Toggles & Server Status */}
                       <div className={`flex items-center gap-3 border-l pl-6 ${scrolledToTop && !darkMode ? 'border-white/20' : 'border-gray-200 dark:border-gray-700'}`}>
@@ -910,33 +955,59 @@ export const Navbar = ({
                         <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
                       </div>
-                      {['home', 'news', 'forum', 'guide', 'commands'].map((key) => (
-                          <button 
+                      {['home', 'articles', 'news', 'guide', 'commands', 'map'].map((key) => {
+                          if (key === 'map') {
+                            return (
+                              <a
                                 key={key}
-                                onClick={() => { navigate(key); setIsMenuOpen(false); }} 
-                                className={`relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 ${
-                                    page === key 
-                                    ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400' 
-                                    : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                                }`}
-                            >
+                                href="http://map.nantetu123.f5.si:35854/"
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={() => setIsMenuOpen(false)}
+                                className="relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                              >
                                 <span className="flex items-center gap-3">
-                                    {key === 'home' && <Home size={18} className="opacity-70" />}
-                                    {key === 'news' && <Bell size={18} className="opacity-70" />}
-                                    {key === 'forum' && <MessageSquare size={18} className="opacity-70" />}
-                                    {key === 'guide' && <BookOpen size={18} className="opacity-70" />}
-                                    {key === 'commands' && <Terminal size={18} className="opacity-70" />}
-                                    {L.nav[key]}
+                                  <Map size={18} className="opacity-70" />
+                                  マップ
                                 </span>
-                                {key === 'news' && hasUnreadNews && (
-                                    <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">NEW</span>
-                                )}
-                          </button>
-                      ))}
+                                <ExternalLink size={16} className="opacity-50" />
+                              </a>
+                            );
+                          }
+                          return (
+                            <button 
+                                  key={key}
+                                  onClick={() => { navigate(key); setIsMenuOpen(false); }} 
+                                  className={`relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 ${
+                                      page === key 
+                                      ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400' 
+                                      : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  }`}
+                              >
+                                  <span className="flex items-center gap-3">
+                                      {key === 'home' && <Home size={18} className="opacity-70" />}
+                                      {key === 'articles' && <FileText size={18} className="opacity-70" />}
+                                      {key === 'news' && <Bell size={18} className="opacity-70" />}
+                                      {key === 'guide' && <BookOpen size={18} className="opacity-70" />}
+                                      {key === 'commands' && <Terminal size={18} className="opacity-70" />}
+                                      {L.nav[key]}
+                                  </span>
+                                  {key === 'news' && hasUnreadNews && (
+                                      <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">NEW</span>
+                                  )}
+                              </button>
+                          );
+                        })}
                       
-                      <button onClick={() => { navigate('join'); setIsMenuOpen(false); }} className="w-full mt-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                          <Gamepad2 size={20} /> {L.nav.join}
-                      </button>
+                      <a 
+                        href="http://map.nantetu123.f5.si:35854/"
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="w-full mt-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                      >
+                          <Map size={20} /> マップ
+                      </a>
 
                       <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
                       <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="block w-full text-left px-4 py-4 text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-xl">
@@ -975,8 +1046,9 @@ export const Footer = ({ L, navigate }) => (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16 text-sm font-bold text-left max-w-5xl mx-auto border-b border-gray-800 pb-12">
                     <div>
                         <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><Map size={14} /> {L.footer.sitemap}</h4>
-                        <ul className="space-y-4">
+                            <ul className="space-y-4">
                             <li><button onClick={() => navigate('home')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.home}</button></li>
+                            <li><button onClick={() => navigate('articles')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.articles}</button></li>
                             <li><button onClick={() => navigate('news')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.news}</button></li>
                             <li><button onClick={() => navigate('join')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.nav.join}</button></li>
                         </ul>
@@ -1000,6 +1072,11 @@ export const Footer = ({ L, navigate }) => (
                          <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><ExternalLink size={14} /> Other</h4>
                          <ul className="space-y-4">
                              <li><button onClick={() => navigate('home', 'contact')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.footer.contact}</button></li>
+                             <li>
+                                <a href="http://map.nantetu123.f5.si:35854/" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
+                                    <Map size={16} className="text-green-500 opacity-80 group-hover:opacity-100" /> マップ
+                                </a>
+                             </li>
                              <li>
                                 <a href="https://www.youtube.com/@なんてつ" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
                                     <Youtube size={16} className="text-red-500 opacity-80 group-hover:opacity-100" /> YouTube
@@ -1035,17 +1112,69 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    
     const userMessage = { role: 'user', text: input.trim() };
     const newHistory = [...chatHistory, userMessage];
     setChatHistory(newHistory);
     setInput('');
     setIsLoading(true);
     
-    // Mock Response
-    setTimeout(() => {
+    try {
+        // Check API Key availability
+        if (!apiKey || apiKey.trim() === '') {
+            setChatHistory(prev => [...prev, { role: 'model', text: 'APIキーが設定されていません。管理者に連絡してください。' }]);
+            setIsLoading(false);
+            return;
+        }
+
+        const systemPrompt = `
+        あなたは「なんてつサーバー」の公式AIアシスタントです。
+        以下の情報を元に、ユーザーの質問に親切に答えてください。
+        
+        【サーバー情報】
+        - 統合版(Bedrock)専用
+        - IP: ${L.server.ip}
+        - Port: ${L.server.port}
+        - 参加タグ: ${L.server.tag}
+        - 特徴: 土地保護あり、荒らし対策ログ完備、Discord連携、Java版のような機能(/tpa, /home等)
+        
+        【ルール】
+        - 荒らし、窃盗、チート禁止（永久BAN）
+        - 差別発言、ハラスメント禁止
+        - 他人の拠点から5マス以上離れて建築すること
+        
+        【コマンド】
+        - /tpa <プレイヤー>: テレポートリクエスト
+        - /sethome: ホーム設定
+        - /home: ホームへ移動
+        - /tty: 土地保護設定
+        
+        【初心者ガイド】
+        - スポーンしたら混雑していない場所へ移動
+        - 5ブロック離れて建築
+        - /ttyで土地保護
+        - Discordに参加推奨
+        `;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: input.trim() }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            })
+        });
+
+        const data = await response.json();
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "すみません、うまく答えられませんでした。";
+
+        setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
+    } catch (error) {
+        console.error("AI Error:", error);
+        setChatHistory(prev => [...prev, { role: 'model', text: "エラーが発生しました。時間を置いて再試行してください。" }]);
+    } finally {
         setIsLoading(false);
-        setChatHistory(prev => [...prev, { role: 'model', text: currentLang === 'ja' ? "申し訳ありません。現在AI機能はメンテナンス中です。" : "Sorry, AI feature is currently under maintenance." }]);
-    }, 1000);
+    }
   };
 
   const handleClear = () => setChatHistory([]);
@@ -1064,7 +1193,7 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
         <div ref={chatRef} className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-black/20">
           {chatHistory.length === 0 ? (
             <div className="text-center p-8 pt-20 text-gray-500 dark:text-gray-400 animate-fade-in-up">
-              <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={36} className="text-purple-500" /></div>
+              <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><Bot size={36} className="text-purple-500" /></div>
               <p className="font-bold text-lg mb-2">{L.footer.chat_subtitle}</p>
             </div>
           ) : (
@@ -1110,35 +1239,54 @@ export const NewsPage = ({ L, newsData }) => {
     );
 };
 
-export const ForumPage = ({ L, user }) => {
+export const ForumPage = ({ L, user, db, appId }) => {
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState('');
     const [name, setName] = useState('');
     const [isSending, setIsSending] = useState(false);
 
+    // Fetch posts from Firestore (Real)
     useEffect(() => {
-        if (!user) return;
-        // In a real app, this would use Firestore properly. For demo, we simulate with state if firestore fails
-        try {
-            // Note: DB is not globally available in this file structure unless passed as prop or context.
-            // Assuming 'db' is available via closure or context in a real app.
-            // For this single file, we skip the implementation details of DB fetch to avoid errors if config is missing.
-            setPosts([]); 
-        } catch (e) {
-            console.log("Firestore error:", e);
-        }
-    }, [user]);
+        if (!user || !db) return;
+
+        const q = query(
+            collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedPosts = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setPosts(loadedPosts);
+        }, (error) => {
+            console.error("Forum Error:", error);
+        });
+
+        return () => unsubscribe();
+    }, [user, db, appId]);
 
     const handlePost = async (e) => {
         e.preventDefault();
-        if (!newPost.trim()) return;
+        if (!newPost.trim() || !user) return;
         setIsSending(true);
-        // Simulate post for UI feedback
-        setTimeout(() => {
-             setPosts([{id: Date.now(), text: newPost, name: name.trim() || L.forum.anonymous, createdAt: {toDate: () => new Date()}}, ...posts]);
-             setNewPost('');
-             setIsSending(false);
-        }, 800);
+        
+        try {
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'), {
+                text: newPost,
+                name: name.trim() || L.forum.anonymous,
+                uid: user.uid,
+                createdAt: serverTimestamp()
+            });
+            setNewPost('');
+        } catch (error) {
+            console.error("Error posting:", error);
+            alert("投稿に失敗しました。");
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (
@@ -1162,7 +1310,7 @@ export const ForumPage = ({ L, user }) => {
                 </form>
             </div>
             <div className="space-y-6">
-                {posts.length === 0 ? <div className="text-center py-20 text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-dashed border-2 border-gray-200 dark:border-gray-700"><MessageSquare size={48} className="mx-auto mb-4 opacity-20" /><p>{L.forum.no_posts}</p></div> : posts.map(post => (<div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in-up hover:shadow-md transition-all"><div className="flex justify-between items-start mb-3"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-400 flex items-center justify-center text-white font-bold text-xs">{post.name.charAt(0)}</div><span className="font-bold text-purple-900 dark:text-purple-300">{post.name}</span></div><span className="text-xs text-gray-400 font-mono">{post.createdAt?.toDate().toLocaleString() || 'Just now'}</span></div><p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap pl-10 text-lg leading-relaxed">{post.text}</p></div>))}
+                {posts.length === 0 ? <div className="text-center py-20 text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-dashed border-2 border-gray-200 dark:border-gray-700"><MessageSquare size={48} className="mx-auto mb-4 opacity-20" /><p>{L.forum.no_posts}</p></div> : posts.map(post => (<div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in-up hover:shadow-md transition-all"><div className="flex justify-between items-start mb-3"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-400 flex items-center justify-center text-white font-bold text-xs">{post.name.charAt(0)}</div><span className="font-bold text-purple-900 dark:text-purple-300">{post.name}</span></div><span className="text-xs text-gray-400 font-mono">{post.createdAt?.toDate ? post.createdAt.toDate().toLocaleString() : 'Just now'}</span></div><p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap pl-10 text-lg leading-relaxed">{post.text}</p></div>))}
             </div>
         </div>
     );
@@ -1264,6 +1412,116 @@ export const TermsPage = ({ L }) => {
     );
 };
 
+export const NotFoundPage = ({ L, navigate }) => (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 animate-fade-in-scale">
+        <div className="text-center">
+            <div className="mb-8 text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">404</div>
+            <h2 className="text-4xl font-black mb-4 dark:text-white">{L.footer.not_found_title}</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-10 max-w-md mx-auto">{L.footer.not_found_desc}</p>
+            <button 
+                onClick={() => navigate('home')} 
+                className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-all hover:-translate-y-1"
+            >
+                <Home size={20} /> {L.footer.not_found_btn}
+            </button>
+        </div>
+    </div>
+);
+
+export const ArticlesPage = ({ L, db, navigate }) => {
+    const [articles, setArticles] = useState([]);
+    useEffect(() => {
+        let unsub = null;
+        if (db) {
+            try {
+                const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'));
+                unsub = onSnapshot(q, snap => {
+                    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setArticles(items);
+                });
+            } catch (e) { console.error('articles fetch error', e); }
+        } else {
+            try {
+                const local = JSON.parse(localStorage.getItem('admin_articles_v1') || '[]');
+                setArticles(local.map(a => ({ id: a.id, ...a })));
+            } catch { setArticles([]); }
+        }
+        return () => { if (unsub) unsub(); };
+    }, [db]);
+
+    return (
+        <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
+            <h2 className="text-4xl font-black mb-6 dark:text-white">{L.nav.articles}</h2>
+            <div className="space-y-6">
+                {articles.map(a => {
+                    // Extract first 2 lines of text from HTML
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(a.html || a.content || '', 'text/html');
+                    const text = doc.body.innerText;
+                    const lines = text.split('\n').filter(l => l.trim());
+                    const preview = lines.slice(0, 2).join('\n');
+                    
+                    return (
+                    <div key={a.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1">
+                                <h3 className="font-bold text-xl dark:text-white">{a.title}</h3>
+                                <div className="text-xs text-gray-500 mb-3">{a.date} • {a.type}</div>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{preview}</div>
+                            </div>
+                            <div>
+                                <button onClick={() => { window.location.hash = `/articles/${a.id}`; }} className="px-4 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap transition-colors">続きを読む</button>
+                            </div>
+                        </div>
+                    </div>
+                    );
+                })}
+                {articles.length === 0 && <div className="text-gray-500 text-center py-8">記事がありません。</div>}
+            </div>
+        </div>
+    );
+};
+
+export const ArticleDetail = ({ L, id, db, navigate }) => {
+    const [article, setArticle] = useState(null);
+    useEffect(() => {
+        let unsub = null;
+        if (db) {
+            try {
+                const docRef = collection(db, 'articles');
+                // Firestore doc id may be string; get by query
+                const q = query(collection(db, 'articles'));
+                unsub = onSnapshot(q, snap => {
+                    const found = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(x => x.id === id || String(x.id) === String(id) || String(x.id) === String(Number(id)));
+                    setArticle(found || null);
+                });
+            } catch (e) { console.error('article detail fetch error', e); }
+        } else {
+            try {
+                const local = JSON.parse(localStorage.getItem('admin_articles_v1') || '[]');
+                const found = local.find(a => String(a.id) === String(id));
+                setArticle(found || null);
+            } catch { setArticle(null); }
+        }
+        return () => { if (unsub) unsub(); };
+    }, [db, id]);
+
+    if (!article) return (
+        <div className="max-w-4xl mx-auto py-24 px-4 text-center">記事が見つかりません。</div>
+    );
+
+    return (
+        <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
+            <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
+            <div className="text-sm text-gray-500 mb-6">{article.date} • {article.type}</div>
+            <div className="prose bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: article.html || article.content || '' }} />
+            <div className="mt-6">
+                <button onClick={() => navigate('articles')} className="px-4 py-2 rounded border">一覧に戻る</button>
+            </div>
+        </div>
+    );
+};
+
 export const PrivacyPage = ({ L }) => {
     const title = L.privacy?.title || "プライバシーポリシー";
     const subtitle = L.privacy?.subtitle || "個人情報の取り扱いについて";
@@ -1307,6 +1565,300 @@ export const PrivacyPage = ({ L }) => {
                      <p className="text-gray-700 dark:text-gray-300">{L.privacy?.section3_content} <a href={`mailto:${L.privacy?.email}`} className="text-purple-500 underline font-bold">{L.privacy?.email}</a></p>
                 </div>
             </div>
+        </div>
+    );
+};
+
+// =====================
+// Admin: Markdown記事作成GUI
+// 管理者向けのシンプルなエディタ。画像はローカルファイルをBase64として埋め込み可能。
+// Firestoreを使用して記事データを永続化します
+// =====================
+export const AdminPage = ({ L, user, db, showToast }) => {
+    const [loggedIn, setLoggedIn] = useState(false);
+    const [keyInput, setKeyInput] = useState('');
+    const [warningAck, setWarningAck] = useState(false);
+    const [articles, setArticles] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // ログイン状態をLocalStorageから読み込み
+    useEffect(() => {
+        if (localStorage.getItem('admin_logged_in') === '1') {
+            setLoggedIn(true);
+        }
+    }, []);
+
+    // Firestoreから記事データを読み込み
+    useEffect(() => {
+        if (!db || !loggedIn) {
+            setLoading(false);
+            return;
+        }
+        
+        const articlesRef = collection(db, 'articles');
+        // 記事の閲覧ページ（Admin以外も見れるページ）で同じロジックを使えば公開されます。
+        const q = query(articlesRef, orderBy('createdAt', 'desc'));
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const articlesData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setArticles(articlesData);
+            setLoading(false);
+        }, (error) => {
+            console.error('Failed to load articles:', error);
+            showToast?.(L?.errorLoadingArticles || 'Failed to load articles', 'error');
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [db, loggedIn, L, showToast]);
+
+    const [title, setTitle] = useState('');
+    const [date, setDate] = useState(() => new Date().toISOString().slice(0,10));
+    const [type, setType] = useState('info');
+    const [md, setMd] = useState('');
+    const [editingId, setEditingId] = useState(null);
+    const fileRef = useRef(null);
+
+    useEffect(() => {
+        localStorage.setItem('admin_articles_v1', JSON.stringify(articles));
+    }, [articles]);
+
+    const simpleRenderMarkdown = useCallback((text) => {
+        if (!text) return '';
+        // escape
+        let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // code blocks
+        html = html.replace(/```([\s\S]*?)```/g, (m, code) => `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g,'&lt;')}</pre>`);
+        // headings
+        html = html.replace(/^###### (.*$)/gim,'<h6>$1</h6>');
+        html = html.replace(/^##### (.*$)/gim,'<h5>$1</h5>');
+        html = html.replace(/^#### (.*$)/gim,'<h4>$1</h4>');
+        html = html.replace(/^### (.*$)/gim,'<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gim,'<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gim,'<h1>$1</h1>');
+        // bold / italic
+        html = html.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g,'<em>$1</em>');
+        // images
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-md my-3" loading="lazy" />');
+        // links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-purple-600 dark:text-purple-400 underline">$1</a>');
+        // paragraphs / line breaks
+        html = html.replace(/\n/g, '<br/>');
+        return html;
+    }, []);
+
+const handleLogin = async () => {
+        // 🚨 サーバーレスAPIに認証処理を完全に移行するため、
+        // 古い ADMIN_KEY や warningAck に関するクライアント認証ロジックはすべて削除します。
+
+        if (!keyInput.trim()) {
+            alert('管理キーを入力してください。');
+            return;
+        }
+        
+        try {
+            // 1. サーバーレスAPIエンドポイントを呼び出す
+            const response = await fetch('/api/admin-login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                // ユーザー入力をサーバーに送信
+                body: JSON.stringify({ keyInput: keyInput }),
+            });
+
+            // 応答をJSONとして解析
+            const data = await response.json();
+
+            // 2. HTTPステータスが正常 (200) で、かつAPIが success: true を返した場合
+            if (response.ok && data.success) {
+                // 認証成功
+                localStorage.setItem('admin_logged_in','1');
+                setLoggedIn(true);
+                if (showToast) showToast('ログインに成功しました');
+            } else {
+                // 認証失敗 (401 Bad Request, keyInput間違い、またはサーバー設定エラー)
+                alert(data.message || '認証に失敗しました。');
+                console.error("Login failed:", data.message);
+            }
+        } catch (error) {
+            // ネットワークエラー、JSON解析エラーなど
+            console.error('API Call Error:', error);
+            alert('ログイン処理中にネットワークエラーが発生しました。');
+        }
+    };
+
+    // handleLogin関数の定義終わり
+
+    const handleLogout = () => {
+        localStorage.removeItem('admin_logged_in');
+        setLoggedIn(false);
+    };
+
+    const handleFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const dataUrl = reader.result;
+            setMd(prev => prev + `\n\n![${file.name}](${dataUrl})\n\n`);
+        };
+        reader.readAsDataURL(file);
+        // reset input
+        e.target.value = '';
+    };
+
+    const clearForm = () => {
+        setTitle(''); setDate(new Date().toISOString().slice(0,10)); setType('info'); setMd(''); setEditingId(null);
+    };
+
+    const handleSave = async () => {
+        if (!title.trim()) { alert('タイトルを入力してください'); return; }
+        const id = editingId || Date.now();
+        const obj = { id, title: title.trim(), date, type, md, html: simpleRenderMarkdown(md) };
+
+        // If Firestore is available, save to collection 'articles'
+        if (db) {
+            try {
+                // ドキュメントIDを自動生成で新規追加します
+                const docRef = await addDoc(collection(db, 'articles'), {
+                    title: obj.title,
+                    date: obj.date,
+                    type: obj.type,
+                    md: obj.md,
+                    html: obj.html,
+                    author: user?.uid || 'admin',
+                    createdAt: serverTimestamp()
+                });
+                if (showToast) showToast('Firestore に保存しました');
+
+                // 編集IDがある場合、Firestoreには既存のドキュメントを更新する処理が必要ですが、
+                // このコードでは新規追加（addDoc）しか実装されていません。
+                // 既存のドキュメントを更新するには `doc` と `updateDoc` が必要です。
+                // しかし、元のコードのロジックを維持するため、ここでは addDoc のみを残します。
+
+            } catch (e) {
+                console.error('Firestore save failed', e);
+                alert('Firestoreへの保存に失敗しました。ローカルに保存します。');
+                setArticles(prev => {
+                    const others = prev.filter(a => a.id !== id);
+                    return [obj, ...others];
+                });
+            }
+        } else {
+            setArticles(prev => {
+                const others = prev.filter(a => a.id !== id);
+                return [obj, ...others];
+            });
+            if (showToast) showToast('ローカルに保存しました');
+        }
+
+        clearForm();
+    };
+
+    const handleEdit = (a) => {
+        setEditingId(a.id); setTitle(a.title); setDate(a.date); setType(a.type); setMd(a.md || '');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+const handleDelete = async (id) => {
+    if (!confirm('この記事を削除してよいですか？')) return;
+    
+    // 1. Firestoreから削除
+    try {
+        await deleteDoc(doc(db, 'articles', id));
+        
+        // 2. 成功した場合のみローカルステートを更新
+        setArticles(prev => prev.filter(a => a.id !== id));
+        if (showToast) showToast('Firestore から記事を削除しました');
+    } catch (e) {
+        console.error("Firestore deletion failed:", e);
+        alert('Firestoreからの削除に失敗しました。');
+    }
+};
+
+    const handleExport = async () => {
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(articles, null, 2));
+            alert('記事データをクリップボードにコピーしました（JSON）');
+        } catch (e) { console.error(e); alert('クリップボードへのコピーに失敗しました'); }
+    };
+
+    return (
+        <div className="max-w-6xl mx-auto py-16 px-4 animate-fade-in-scale">
+            <div className="mb-8 flex items-center justify-between">
+                <h2 className="text-3xl font-black dark:text-white">管理者ダッシュボード — 記事作成</h2>
+                {!loggedIn ? (
+                    <div className="flex items-center gap-3">
+                        <input value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder="管理キー" className="px-3 py-2 rounded border" />
+                        <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={warningAck} onChange={e => setWarningAck(e.target.checked)} /> 管理キー未設定を了承</label>
+                        <button onClick={handleLogin} className="bg-purple-600 text-white px-4 py-2 rounded">ログイン</button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3">
+                        <button onClick={handleExport} className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800">エクスポート</button>
+                        <button onClick={handleLogout} className="px-3 py-2 rounded bg-red-600 text-white">ログアウト</button>
+                    </div>
+                )}
+            </div>
+
+            {!loggedIn ? (
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md">
+                    <p className="text-gray-600 dark:text-gray-300">管理者ログインが必要です。運用時はコード内の <code>ADMIN_KEY</code> を設定し、ここに入力してください。現在はローカル保存のみ対応しています。</p>
+                </div>
+            ) : (
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm space-y-4">
+                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="タイトル" className="w-full px-4 py-3 rounded border" />
+                            <div className="flex gap-3">
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded border" />
+                                <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded border">
+                                    <option value="info">お知らせ</option>
+                                    <option value="maintenance">メンテナンス</option>
+                                </select>
+                                <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="px-3 py-2 rounded border" />
+                            </div>
+                            <textarea value={md} onChange={e => setMd(e.target.value)} rows={12} placeholder="Markdownで記事を記述してください。画像はアップロードで埋め込まれます。" className="w-full px-4 py-3 rounded border font-mono"></textarea>
+                            <div className="flex gap-3">
+                                <button onClick={handleSave} className="bg-purple-600 text-white px-4 py-2 rounded">保存</button>
+                                <button onClick={clearForm} className="px-4 py-2 rounded border">クリア</button>
+                            </div>
+                        </div>
+                        <div className="mt-6">
+                            <h3 className="font-bold mb-3 dark:text-white">プレビュー</h3>
+                            <div className="prose max-w-full bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: simpleRenderMarkdown(md) }} />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+                            <h3 className="font-bold mb-4 dark:text-white">保存済み記事 ({articles.length})</h3>
+                            <div className="space-y-4 max-h-[60vh] overflow-auto pr-2">
+                                {articles.map(a => (
+                                    <div key={a.id} className="p-3 rounded border border-gray-100 dark:border-gray-700">
+                                        <div className="flex justify-between items-start gap-3">
+                                            <div>
+                                                <div className="font-bold dark:text-white">{a.title}</div>
+                                                <div className="text-xs text-gray-500">{a.date} • {a.type}</div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => handleEdit(a)} className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-900">編集</button>
+                                                <button onClick={() => handleDelete(a.id)} className="px-3 py-1 rounded bg-red-600 text-white">削除</button>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: a.html }} />
+                                    </div>
+                                ))}
+                                {articles.length === 0 && <div className="text-gray-500">記事がありません。新規作成してください。</div>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -1360,7 +1912,7 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
 
             <div className="lg:w-1/2 w-full">
                 <div className="relative aspect-video lg:aspect-auto lg:h-[600px] overflow-hidden group rounded-[2.5rem] shadow-2xl transform rotate-1 hover:rotate-0 transition-all duration-700 border-4 border-white dark:border-gray-800">
-                    <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/join_info.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                    <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/join_info.png?raw=true" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" loading="lazy" />
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent flex flex-col justify-end p-10">
                         <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                             <p className="text-white font-black text-3xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
@@ -1372,6 +1924,110 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
         </div>
     </section>
 );
+
+export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
+  const searchResults = [];
+  const lowerSearchTerm = searchTerm.toLowerCase();
+  
+  // Search in news
+  const newsData = L.news.default_data || [];
+  newsData.forEach(item => {
+    if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `news-${item.id}`,
+        category: L.footer.search_category_news,
+        title: item.title,
+        description: item.content.substring(0, 100) + '...',
+        action: () => navigate('news')
+      });
+    }
+  });
+  
+  // Search in commands
+  const commands = L.commands.sections || [];
+  commands.forEach(section => {
+    section.commands?.forEach(cmd => {
+      if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
+        searchResults.push({
+          id: `cmd-${cmd.cmd}`,
+          category: L.footer.search_category_command,
+          title: cmd.cmd,
+          description: cmd.desc,
+          action: () => navigate('commands')
+        });
+      }
+    });
+  });
+  
+  // Search in FAQ
+  const faqs = L.guide.faq_data || [];
+  faqs.forEach((faq, i) => {
+    if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `faq-${i}`,
+        category: L.footer.search_category_guide,
+        title: faq.q,
+        description: faq.a.substring(0, 100) + '...',
+        action: () => navigate('guide')
+      });
+    }
+  });
+  
+  // Search in terms and privacy
+  const termsChapters = L.terms?.chapters || [];
+  termsChapters.forEach((chapter, idx) => {
+    if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `terms-${idx}`,
+        category: L.footer.search_category_terms,
+        title: chapter.title,
+        description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
+        action: () => navigate('terms')
+      });
+    }
+  });
+  
+  if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
+    searchResults.push({
+      id: 'privacy',
+      category: L.footer.search_category_privacy,
+      title: L.privacy.title,
+      description: L.privacy.intro?.substring(0, 100) || '',
+      action: () => navigate('privacy')
+    });
+  }
+  
+  return (
+    <div className="space-y-6">
+      {searchResults.length === 0 ? (
+        <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+          <Search size={48} className="mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-500 dark:text-gray-400 text-lg">{L.footer.search_no_results(searchTerm)}</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-6">{L.footer.search_found(searchResults.length)}</p>
+          {searchResults.map((result) => (
+            <div 
+              key={result.id}
+              onClick={result.action}
+              className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
+            >
+              <div className="flex justify-between items-start gap-4 mb-3">
+                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
+              </div>
+              <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
+              <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                {L.footer.search_result_btn} <ArrowRight size={14} />
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+};
 
 export const JoinPage = ({ L, serverStatus, handleCopy, navigate }) => (
     <div className="pt-24"><JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} /></div>
@@ -1386,13 +2042,19 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
     const QUIZ_DATA = L.quiz_data;
     const latestNews = newsData && newsData.length > 0 ? newsData.slice(0, 3) : L.news.default_data;
 
-    // Contact Form Logic
+    // Contact Form Logic (Enhanced with validation)
     const handleContactSubmit = async (e) => {
         e.preventDefault();
         const form = e.target;
-        const name = form.name.value;
-        const email = form.email.value;
-        const message = form.message.value;
+        const name = form.name.value?.trim();
+        const email = form.email.value?.trim();
+        const message = form.message.value?.trim();
+
+        // Validation
+        if (!name || !email || !message) {
+            showToast('すべてのフィールドに入力してください');
+            return;
+        }
 
         if (!DISCORD_WEBHOOK_URL) {
             showToast(L.lang_name === "日本語" ? "Webhookが設定されていません (デモ)" : "Webhook not configured (Demo)");
@@ -1408,9 +2070,9 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         title: "📬 新しいお問い合わせ",
                         color: 0x8b5cf6, // Purple
                         fields: [
-                            { name: "お名前 (MCID)", value: name, inline: true },
-                            { name: "連絡先", value: email, inline: true },
-                            { name: "メッセージ", value: message }
+                            { name: "お名前 (MCID)", value: name || "未入力", inline: true },
+                            { name: "連絡先", value: email || "未入力", inline: true },
+                            { name: "メッセージ", value: message || "未入力" }
                         ],
                         timestamp: new Date().toISOString()
                     }]
@@ -1421,11 +2083,11 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                 showToast(L.lang_name === "日本語" ? "送信しました！" : "Message Sent!");
                 form.reset();
             } else {
-                throw new Error("Failed");
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
         } catch (error) {
-            console.error(error);
-            showToast(L.lang_name === "日本語" ? "送信に失敗しました" : "Failed to send");
+            console.error('Contact form error:', error);
+            showToast(L.lang_name === "日本語" ? "送信に失敗しました。後ほど再度お試しください。" : "Failed to send. Please try again later.");
         }
     };
 
@@ -1443,7 +2105,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         {serverStatus.loading ? L.status.loading : serverStatus.online ? L.status.online(serverStatus.players) : L.status.offline}
                     </div>
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700 tracking-tight">
+                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl whitespace-pre-line animate-fade-in-up transition-all duration-700 tracking-tight">
                         {L.home.hero_title.split('\n')[0]}<br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-yellow-300 animate-pulse">{L.home.hero_title.split('\n')[1]}</span>
                     </h1>
@@ -1527,7 +2189,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         </div>
                          <div className="order-1 md:order-2 relative">
                              <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-all duration-700">
-                                <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" alt="Server Community" className="w-full h-full object-cover" />
+                                <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" alt="Server Community" className="w-full h-full object-cover" loading="lazy" />
                              </div>
                              <div className="absolute inset-0 bg-purple-600 rounded-[3rem] rotate-6 opacity-20 scale-95 blur-2xl -z-10"></div>
                         </div>
@@ -1709,17 +2371,22 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState('ja');
   const [searchTerm, setSearchTerm] = useState('');
+  
   // Loading states
   const [isAppLoading, setIsAppLoading] = useState(true); // Splash screen
   const [isPageLoading, setIsPageLoading] = useState(false); // Navigation bar
   
   const [newsData, setNewsData] = useState([]);
   const [hasUnreadNews, setHasUnreadNews] = useState(false);
+  
+  // Firebase State
   const [user, setUser] = useState(null);
+  const [db, setDb] = useState(null);
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
   const L = LANGUAGES[currentLang];
 
-  // --- Initialize Firebase (Safe Mode for Preview) ---
+  // --- Initialize Firebase ---
   useEffect(() => {
     const initAuth = async () => {
         try {
@@ -1727,7 +2394,8 @@ export default function App() {
             if(firebaseConfig) {
                  const app = initializeApp(firebaseConfig);
                  const auth = getAuth(app);
-                 const db = getFirestore(app);
+                 const firestore = getFirestore(app);
+                 setDb(firestore);
                  
                  if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -1741,15 +2409,36 @@ export default function App() {
             }
         } catch (e) {
             console.error("Firebase init failed:", e);
-            setUser({ uid: 'demo-user-fallback' });
         }
     };
     initAuth();
   }, []);
 
+  // Enhanced dark mode management with localStorage persistence
   useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode !== null) {
+      const isDark = JSON.parse(savedDarkMode);
+      setDarkMode(isDark);
+      if (isDark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    } else {
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(prefersDark);
+      if (prefersDark) document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
+    }
   }, [darkMode]);
 
   // Initial Splash Screen Timer
@@ -1757,6 +2446,42 @@ export default function App() {
     const timer = setTimeout(() => setIsAppLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  // --- Router Logic (Hash Router) ---
+  useEffect(() => {
+      const handleHashChange = () => {
+          const hash = window.location.hash.replace('#/', '') || 'home';
+          setPage(hash);
+      };
+
+      // Set initial page from hash
+      handleHashChange();
+
+      window.addEventListener('hashchange', handleHashChange);
+      return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Enhanced Navigation with Loading Bar & Routing (Memoized)
+  const handleNavigate = useCallback((targetPage, sectionId = null) => {
+      if (targetPage === page && !sectionId) return;
+
+      setIsPageLoading(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Update URL hash
+      window.location.hash = `/${targetPage}`;
+      
+      // Simulate loading delay for smooth feel
+      setTimeout(() => {
+          setIsPageLoading(false);
+          if (sectionId) {
+             setTimeout(() => {
+                 const element = document.getElementById(sectionId);
+                 if (element) element.scrollIntoView({ behavior: 'smooth' });
+             }, 100);
+          }
+      }, 400);
+  }, [page]);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -1777,9 +2502,23 @@ export default function App() {
                 // Google Sheets API returns JSONP, strip function call
                 const json = JSON.parse(text.substring(text.indexOf('(') + 1, text.lastIndexOf(')')));
                 if (json.table?.rows) {
-                    const parsed = json.table.rows.map((row, i) => ({
-                        id: i + 100, date: row.c[0]?.v || '', title: row.c[1]?.v || '', content: row.c[2]?.v || '', url: row.c[3]?.v, type: row.c[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info'
-                    })).filter(i => i.title);
+                    const parsed = json.table.rows.map((row, i) => {
+                        let dateStr = row.c[0]?.v || '';
+                        // Handle numeric date format from Google Sheets (serial format)
+                        if (typeof dateStr === 'number') {
+                          const excelEpoch = new Date(1899, 11, 30);
+                          const dateObj = new Date(excelEpoch.getTime() + dateStr * 86400000);
+                          dateStr = dateObj.toLocaleDateString('ja-JP').replace(/\\//g, '.');
+                        }
+                        return {
+                            id: i + 100,
+                            date: dateStr,
+                            title: row.c[1]?.v || '',
+                            content: row.c[2]?.v || '',
+                            url: row.c[3]?.v,
+                            type: row.c[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info'
+                        };
+                    }).filter(i => i.title);
                     setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
                 }
             }
@@ -1789,50 +2528,42 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const showToast = (msg) => {
+  const showToast = useCallback((msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
-  };
+  }, []);
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-       // CopyBox handles its own visual feedback, so we don't strictly need a toast here,
-       // but keeping it for global consistency if needed.
-       // showToast(L.footer.copy_success); 
+  const handleCopy = useCallback((text) => {
+    navigator.clipboard.writeText(text).catch(err => {
+      console.error('Failed to copy:', err);
+      showToast('コピーに失敗しました');
     });
-  };
+  }, [showToast]);
 
-  // Enhanced Navigation with Loading Bar
-  const handleNavigate = (targetPage, sectionId = null) => {
-      if (targetPage === page && !sectionId) return;
-
-      setIsPageLoading(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      // Simulate loading delay for smooth feel
-      setTimeout(() => {
-          setPage(targetPage);
-          setIsPageLoading(false);
-          if (sectionId) {
-             setTimeout(() => {
-                 const element = document.getElementById(sectionId);
-                 if (element) element.scrollIntoView({ behavior: 'smooth' });
-             }, 100);
-          }
-      }, 400);
-  };
-
-  const scrollToSection = (id) => {
+  const scrollToSection = useCallback((id) => {
       const element = document.getElementById(id);
       if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
       }
-  };
+  }, []);
 
-  // Handle Quiz
-  const handleQuizAnswer = (selectedOption) => {
+  const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
+  
+  // Debounced search (500ms delay)
+  const searchTimeoutRef = useRef(null);
+  const handleSearch = useCallback((e) => {
+    const value = e.target.value;
+    clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchTerm(value);
+    }, 500);
+  }, []);
+
+  // Handle Quiz (Memoized with error handling)
+  const handleQuizAnswer = useCallback((selectedOption) => {
+    try {
       const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
-      setQuizState({ ...quizState, showResult: true, isCorrect });
+      setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
 
       setTimeout(() => {
           if (isCorrect) {
@@ -1855,14 +2586,11 @@ export default function App() {
                });
           }
       }, 1500);
-  };
-
-  const resetQuiz = () => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null });
-  const handleSearch = (e) => setSearchTerm(e.target.value);
-
-  // Filter content based on search
-  // (Simplified for demo: primarily just filtering news or showing simple results)
-  // In a full app, this would route to a Search Results page or filter the current view dynamically.
+    } catch (err) {
+      console.error('Quiz error:', err);
+      showToast('クイズ処理中にエラーが発生しました');
+    }
+  }, [L.quiz_data, quizState.current, showToast]);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
@@ -1892,7 +2620,13 @@ export default function App() {
 
       {/* 3. Main Content Router */}
       <main className="relative z-10 min-h-screen">
-          {page === 'home' && (
+          {searchTerm && (
+              <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
+                <h2 className="text-4xl font-black mb-8 dark:text-white">{L.footer.search_results_title}</h2>
+                <SearchResultsPage L={L} searchTerm={searchTerm} navigate={handleNavigate} />
+              </div>
+          )}
+          {!searchTerm && page === 'home' && (
               <HomePage 
                 L={L} 
                 serverStatus={serverStatus} 
@@ -1910,12 +2644,22 @@ export default function App() {
                 hasUnreadNews={hasUnreadNews}
               />
           )}
-          {page === 'news' && <NewsPage L={L} newsData={newsData} />}
-          {page === 'forum' && <ForumPage L={L} user={user} />}
-          {page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
-          {page === 'commands' && <CommandsPage L={L} />}
-          {page === 'terms' && <TermsPage L={L} />}
-          {page === 'privacy' && <PrivacyPage L={L} />}
+          {!searchTerm && page === 'news' && <NewsPage L={L} newsData={newsData} />}
+          {!searchTerm && page === 'articles' && <ArticlesPage L={L} db={db} navigate={handleNavigate} />}
+          {!searchTerm && page.startsWith && page.startsWith('articles/') && (
+              (() => {
+                  const id = page.split('/')[1];
+                  return <ArticleDetail L={L} id={id} db={db} navigate={handleNavigate} />;
+              })()
+          )}
+          {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
+          {!searchTerm && page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
+          {!searchTerm && page === 'commands' && <CommandsPage L={L} />}
+          {!searchTerm && page === 'terms' && <TermsPage L={L} />}
+          {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
+          {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
+          {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} showToast={showToast} />}
+          {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && <NotFoundPage L={L} navigate={handleNavigate} />}
       </main>
 
       {/* 4. Footer */}
