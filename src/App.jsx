@@ -1786,6 +1786,13 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         const id = editingId || Date.now();
         const obj = { id, title: title.trim(), date, type, md, html: simpleRenderMarkdown(md) };
 
+        // Check document size (approximate)
+        const size = new Blob([JSON.stringify(obj)]).size;
+        if (size > 1000000) {
+            alert(`記事のデータサイズが大きすぎます (${Math.round(size / 1024)} KB)。\n画像が多すぎるか大きすぎます。画像を圧縮するか、外部URLを使用してください。\n(Firestoreの上限は 1MB です)`);
+            return;
+        }
+
         // If Firestore is available, save to collection 'articles'
         if (db) {
             try {
@@ -1808,11 +1815,21 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
 
             } catch (e) {
                 console.error('Firestore save failed', e);
-                alert('Firestoreへの保存に失敗しました。ローカルに保存します。');
+                // Specific handling for permission errors or size errors (though size is caught above, race conditions or other overhead might trigger it)
+                if (e.code === 'permission-denied') {
+                    alert('Firestoreへの保存権限がありません。\nFirebaseコンソールで Authentication (匿名認証) が有効になっているか、セキュリティルールが正しいか確認してください。');
+                } else if (e.code === 'resource-exhausted') {
+                    alert('Firestoreのクォータ制限を超過しました。');
+                } else {
+                    alert(`Firestoreへの保存に失敗しました。\n(${e.message})`);
+                }
+
+                // Fallback to local
                 setArticles(prev => {
                     const others = prev.filter(a => a.id !== id);
                     return [obj, ...others];
                 });
+                if (showToast) showToast('ローカルに保存しました (Firestore失敗)');
             }
         } else {
             setArticles(prev => {
