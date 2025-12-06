@@ -125,6 +125,9 @@ const LANGUAGES = {
             subtitle: "サーバーの最新情報やメンテナンス情報をお届けします。",
             maintenance: "メンテナンス",
             info: "インフォメーション",
+            explanation: "解説",
+            recruitment: "募集",
+            other: "その他",
             fetch_error: "お知らせの読み込みに失敗しました。",
             link_text: "リンクを開く",
             default_data: [
@@ -416,6 +419,9 @@ const LANGUAGES = {
             subtitle: "The latest server updates and maintenance information.",
             maintenance: "Maintenance",
             info: "Information",
+            explanation: "Explanation",
+            recruitment: "Recruitment",
+            other: "Other",
             fetch_error: "Failed to load announcements.",
             link_text: "Open Link",
             default_data: [
@@ -769,6 +775,17 @@ export const AccordionItem = ({ title, content, isOpen, toggle }) => (
 export const NewsItem = ({ item, L }) => {
     const [isOpen, setIsOpen] = useState(false);
 
+    const getTypeConfig = (type) => {
+        switch (type) {
+            case 'maintenance': return { label: L.news.maintenance, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
+            case 'explanation': return { label: L.news.explanation, style: 'bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50' };
+            case 'recruitment': return { label: L.news.recruitment, style: 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50' };
+            case 'other': return { label: L.news.other, style: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' };
+            default: return { label: L.news.info, style: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50' };
+        }
+    };
+    const config = getTypeConfig(item.type);
+
     return (
         <div
             onClick={() => setIsOpen(!isOpen)}
@@ -777,8 +794,8 @@ export const NewsItem = ({ item, L }) => {
             <div className="p-6 md:p-8">
                 <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4 justify-between">
                     <div className="flex flex-col md:flex-row md:items-center gap-3">
-                        <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider w-fit border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50'}`}>
-                            {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
+                        <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider w-fit border ${config.style}`}>
+                            {config.label}
                         </span>
                         <span className="text-gray-400 text-sm font-bold flex items-center gap-1.5"><Clock size={14} /> {formatCorrectedDate(item.date)}</span>
                     </div>
@@ -1246,6 +1263,17 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
 
     if (!item) return <div className="max-w-4xl mx-auto py-32 px-4 text-center">お知らせが見つかりません。</div>;
 
+    const getTypeConfig = (type) => {
+        switch (type) {
+            case 'maintenance': return { label: L.news.maintenance, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
+            case 'explanation': return { label: L.news.explanation, style: 'bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50' };
+            case 'recruitment': return { label: L.news.recruitment, style: 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50' };
+            case 'other': return { label: L.news.other, style: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' };
+            default: return { label: L.news.info, style: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50' };
+        }
+    };
+    const config = getTypeConfig(item.type);
+
     return (
         <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
             <div className="mb-8">
@@ -1255,8 +1283,8 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100 dark:border-gray-700">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-gray-100 dark:border-gray-700 pb-6">
-                    <span className={`px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider w-fit border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50'}`}>
-                        {item.type === 'maintenance' ? L.news.maintenance : L.news.info}
+                    <span className={`px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider w-fit border ${config.style}`}>
+                        {config.label}
                     </span>
                     <span className="text-gray-400 font-bold flex items-center gap-2"><Clock size={16} /> {formatCorrectedDate(item.date)}</span>
                 </div>
@@ -2595,7 +2623,14 @@ export default function App() {
                                 title: row.c[1]?.v || '',
                                 content: row.c[2]?.v || '',
                                 url: row.c[3]?.v,
-                                type: row.c[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info'
+                                type: (() => {
+                                    const c = row.c[2]?.v || '';
+                                    if (c.includes('メンテナンス')) return 'maintenance';
+                                    if (c.includes('解説')) return 'explanation';
+                                    if (c.includes('募集')) return 'recruitment';
+                                    if (c.includes('その他')) return 'other';
+                                    return 'info';
+                                })()
                             };
                         }).filter(i => i.title);
                         setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
