@@ -956,7 +956,7 @@ export const Navbar = ({
                                   <span className="flex items-center gap-3">
                                       {key === 'home' && <Home size={18} className="opacity-70" />}
                                       {key === 'news' && <Bell size={18} className="opacity-70" />}
-                                      {key === 'forum' && <MessageSquare size={18} className="opacity-70" />}
+                                      {key === 'articles' && <ArticlesPage size={18} className="opacity-70" />}
                                       {key === 'guide' && <BookOpen size={18} className="opacity-70" />}
                                       {key === 'commands' && <Terminal size={18} className="opacity-70" />}
                                       {L.nav[key]}
