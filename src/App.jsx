@@ -2125,11 +2125,11 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                 {L.footer.search_result_btn} <ArrowRight size={14} />
               </div>
             </div>
-          ))}
-        </>
-      )}
-    </div>          
-  );
+</>
+      )} // JSXの条件分岐の閉じ括弧
+    </div>          
+  ); // return の閉じ括弧
+};
 
 export const JoinPage = ({ L, serverStatus, handleCopy, navigate }) => (
     <div className="pt-24"><JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} /></div>
