@@ -849,7 +849,23 @@ export const Navbar = ({
                       
                       {/* Nav Links */}
                       <div className="flex items-center gap-1 bg-white/10 dark:bg-black/20 backdrop-blur-md p-1.5 rounded-full border border-white/20 dark:border-white/10 shadow-sm">
-                        {['home', 'news', 'forum', 'commands', 'guide'].map((key) => (
+                        {['home', 'news', 'forum', 'commands', 'guide', 'map'].map((key) => {
+                          if (key === 'map') {
+                            return (
+                              <a
+                                key={key}
+                                href="http://map.nantetu123.f5.si:35854/"
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`relative px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1 ${
+                                  scrolledToTop && !darkMode ? 'text-white hover:bg-white/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                }`}
+                              >
+                                <Map size={16} /> マップ
+                              </a>
+                            );
+                          }
+                          return (
                             <button 
                               key={key}
                               onClick={() => navigate(key)} 
@@ -864,17 +880,9 @@ export const Navbar = ({
                                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse"></span>
                               )}
                             </button>
-                        ))}
+                          );
+                        })}
                       </div>
-
-                      {/* Join Button (Primary CTA) */}
-                      <button 
-                        onClick={() => navigate('join')}
-                        className="bg-white text-purple-600 hover:bg-purple-50 font-bold py-2.5 px-6 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center gap-2 ring-2 ring-purple-600/10 active:scale-95"
-                      >
-                          <Gamepad2 size={18} />
-                          {L.nav.join}
-                      </button>
 
                       {/* Search & Toggles & Server Status */}
                       <div className={`flex items-center gap-3 border-l pl-6 ${scrolledToTop && !darkMode ? 'border-white/20' : 'border-gray-200 dark:border-gray-700'}`}>
@@ -913,33 +921,59 @@ export const Navbar = ({
                         <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
                       </div>
-                      {['home', 'news', 'forum', 'guide', 'commands'].map((key) => (
-                          <button 
+                      {['home', 'news', 'forum', 'guide', 'commands', 'map'].map((key) => {
+                          if (key === 'map') {
+                            return (
+                              <a
                                 key={key}
-                                onClick={() => { navigate(key); setIsMenuOpen(false); }} 
-                                className={`relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 ${
-                                    page === key 
-                                    ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400' 
-                                    : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                                }`}
-                            >
+                                href="http://map.nantetu123.f5.si:35854/"
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={() => setIsMenuOpen(false)}
+                                className="relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                              >
                                 <span className="flex items-center gap-3">
-                                    {key === 'home' && <Home size={18} className="opacity-70" />}
-                                    {key === 'news' && <Bell size={18} className="opacity-70" />}
-                                    {key === 'forum' && <MessageSquare size={18} className="opacity-70" />}
-                                    {key === 'guide' && <BookOpen size={18} className="opacity-70" />}
-                                    {key === 'commands' && <Terminal size={18} className="opacity-70" />}
-                                    {L.nav[key]}
+                                  <Map size={18} className="opacity-70" />
+                                  マップ
                                 </span>
-                                {key === 'news' && hasUnreadNews && (
-                                    <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">NEW</span>
-                                )}
-                          </button>
-                      ))}
+                                <ExternalLink size={16} className="opacity-50" />
+                              </a>
+                            );
+                          }
+                          return (
+                            <button 
+                                  key={key}
+                                  onClick={() => { navigate(key); setIsMenuOpen(false); }} 
+                                  className={`relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 ${
+                                      page === key 
+                                      ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400' 
+                                      : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  }`}
+                              >
+                                  <span className="flex items-center gap-3">
+                                      {key === 'home' && <Home size={18} className="opacity-70" />}
+                                      {key === 'news' && <Bell size={18} className="opacity-70" />}
+                                      {key === 'forum' && <MessageSquare size={18} className="opacity-70" />}
+                                      {key === 'guide' && <BookOpen size={18} className="opacity-70" />}
+                                      {key === 'commands' && <Terminal size={18} className="opacity-70" />}
+                                      {L.nav[key]}
+                                  </span>
+                                  {key === 'news' && hasUnreadNews && (
+                                      <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">NEW</span>
+                                  )}
+                              </button>
+                          );
+                        })}
                       
-                      <button onClick={() => { navigate('join'); setIsMenuOpen(false); }} className="w-full mt-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                          <Gamepad2 size={20} /> {L.nav.join}
-                      </button>
+                      <a 
+                        href="http://map.nantetu123.f5.si:35854/"
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="w-full mt-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                      >
+                          <Map size={20} /> マップ
+                      </a>
 
                       <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
                       <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="block w-full text-left px-4 py-4 text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-xl">
@@ -1003,6 +1037,11 @@ export const Footer = ({ L, navigate }) => (
                          <h4 className="text-white mb-6 uppercase tracking-widest text-xs opacity-50 flex items-center gap-2"><ExternalLink size={14} /> Other</h4>
                          <ul className="space-y-4">
                              <li><button onClick={() => navigate('home', 'contact')} className="hover:text-purple-400 transition-colors flex items-center gap-2 group"><span className="w-1 h-1 bg-gray-600 group-hover:bg-purple-500 rounded-full transition-colors"></span>{L.footer.contact}</button></li>
+                             <li>
+                                <a href="http://map.nantetu123.f5.si:35854/" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
+                                    <Map size={16} className="text-green-500 opacity-80 group-hover:opacity-100" /> マップ
+                                </a>
+                             </li>
                              <li>
                                 <a href="https://www.youtube.com/@なんてつ" target="_blank" rel="noreferrer" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
                                     <Youtube size={16} className="text-red-500 opacity-80 group-hover:opacity-100" /> YouTube
@@ -1331,6 +1370,22 @@ export const TermsPage = ({ L }) => {
     );
 };
 
+export const NotFoundPage = ({ L, navigate }) => (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 animate-fade-in-scale">
+        <div className="text-center">
+            <div className="mb-8 text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">404</div>
+            <h2 className="text-4xl font-black mb-4 dark:text-white">{L.footer.not_found_title}</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-10 max-w-md mx-auto">{L.footer.not_found_desc}</p>
+            <button 
+                onClick={() => navigate('home')} 
+                className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-all hover:-translate-y-1"
+            >
+                <Home size={20} /> {L.footer.not_found_btn}
+            </button>
+        </div>
+    </div>
+);
+
 export const PrivacyPage = ({ L }) => {
     const title = L.privacy?.title || "プライバシーポリシー";
     const subtitle = L.privacy?.subtitle || "個人情報の取り扱いについて";
@@ -1439,6 +1494,110 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
         </div>
     </section>
 );
+
+export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
+  const searchResults = [];
+  const lowerSearchTerm = searchTerm.toLowerCase();
+  
+  // Search in news
+  const newsData = L.news.default_data || [];
+  newsData.forEach(item => {
+    if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `news-${item.id}`,
+        category: L.footer.search_category_news,
+        title: item.title,
+        description: item.content.substring(0, 100) + '...',
+        action: () => navigate('news')
+      });
+    }
+  });
+  
+  // Search in commands
+  const commands = L.commands.sections || [];
+  commands.forEach(section => {
+    section.commands?.forEach(cmd => {
+      if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
+        searchResults.push({
+          id: `cmd-${cmd.cmd}`,
+          category: L.footer.search_category_command,
+          title: cmd.cmd,
+          description: cmd.desc,
+          action: () => navigate('commands')
+        });
+      }
+    });
+  });
+  
+  // Search in FAQ
+  const faqs = L.guide.faq_data || [];
+  faqs.forEach((faq, i) => {
+    if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `faq-${i}`,
+        category: L.footer.search_category_guide,
+        title: faq.q,
+        description: faq.a.substring(0, 100) + '...',
+        action: () => navigate('guide')
+      });
+    }
+  });
+  
+  // Search in terms and privacy
+  const termsChapters = L.terms?.chapters || [];
+  termsChapters.forEach((chapter, idx) => {
+    if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `terms-${idx}`,
+        category: L.footer.search_category_terms,
+        title: chapter.title,
+        description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
+        action: () => navigate('terms')
+      });
+    }
+  });
+  
+  if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
+    searchResults.push({
+      id: 'privacy',
+      category: L.footer.search_category_privacy,
+      title: L.privacy.title,
+      description: L.privacy.intro?.substring(0, 100) || '',
+      action: () => navigate('privacy')
+    });
+  }
+  
+  return (
+    <div className="space-y-6">
+      {searchResults.length === 0 ? (
+        <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+          <Search size={48} className="mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-500 dark:text-gray-400 text-lg">{L.footer.search_no_results(searchTerm)}</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-6">{L.footer.search_found(searchResults.length)}</p>
+          {searchResults.map((result) => (
+            <div 
+              key={result.id}
+              onClick={result.action}
+              className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
+            >
+              <div className="flex justify-between items-start gap-4 mb-3">
+                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
+              </div>
+              <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
+              <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                {L.footer.search_result_btn} <ArrowRight size={14} />
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+};
 
 export const JoinPage = ({ L, serverStatus, handleCopy, navigate }) => (
     <div className="pt-24"><JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} /></div>
@@ -1819,9 +1978,31 @@ export default function App() {
     initAuth();
   }, []);
 
+  // Enhanced dark mode management with localStorage persistence
   useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode !== null) {
+      const isDark = JSON.parse(savedDarkMode);
+      setDarkMode(isDark);
+      if (isDark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    } else {
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(prefersDark);
+      if (prefersDark) document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
+    }
   }, [darkMode]);
 
   // Initial Splash Screen Timer
@@ -1885,9 +2066,23 @@ export default function App() {
                 // Google Sheets API returns JSONP, strip function call
                 const json = JSON.parse(text.substring(text.indexOf('(') + 1, text.lastIndexOf(')')));
                 if (json.table?.rows) {
-                    const parsed = json.table.rows.map((row, i) => ({
-                        id: i + 100, date: row.c[0]?.v || '', title: row.c[1]?.v || '', content: row.c[2]?.v || '', url: row.c[3]?.v, type: row.c[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info'
-                    })).filter(i => i.title);
+                    const parsed = json.table.rows.map((row, i) => {
+                        let dateStr = row.c[0]?.v || '';
+                        // Handle numeric date format from Google Sheets (serial format)
+                        if (typeof dateStr === 'number') {
+                          const excelEpoch = new Date(1899, 11, 30);
+                          const dateObj = new Date(excelEpoch.getTime() + dateStr * 86400000);
+                          dateStr = dateObj.toLocaleDateString('ja-JP').replace(/\\//g, '.');
+                        }
+                        return {
+                            id: i + 100,
+                            date: dateStr,
+                            title: row.c[1]?.v || '',
+                            content: row.c[2]?.v || '',
+                            url: row.c[3]?.v,
+                            type: row.c[2]?.v?.includes('メンテナンス') ? 'maintenance' : 'info'
+                        };
+                    }).filter(i => i.title);
                     setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
                 }
             }
@@ -1972,7 +2167,13 @@ export default function App() {
 
       {/* 3. Main Content Router */}
       <main className="relative z-10 min-h-screen">
-          {page === 'home' && (
+          {searchTerm && (
+              <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
+                <h2 className="text-4xl font-black mb-8 dark:text-white">{L.footer.search_results_title}</h2>
+                <SearchResultsPage L={L} searchTerm={searchTerm} navigate={handleNavigate} />
+              </div>
+          )}
+          {!searchTerm && page === 'home' && (
               <HomePage 
                 L={L} 
                 serverStatus={serverStatus} 
@@ -1990,12 +2191,14 @@ export default function App() {
                 hasUnreadNews={hasUnreadNews}
               />
           )}
-          {page === 'news' && <NewsPage L={L} newsData={newsData} />}
-          {page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
-          {page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
-          {page === 'commands' && <CommandsPage L={L} />}
-          {page === 'terms' && <TermsPage L={L} />}
-          {page === 'privacy' && <PrivacyPage L={L} />}
+          {!searchTerm && page === 'news' && <NewsPage L={L} newsData={newsData} />}
+          {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
+          {!searchTerm && page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
+          {!searchTerm && page === 'commands' && <CommandsPage L={L} />}
+          {!searchTerm && page === 'terms' && <TermsPage L={L} />}
+          {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
+          {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
+          {!searchTerm && ['home', 'news', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join'].includes(page) === false && <NotFoundPage L={L} navigate={handleNavigate} />}
       </main>
 
       {/* 4. Footer */}
