@@ -2029,6 +2029,110 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
   );
 };
 
+export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
+  const searchResults = [];
+  const lowerSearchTerm = searchTerm.toLowerCase();
+  
+  // Search in news
+  const newsData = L.news.default_data || [];
+  newsData.forEach(item => {
+    if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `news-${item.id}`,
+        category: L.footer.search_category_news,
+        title: item.title,
+        description: item.content.substring(0, 100) + '...',
+        action: () => navigate('news')
+      });
+    }
+  });
+  
+  // Search in commands
+  const commands = L.commands.sections || [];
+  commands.forEach(section => {
+    section.commands?.forEach(cmd => {
+      if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
+        searchResults.push({
+          id: `cmd-${cmd.cmd}`,
+          category: L.footer.search_category_command,
+          title: cmd.cmd,
+          description: cmd.desc,
+          action: () => navigate('commands')
+        });
+      }
+    });
+  });
+  
+  // Search in FAQ
+  const faqs = L.guide.faq_data || [];
+  faqs.forEach((faq, i) => {
+    if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `faq-${i}`,
+        category: L.footer.search_category_guide,
+        title: faq.q,
+        description: faq.a.substring(0, 100) + '...',
+        action: () => navigate('guide')
+      });
+    }
+  });
+  
+  // Search in terms and privacy
+  const termsChapters = L.terms?.chapters || [];
+  termsChapters.forEach((chapter, idx) => {
+    if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
+      searchResults.push({
+        id: `terms-${idx}`,
+        category: L.footer.search_category_terms,
+        title: chapter.title,
+        description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
+        action: () => navigate('terms')
+      });
+    }
+  });
+  
+  if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
+    searchResults.push({
+      id: 'privacy',
+      category: L.footer.search_category_privacy,
+      title: L.privacy.title,
+      description: L.privacy.intro?.substring(0, 100) || '',
+      action: () => navigate('privacy')
+    });
+  }
+  
+  return (
+    <div className="space-y-6">
+      {searchResults.length === 0 ? (
+        <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+          <Search size={48} className="mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-500 dark:text-gray-400 text-lg">{L.footer.search_no_results(searchTerm)}</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-6">{L.footer.search_found(searchResults.length)}</p>
+          {searchResults.map((result) => (
+            <div 
+              key={result.id}
+              onClick={result.action}
+              className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
+            >
+              <div className="flex justify-between items-start gap-4 mb-3">
+                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
+              </div>
+              <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
+              <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                {L.footer.search_result_btn} <ArrowRight size={14} />
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+};
+
 export const JoinPage = ({ L, serverStatus, handleCopy, navigate }) => (
     <div className="pt-24"><JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} /></div>
 );
@@ -2445,6 +2549,20 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => setIsAppLoading(false), 2000);
     return () => clearTimeout(timer);
+  }, []);
+
+  // --- Router Logic (Hash Router) ---
+  useEffect(() => {
+      const handleHashChange = () => {
+          const hash = window.location.hash.replace('#/', '') || 'home';
+          setPage(hash);
+      };
+
+      // Set initial page from hash
+      handleHashChange();
+
+      window.addEventListener('hashchange', handleHashChange);
+      return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   // --- Router Logic (Hash Router) ---
