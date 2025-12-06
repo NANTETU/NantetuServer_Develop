@@ -22,13 +22,16 @@ const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
-    authDomain: "nantetu-29158.firebaseapp.com",
-    projectId: "nantetu-29158",
-    storageBucket: "nantetu-29158.firebasestorage.app",
-    messagingSenderId: "971397700888",
-    appId: "1:971397700888:web:3d3b25a0762faad23e926d"
+  apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
+  authDomain: "nantetu-29158.firebaseapp.com",
+  projectId: "nantetu-29158",
+  storageBucket: "nantetu-29158.firebasestorage.app",
+  messagingSenderId: "971397700888",
+  appId: "1:971397700888:web:3d3b25a0762faad23e926d"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
 const formatCorrectedDate = (dateString) => {
     // スプレッドシートからの形式 (例: "2025/12/03 22:44:25") をそのまま Dateオブジェクトに渡す
@@ -1499,7 +1502,7 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
         let unsub = null;
         if (db) {
             try {
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'articles'), orderBy('createdAt', 'desc'));
+                const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'));
                 unsub = onSnapshot(q, snap => {
                     const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     setArticles(items);
@@ -1553,9 +1556,9 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
         let unsub = null;
         if (db) {
             try {
-                const docRef = collection(db, 'artifacts', appId, 'public', 'data', 'articles');
+                const docRef = collection(db, 'articles');
                 // Firestore doc id may be string; get by query
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'articles'));
+                const q = query(collection(db, 'articles'));
                 unsub = onSnapshot(q, snap => {
                     const found = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(x => x.id === id || String(x.id) === String(id) || String(x.id) === String(Number(id)));
                     setArticle(found || null);
@@ -1660,7 +1663,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
             return;
         }
 
-        const articlesRef = collection(db, 'artifacts', appId, 'public', 'data', 'articles');
+        const articlesRef = collection(db, 'articles');
         // 記事の閲覧ページ（Admin以外も見れるページ）で同じロジックを使えば公開されます。
         const q = query(articlesRef, orderBy('createdAt', 'desc'));
 
@@ -1797,7 +1800,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         if (db) {
             try {
                 // ドキュメントIDを自動生成で新規追加します
-                const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'articles'), {
+                const docRef = await addDoc(collection(db, 'articles'), {
                     title: obj.title,
                     date: obj.date,
                     type: obj.type,
@@ -1852,7 +1855,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
 
         // 1. Firestoreから削除
         try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'articles', id));
+            await deleteDoc(doc(db, 'articles', id));
 
             // 2. 成功した場合のみローカルステートを更新
             setArticles(prev => prev.filter(a => a.id !== id));
