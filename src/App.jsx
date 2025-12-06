@@ -1312,6 +1312,8 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
     );
 };
 
+
+
 export const ForumPage = ({ L, user, db, appId }) => {
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState('');
@@ -1320,12 +1322,13 @@ export const ForumPage = ({ L, user, db, appId }) => {
 
     // Fetch posts from Firestore (Real)
     useEffect(() => {
-        // user requirement usually for RLS, but if rules allow public read, this might be strict.
-        // keeping user check if anonymous auth is standard.
-        if (!db) return;
+        if (!db || !appId) return;
+
+        // Use artifacts path to avoid permission errors on root collection
+        const forumPath = `artifacts/${appId}/public/data/forum_posts`;
 
         const q = query(
-            collection(db, 'forum_posts'),
+            collection(db, forumPath),
             orderBy('createdAt', 'desc'),
             limit(50)
         );
@@ -1339,12 +1342,12 @@ export const ForumPage = ({ L, user, db, appId }) => {
         }, (error) => {
             console.error("Forum Error:", error);
             if (error.code === 'permission-denied') {
-                // Silent fail or toast? probably toast better if critical
+                // Handle permission error
             }
         });
 
         return () => unsubscribe();
-    }, [user, db, appId]); // dependency on user/appId less critical if path is root
+    }, [user, db, appId]);
 
     const handlePost = async (e) => {
         e.preventDefault();
@@ -1352,7 +1355,8 @@ export const ForumPage = ({ L, user, db, appId }) => {
         setIsSending(true);
 
         try {
-            await addDoc(collection(db, 'forum_posts'), {
+            const forumPath = `artifacts/${appId}/public/data/forum_posts`;
+            await addDoc(collection(db, forumPath), {
                 text: newPost,
                 name: name.trim() || L.forum.anonymous,
                 uid: user.uid,
