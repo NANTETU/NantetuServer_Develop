@@ -11,6 +11,9 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
 import { doc, deleteDoc } from 'firebase/firestore'
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 // ==========================================
 // 1. Configuration & Data (languages.js)
@@ -22,12 +25,12 @@ const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
-  authDomain: "nantetu-29158.firebaseapp.com",
-  projectId: "nantetu-29158",
-  storageBucket: "nantetu-29158.firebasestorage.app",
-  messagingSenderId: "971397700888",
-  appId: "1:971397700888:web:3d3b25a0762faad23e926d"
+    apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
+    authDomain: "nantetu-29158.firebaseapp.com",
+    projectId: "nantetu-29158",
+    storageBucket: "nantetu-29158.firebasestorage.app",
+    messagingSenderId: "971397700888",
+    appId: "1:971397700888:web:3d3b25a0762faad23e926d"
 };
 
 // Initialize Firebase
@@ -1293,7 +1296,9 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
                 </div>
                 <h1 className="text-3xl md:text-4xl font-black mb-8 dark:text-white leading-tight">{item.title}</h1>
                 <div className="prose prose-lg dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                    {item.content}
+                    <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
+                        {item.content}
+                    </ReactMarkdown>
                 </div>
                 {item.url && (
                     <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
@@ -1315,10 +1320,12 @@ export const ForumPage = ({ L, user, db, appId }) => {
 
     // Fetch posts from Firestore (Real)
     useEffect(() => {
-        if (!user || !db) return;
+        // user requirement usually for RLS, but if rules allow public read, this might be strict.
+        // keeping user check if anonymous auth is standard.
+        if (!db) return;
 
         const q = query(
-            collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'),
+            collection(db, 'forum_posts'),
             orderBy('createdAt', 'desc'),
             limit(50)
         );
@@ -1331,10 +1338,13 @@ export const ForumPage = ({ L, user, db, appId }) => {
             setPosts(loadedPosts);
         }, (error) => {
             console.error("Forum Error:", error);
+            if (error.code === 'permission-denied') {
+                // Silent fail or toast? probably toast better if critical
+            }
         });
 
         return () => unsubscribe();
-    }, [user, db, appId]);
+    }, [user, db, appId]); // dependency on user/appId less critical if path is root
 
     const handlePost = async (e) => {
         e.preventDefault();
@@ -1342,7 +1352,7 @@ export const ForumPage = ({ L, user, db, appId }) => {
         setIsSending(true);
 
         try {
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'forum_posts'), {
+            await addDoc(collection(db, 'forum_posts'), {
                 text: newPost,
                 name: name.trim() || L.forum.anonymous,
                 uid: user.uid,
@@ -1351,7 +1361,7 @@ export const ForumPage = ({ L, user, db, appId }) => {
             setNewPost('');
         } catch (error) {
             console.error("Error posting:", error);
-            alert("投稿に失敗しました。");
+            alert("投稿に失敗しました。(権限エラーの可能性があります)");
         } finally {
             setIsSending(false);
         }
@@ -1898,25 +1908,31 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
             ) : (
                 <div className="grid md:grid-cols-2 gap-8">
                     <div>
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm space-y-4">
-                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="タイトル" className="w-full px-4 py-3 rounded border" />
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm space-y-4 border border-gray-100 dark:border-gray-700">
+                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="タイトル" className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" />
                             <div className="flex gap-3">
-                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded border" />
-                                <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded border">
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" />
+                                <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all">
                                     <option value="info">お知らせ</option>
                                     <option value="maintenance">メンテナンス</option>
+                                    <option value="explanation">解説</option>
+                                    <option value="recruitment">募集</option>
                                 </select>
-                                <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="px-3 py-2 rounded border" />
+                                <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
                             </div>
-                            <textarea value={md} onChange={e => setMd(e.target.value)} rows={12} placeholder="Markdownで記事を記述してください。画像はアップロードで埋め込まれます。" className="w-full px-4 py-3 rounded border font-mono"></textarea>
+                            <textarea value={md} onChange={e => setMd(e.target.value)} rows={12} placeholder="Markdownで記事を記述してください。画像はアップロードで埋め込まれます。" className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all font-mono text-sm"></textarea>
                             <div className="flex gap-3">
-                                <button onClick={handleSave} className="bg-purple-600 text-white px-4 py-2 rounded">保存</button>
-                                <button onClick={clearForm} className="px-4 py-2 rounded border">クリア</button>
+                                <button onClick={handleSave} className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2 rounded-xl transition-all shadow-md active:scale-95">保存</button>
+                                <button onClick={clearForm} className="px-6 py-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all dark:text-white">クリア</button>
                             </div>
                         </div>
                         <div className="mt-6">
                             <h3 className="font-bold mb-3 dark:text-white">プレビュー</h3>
-                            <div className="prose max-w-full bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: simpleRenderMarkdown(md) }} />
+                            <div className="prose max-w-full bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200">
+                                <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
+                                    {md || 'プレビューが表示されます...'}
+                                </ReactMarkdown>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -2011,77 +2027,122 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
 );
 
 export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
-    const searchResults = [];
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(true);
     const lowerSearchTerm = searchTerm.toLowerCase();
 
-    // Search in news
-    const newsData = L.news.default_data || [];
-    newsData.forEach(item => {
-        if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
-            searchResults.push({
-                id: `news-${item.id}`,
-                category: L.footer.search_category_news,
-                title: item.title,
-                description: item.content.substring(0, 100) + '...',
-                action: () => navigate('news')
+    // Using simple useEffect to aggregate results allows async Firestore call
+    useEffect(() => {
+        const fetchResults = async () => {
+            setIsSearching(true);
+            const results = [];
+
+            // 1. Static Content (News, Commands, Guide, Terms)
+            // Search in news
+            const newsData = L.news.default_data || [];
+            newsData.forEach(item => {
+                if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
+                    results.push({
+                        id: `news-${item.id}`,
+                        category: L.footer.search_category_news,
+                        title: item.title,
+                        description: item.content.substring(0, 100) + '...',
+                        action: () => navigate('news') // Could navigate to specific news if updated
+                    });
+                }
             });
-        }
-    });
 
+            // Search in commands
+            const commands = L.commands.sections || [];
+            commands.forEach(section => {
+                section.commands?.forEach(cmd => {
+                    if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
+                        results.push({
+                            id: `cmd-${cmd.cmd}`,
+                            category: L.footer.search_category_command,
+                            title: cmd.cmd,
+                            description: cmd.desc,
+                            action: () => navigate('commands')
+                        });
+                    }
+                });
+            });
 
-    // Search in commands
-    const commands = L.commands.sections || [];
-    commands.forEach(section => {
-        section.commands?.forEach(cmd => {
-            if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
-                searchResults.push({
-                    id: `cmd-${cmd.cmd}`,
-                    category: L.footer.search_category_command,
-                    title: cmd.cmd,
-                    description: cmd.desc,
-                    action: () => navigate('commands')
+            // Search in FAQ
+            const faqs = L.guide.faq_data || [];
+            faqs.forEach((faq, i) => {
+                if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
+                    results.push({
+                        id: `faq-${i}`,
+                        category: L.footer.search_category_guide,
+                        title: faq.q,
+                        description: faq.a.substring(0, 100) + '...',
+                        action: () => navigate('guide')
+                    });
+                }
+            });
+
+            // Search in terms and privacy
+            const termsChapters = L.terms?.chapters || [];
+            termsChapters.forEach((chapter, idx) => {
+                if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
+                    results.push({
+                        id: `terms-${idx}`,
+                        category: L.footer.search_category_terms,
+                        title: chapter.title,
+                        description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
+                        action: () => navigate('terms')
+                    });
+                }
+            });
+
+            if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
+                results.push({
+                    id: 'privacy',
+                    category: L.footer.search_category_privacy,
+                    title: L.privacy.title,
+                    description: L.privacy.intro?.substring(0, 100) || '',
+                    action: () => navigate('privacy')
                 });
             }
-        });
-    });
 
-    // Search in FAQ
-    const faqs = L.guide.faq_data || [];
-    faqs.forEach((faq, i) => {
-        if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
-            searchResults.push({
-                id: `faq-${i}`,
-                category: L.footer.search_category_guide,
-                title: faq.q,
-                description: faq.a.substring(0, 100) + '...',
-                action: () => navigate('guide')
-            });
-        }
-    });
+            // 2. Firestore Articles (Async)
+            const db = getFirestore(); // Ensure initialized or import instance?
+            // Actually usually db is passed down but SearchResultsPage only receives L, searchTerm, navigate.
+            // We can get db instance via getFirestore() since app is initialized.
 
-    // Search in terms and privacy
-    const termsChapters = L.terms?.chapters || [];
-    termsChapters.forEach((chapter, idx) => {
-        if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
-            searchResults.push({
-                id: `terms-${idx}`,
-                category: L.footer.search_category_terms,
-                title: chapter.title,
-                description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
-                action: () => navigate('terms')
-            });
-        }
-    });
+            try {
+                // Determine collection path - using 'articles' based on fix
+                // Doing client-side filter for simplicity on small dataset, or simple query
+                // Firestore doesn't support full-text search natively easily for "contains".
+                // We will fetch recent articles and filter.
+                const q = query(collection(db, 'articles'), limit(20)); // Limit to prevent overload
+                const querySnapshot = await import('firebase/firestore').then(mod => mod.getDocs(q));
 
-    if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
-        searchResults.push({
-            id: 'privacy',
-            category: L.footer.search_category_privacy,
-            title: L.privacy.title,
-            description: L.privacy.intro?.substring(0, 100) || '',
-            action: () => navigate('privacy')
-        });
-    }
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.title?.toLowerCase().includes(lowerSearchTerm) || data.md?.toLowerCase().includes(lowerSearchTerm)) {
+                        results.push({
+                            id: `art-${doc.id}`,
+                            category: L.nav.articles || 'Articles',
+                            title: data.title,
+                            description: (data.md || '').substring(0, 100) + '...',
+                            action: () => navigate(`articles/${doc.id}`)
+                        });
+                    }
+                });
+            } catch (e) {
+                console.log("Search Firestore error (silent):", e);
+            }
+
+            setSearchResults(results);
+            setIsSearching(false);
+        };
+
+        const timeout = setTimeout(fetchResults, 300); // 300ms debounce
+        return () => clearTimeout(timeout);
+    }, [searchTerm, L, navigate, lowerSearchTerm]);
+
 
     return (
         <div className="space-y-6">
@@ -2130,51 +2191,37 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
     const latestNews = newsData && newsData.length > 0 ? newsData.slice(0, 3) : L.news.default_data;
 
     // Contact Form Logic (Enhanced with validation)
+
+
     const handleContactSubmit = async (e) => {
         e.preventDefault();
-        const form = e.target;
-        const name = form.name.value?.trim();
-        const email = form.email.value?.trim();
-        const message = form.message.value?.trim();
+        const formData = new FormData(e.target);
+        const data = {
+            name: formData.get('name'),
+            email: formData.get('email'),
+            message: formData.get('message'),
+            subject: 'Contact Form Submission'
+        };
 
-        // Validation
-        if (!name || !email || !message) {
-            showToast('すべてのフィールドに入力してください');
-            return;
-        }
-
-        if (!DISCORD_WEBHOOK_URL) {
-            showToast(L.lang_name === "日本語" ? "Webhookが設定されていません (デモ)" : "Webhook not configured (Demo)");
-            return;
-        }
+        if (showToast) showToast('送信中...', 'info');
 
         try {
-            const response = await fetch(DISCORD_WEBHOOK_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    embeds: [{
-                        title: "📬 新しいお問い合わせ",
-                        color: 0x8b5cf6, // Purple
-                        fields: [
-                            { name: "お名前 (MCID)", value: name || "未入力", inline: true },
-                            { name: "連絡先", value: email || "未入力", inline: true },
-                            { name: "メッセージ", value: message || "未入力" }
-                        ],
-                        timestamp: new Date().toISOString()
-                    }]
-                })
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
             });
 
-            if (response.ok) {
-                showToast(L.lang_name === "日本語" ? "送信しました！" : "Message Sent!");
-                form.reset();
+            const result = await res.json();
+            if (res.ok && result.success) {
+                if (showToast) showToast('送信しました！', 'success');
+                e.target.reset();
             } else {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(result.message || '送信に失敗しました');
             }
         } catch (error) {
-            console.error('Contact form error:', error);
-            showToast(L.lang_name === "日本語" ? "送信に失敗しました。後ほど再度お試しください。" : "Failed to send. Please try again later.");
+            console.error('Contact Error:', error);
+            if (showToast) showToast('エラーが発生しました。時間を置いて再試行してください。', 'error');
         }
     };
 
@@ -2630,13 +2677,37 @@ export default function App() {
                     const json = JSON.parse(text.substring(text.indexOf('(') + 1, text.lastIndexOf(')')));
                     if (json.table?.rows) {
                         const parsed = json.table.rows.map((row, i) => {
-                            let dateStr = row.c[0]?.v || '';
-                            // Handle numeric date format from Google Sheets (serial format)
-                            if (typeof dateStr === 'number') {
+                            // Google Sheets might return "Date(2025,11,3)" where month is 0-indexed
+                            console.log("Raw date from sheet:", row.c[0]?.v);  // Debug log
+                            let rawDate = row.c[0]?.v;
+
+                            if (typeof rawDate === 'string' && rawDate.startsWith('Date(')) {
+                                const parts = rawDate.match(/\d+/g);
+                                if (parts && parts.length >= 3) {
+                                    // Year, Month (0-11), Day
+                                    const y = parseInt(parts[0]);
+                                    const m = parseInt(parts[1]) + 1; // Display month is +1
+                                    const d = parseInt(parts[2]);
+                                    dateStr = `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`;
+                                }
+                            } else if (typeof rawDate === 'number') {
+                                // Excel Serial Date
                                 const excelEpoch = new Date(1899, 11, 30);
-                                const dateObj = new Date(excelEpoch.getTime() + dateStr * 86400000);
-                                dateStr = dateObj.toLocaleDateString('ja-JP').replace(/\\/ / g, '.');
+                                const dateObj = new Date(excelEpoch.getTime() + rawDate * 86400000);
+                                dateStr = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
+                            } else {
+                                // String like "2025/12/03"
+                                // If it's already a string, try to parse it safely or just use it if it looks like a date
+                                try {
+                                    const d = new Date(rawDate);
+                                    if (!isNaN(d.getTime())) {
+                                        dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+                                    } else {
+                                        dateStr = String(rawDate);
+                                    }
+                                } catch { dateStr = String(rawDate); }
                             }
+
                             return {
                                 id: i + 100,
                                 date: dateStr,
@@ -2752,8 +2823,8 @@ export default function App() {
                 newsData={newsData}
             />
 
-            {/* 3. Main Content Router */}
-            <main className="relative z-10 min-h-screen">
+            {/* 3. Main Content Router - TEXT COLOR FIX applied here */}
+            <main className="relative z-10 min-h-screen text-gray-900 dark:text-gray-100">
                 {searchTerm && (
                     <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
                         <h2 className="text-4xl font-black mb-8 dark:text-white">{L.footer.search_results_title}</h2>
@@ -2799,7 +2870,7 @@ export default function App() {
                 {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
                 {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
                 {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} appId={appId} showToast={showToast} />}
-                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && <NotFoundPage L={L} navigate={handleNavigate} />}
+                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && !page.startsWith('news/') && <NotFoundPage L={L} navigate={handleNavigate} />}
             </main>
 
             {/* 4. Footer */}
