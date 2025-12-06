@@ -8,8 +8,11 @@ import {
     Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
+<<<<<<< HEAD
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
 import { doc, deleteDoc } from 'firebase/firestore'
+=======
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
 
 // ==========================================
@@ -21,6 +24,13 @@ const SHEET_GID = '566365801';
 const NEWS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1437085348210675712/3kPCM9gKqGYjg6CTBU7EuNjcYZDVkpcQSdmBtwa4g2fE7dg5_tTriW1p_g_HSo409DYL";
 
+<<<<<<< HEAD
+=======
+
+const apiKey = ""; 
+const ADMIN_KEY = "mv(wP|tn#MR9";
+
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
 const firebaseConfig = {
   apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
   authDomain: "nantetu-29158.firebaseapp.com",
@@ -30,6 +40,7 @@ const firebaseConfig = {
   appId: "1:971397700888:web:3d3b25a0762faad23e926d"
 };
 
+<<<<<<< HEAD
 const handleGeminiCall = useCallback(async (userPrompt) => {
     const apiEndpoint = '/api/generate'; 
 
@@ -56,6 +67,8 @@ const handleGeminiCall = useCallback(async (userPrompt) => {
     }
 }, []);
 
+=======
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
 const LANGUAGES = {
     ja: {
         lang_code: "ja",
@@ -1573,14 +1586,19 @@ export const PrivacyPage = ({ L }) => {
 // Admin: Markdown記事作成GUI
 // 管理者向けのシンプルなエディタ。画像はローカルファイルをBase64として埋め込み可能。
 // Firestoreを使用して記事データを永続化します
+<<<<<<< HEAD
 // =====================
 export const AdminPage = ({ L, user, db, showToast }) => {
+=======
+export const AdminPage = ({ L, user, showToast }) => {
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
     const [loggedIn, setLoggedIn] = useState(false);
     const [keyInput, setKeyInput] = useState('');
     const [warningAck, setWarningAck] = useState(false);
     const [articles, setArticles] = useState([]);
     const [loading, setLoading] = useState(true);
 
+<<<<<<< HEAD
     // ログイン状態をLocalStorageから読み込み
     useEffect(() => {
         if (localStorage.getItem('admin_logged_in') === '1') {
@@ -1588,6 +1606,8 @@ export const AdminPage = ({ L, user, db, showToast }) => {
         }
     }, []);
 
+=======
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
     // Firestoreから記事データを読み込み
     useEffect(() => {
         if (!db || !loggedIn) {
@@ -1596,7 +1616,10 @@ export const AdminPage = ({ L, user, db, showToast }) => {
         }
         
         const articlesRef = collection(db, 'articles');
+<<<<<<< HEAD
         // 記事の閲覧ページ（Admin以外も見れるページ）で同じロジックを使えば公開されます。
+=======
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
         const q = query(articlesRef, orderBy('createdAt', 'desc'));
         
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -1651,6 +1674,7 @@ export const AdminPage = ({ L, user, db, showToast }) => {
         return html;
     }, []);
 
+<<<<<<< HEAD
 const handleLogin = async () => {
         // 🚨 サーバーレスAPIに認証処理を完全に移行するため、
         // 古い ADMIN_KEY や warningAck に関するクライアント認証ロジックはすべて削除します。
@@ -1694,6 +1718,23 @@ const handleLogin = async () => {
 
     // handleLogin関数の定義終わり
 
+=======
+    const handleLogin = () => {
+        if (typeof ADMIN_KEY !== 'undefined' && ADMIN_KEY && keyInput !== ADMIN_KEY) {
+            alert('管理キーが違います');
+            return;
+        }
+        if (!ADMIN_KEY) {
+            if (!warningAck) {
+                alert('管理キーが未設定です。運用時はコード内の ADMIN_KEY を設定してください。続行する場合は確認にチェックを入れてください。');
+                return;
+            }
+        }
+        localStorage.setItem('admin_logged_in','1');
+        setLoggedIn(true);
+    };
+
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
     const handleLogout = () => {
         localStorage.removeItem('admin_logged_in');
         setLoggedIn(false);
@@ -1724,8 +1765,12 @@ const handleLogin = async () => {
         // If Firestore is available, save to collection 'articles'
         if (db) {
             try {
+<<<<<<< HEAD
                 // ドキュメントIDを自動生成で新規追加します
                 const docRef = await addDoc(collection(db, 'articles'), {
+=======
+                await addDoc(collection(db, 'articles'), {
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
                     title: obj.title,
                     date: obj.date,
                     type: obj.type,
@@ -1735,12 +1780,15 @@ const handleLogin = async () => {
                     createdAt: serverTimestamp()
                 });
                 if (showToast) showToast('Firestore に保存しました');
+<<<<<<< HEAD
 
                 // 編集IDがある場合、Firestoreには既存のドキュメントを更新する処理が必要ですが、
                 // このコードでは新規追加（addDoc）しか実装されていません。
                 // 既存のドキュメントを更新するには `doc` と `updateDoc` が必要です。
                 // しかし、元のコードのロジックを維持するため、ここでは addDoc のみを残します。
 
+=======
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
             } catch (e) {
                 console.error('Firestore save failed', e);
                 alert('Firestoreへの保存に失敗しました。ローカルに保存します。');
@@ -1765,6 +1813,7 @@ const handleLogin = async () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+<<<<<<< HEAD
 const handleDelete = async (id) => {
     if (!confirm('この記事を削除してよいですか？')) return;
     
@@ -1780,6 +1829,12 @@ const handleDelete = async (id) => {
         alert('Firestoreからの削除に失敗しました。');
     }
 };
+=======
+    const handleDelete = (id) => {
+        if (!confirm('この記事を削除してよいですか？')) return;
+        setArticles(prev => prev.filter(a => a.id !== id));
+    };
+>>>>>>> 58cd00f6e0dfb6923397d392698756cae93777b1
 
     const handleExport = async () => {
         try {
@@ -1924,110 +1979,6 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
         </div>
     </section>
 );
-
-export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
-  const searchResults = [];
-  const lowerSearchTerm = searchTerm.toLowerCase();
-  
-  // Search in news
-  const newsData = L.news.default_data || [];
-  newsData.forEach(item => {
-    if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
-      searchResults.push({
-        id: `news-${item.id}`,
-        category: L.footer.search_category_news,
-        title: item.title,
-        description: item.content.substring(0, 100) + '...',
-        action: () => navigate('news')
-      });
-    }
-  });
-  
-  // Search in commands
-  const commands = L.commands.sections || [];
-  commands.forEach(section => {
-    section.commands?.forEach(cmd => {
-      if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
-        searchResults.push({
-          id: `cmd-${cmd.cmd}`,
-          category: L.footer.search_category_command,
-          title: cmd.cmd,
-          description: cmd.desc,
-          action: () => navigate('commands')
-        });
-      }
-    });
-  });
-  
-  // Search in FAQ
-  const faqs = L.guide.faq_data || [];
-  faqs.forEach((faq, i) => {
-    if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
-      searchResults.push({
-        id: `faq-${i}`,
-        category: L.footer.search_category_guide,
-        title: faq.q,
-        description: faq.a.substring(0, 100) + '...',
-        action: () => navigate('guide')
-      });
-    }
-  });
-  
-  // Search in terms and privacy
-  const termsChapters = L.terms?.chapters || [];
-  termsChapters.forEach((chapter, idx) => {
-    if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
-      searchResults.push({
-        id: `terms-${idx}`,
-        category: L.footer.search_category_terms,
-        title: chapter.title,
-        description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
-        action: () => navigate('terms')
-      });
-    }
-  });
-  
-  if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
-    searchResults.push({
-      id: 'privacy',
-      category: L.footer.search_category_privacy,
-      title: L.privacy.title,
-      description: L.privacy.intro?.substring(0, 100) || '',
-      action: () => navigate('privacy')
-    });
-  }
-  
-  return (
-    <div className="space-y-6">
-      {searchResults.length === 0 ? (
-        <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-          <Search size={48} className="mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-500 dark:text-gray-400 text-lg">{L.footer.search_no_results(searchTerm)}</p>
-        </div>
-      ) : (
-        <>
-          <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-6">{L.footer.search_found(searchResults.length)}</p>
-          {searchResults.map((result) => (
-            <div 
-              key={result.id}
-              onClick={result.action}
-              className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
-            >
-              <div className="flex justify-between items-start gap-4 mb-3">
-                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
-              </div>
-              <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
-              <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                {L.footer.search_result_btn} <ArrowRight size={14} />
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-    </div>
-  );
-};
 
 export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
   const searchResults = [];
@@ -2549,20 +2500,6 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => setIsAppLoading(false), 2000);
     return () => clearTimeout(timer);
-  }, []);
-
-  // --- Router Logic (Hash Router) ---
-  useEffect(() => {
-      const handleHashChange = () => {
-          const hash = window.location.hash.replace('#/', '') || 'home';
-          setPage(hash);
-      };
-
-      // Set initial page from hash
-      handleHashChange();
-
-      window.addEventListener('hashchange', handleHashChange);
-      return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   // --- Router Logic (Hash Router) ---
