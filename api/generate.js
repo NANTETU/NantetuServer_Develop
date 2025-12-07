@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
     // モデルの取得 (gemini-1.5-flash が現在の標準的な軽量モデル)
     // 2.5-flash は存在しないか、まだ公開されていない可能性があります
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     // コンテンツ生成
     const result = await model.generateContent(prompt);
