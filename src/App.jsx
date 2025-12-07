@@ -5,12 +5,12 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
     Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, ChevronLeft, UploadCloud, LogOut, GlobeAsiaAustralia,
-    Pencil, Trash, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon
+    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, ChevronLeft, UploadCloud, LogOut, GlobeAsiaAustralia as GlobeAsiaAustraliaIcon,
+    Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
-import { doc, deleteDoc } from 'firebase/firestore'
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -594,7 +594,7 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     );
 
     // Simple markdown renderer
-    const simpleRenderMarkdown = useCallback((text) => {
+    const simpleRenderMarkdown = (text) => {
         if (!text) return '';
         // escape
         let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -620,13 +620,13 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
             '<a href="$2" target="_blank" rel="noreferrer" class="text-purple-600 dark:text-purple-400 underline">$1</a>');
         // paragraphs / line breaks
         return html.replace(/\n/g, '<br />');
-    }, []);
+    };
 
     useEffect(() => {
         if (article) {
             setContent(simpleRenderMarkdown(article.md));
         }
-    }, [article, simpleRenderMarkdown]);
+    }, [article]);
 
     return (
         <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
@@ -688,6 +688,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
     }, [db, loggedIn, L, showToast]);
 
     const [title, setTitle] = useState('');
+    const [deletingId, setDeletingId] = useState(null);
     const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
     const [type, setType] = useState('info');
     const [md, setMd] = useState('');
@@ -1035,7 +1036,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
 
             {!loggedIn ? (
                 <div className="max-w-lg mx-auto bg-white dark:bg-gray-800 p-10 rounded-3xl shadow-2xl text-center border-t-4 border-purple-500">
-                    <ShieldExclamationIcon className="w-16 h-16 mx-auto text-purple-500 mb-4" />
+                    <Shield className="w-16 h-16 mx-auto text-purple-500 mb-4" />
                     <p className="text-xl font-bold dark:text-white mb-3">管理者アクセスが必要です</p>
                     <p className="text-gray-600 dark:text-gray-400">
                         記事の作成・編集を行うには、管理キーを入力してログインしてください。
