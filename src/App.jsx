@@ -165,6 +165,7 @@ export const NewsItem = ({ item, L }) => {
     const getTypeConfig = (type) => {
         switch (type) {
             case 'maintenance': return { label: L.news.maintenance, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
+            case 'request': return { label: L.news.request, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
             case 'explanation': return { label: L.news.explanation, style: 'bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50' };
             case 'recruitment': return { label: L.news.recruitment, style: 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50' };
             case 'other': return { label: L.news.other, style: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' };
@@ -443,6 +444,7 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
     const getTypeConfig = (type) => {
         switch (type) {
             case 'maintenance': return { label: L.news.maintenance, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
+            case 'request': return { label: L.news.request, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
             case 'explanation': return { label: L.news.explanation, style: 'bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50' };
             case 'recruitment': return { label: L.news.recruitment, style: 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50' };
             case 'other': return { label: L.news.other, style: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' };
@@ -455,7 +457,7 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
         <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
             <div className="mb-8">
                 <button onClick={() => navigate('news')} className="flex items-center gap-2 text-gray-500 hover:text-purple-600 transition-colors font-bold">
-                    <ArrowRight size={18} className="rotate-180" /> {L.news.title}に戻めE
+                    <ArrowRight size={18} className="rotate-180" /> {L.news.title}に戻る
                 </button>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100 dark:border-gray-700">
@@ -749,7 +751,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
     };
 
     const handleSave = async () => {
-        if (!title.trim()) { alert('タイトルを�E力してください'); return; }
+        if (!title.trim()) { alert('タイトルを入力してください'); return; }
         const id = editingId || Date.now();
         const obj = { id, title: title.trim(), date, type, md, html: simpleRenderMarkdown(md) };
 
@@ -868,6 +870,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                                 <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" />
                                 <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all">
                                     <option value="info">お知らせ</option>
+                                    <option value="request">お願い</option>
                                     <option value="maintenance">メンテナンス</option>
                                     <option value="explanation">解説</option>
                                     <option value="recruitment">募集</option>
@@ -1697,10 +1700,11 @@ export default function App() {
                                 url: row.c[3]?.v,
                                 type: (() => {
                                     const c = row.c[2]?.v || '';
-                                    if (c.includes('メンチE��ンス')) return 'maintenance';
+                                    if (c.includes('メンチンス')) return 'maintenance';
+                                    if (c.includes('お願い')) return 'request';
                                     if (c.includes('解説')) return 'explanation';
                                     if (c.includes('募集')) return 'recruitment';
-                                    if (c.includes('そ�E仁E')) return 'other';
+                                    if (c.includes('その他')) return 'other';
                                     return 'info';
                                 })()
                             };
@@ -1725,7 +1729,7 @@ export default function App() {
     const handleCopy = useCallback((text) => {
         navigator.clipboard.writeText(text).catch(err => {
             console.error('Failed to copy:', err);
-            showToast('コピ�Eに失敗しました');
+            showToast('コピーに失敗しました');
         });
     }, [showToast]);
 
