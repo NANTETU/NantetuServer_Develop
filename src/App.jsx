@@ -1317,6 +1317,57 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
 export const ForumPage = ({ L, user, db, appId }) => {
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState('');
+    const [name, setName] = useState('');
+    const [isSending, setIsSending] = useState(false);
+
+    // Fetch posts from Firestore (Real)
+    useEffect(() => {
+        if (!user || !db || !appId) return; // Wait for User Auth!
+
+        // Use root path 'forum_posts' as per original success, but with strict auth check
+        const forumPath = 'forum_posts';
+
+        const q = query(
+            collection(db, forumPath),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedPosts = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setPosts(loadedPosts);
+        }, (error) => {
+            console.error("Forum Error:", error);
+        });
+
+        return () => unsubscribe();
+    }, [user, db, appId]);
+
+    const handlePost = async (e) => {
+        e.preventDefault();
+        if (!newPost.trim() || !user) return;
+        setIsSending(true);
+
+        try {
+            const forumPath = 'forum_posts';
+            await addDoc(collection(db, forumPath), {
+                text: newPost,
+                name: name.trim() || L.forum.anonymous,
+                uid: user.uid,
+                createdAt: serverTimestamp()
+            });
+            setNewPost('');
+        } catch (error) {
+            console.error("Error posting:", error);
+            alert("投稿に失敗しました。(権限エラー)");
+        } finally {
+            setIsSending(false);
+        }
+    };
+
     return (
         <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
             <div className="text-center mb-16"><h2 className="text-4xl font-black mb-4 dark:text-white">{L.forum.title}</h2></div>
