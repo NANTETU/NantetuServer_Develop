@@ -5,7 +5,7 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
     Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, ChevronLeft, UploadCloud, LogOut, GlobeAsiaAustralia as GlobeAsiaAustraliaIcon,
+    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, ChevronLeft, UploadCloud, LogOut, Globe as GlobeIcon,
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
@@ -942,7 +942,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                             onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400/808080/FFFFFF?text=Image+Load+Error'; }}
                         />
                     ) : (
-                        <GlobeAsiaAustraliaIcon className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                        <GlobeIcon className="w-12 h-12 text-gray-400 dark:text-gray-500" />
                     )}
                 </div>
 
