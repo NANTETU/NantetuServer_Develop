@@ -943,7 +943,7 @@ export const Navbar = ({
                                 <div className={`flex items-center gap-3 border-l pl-6 ${scrolledToTop && !darkMode ? 'border-white/20' : 'border-gray-200 dark:border-gray-700'}`}>
                                     <div className="relative group">
                                         <Search size={16} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors ${scrolledToTop && !darkMode ? 'text-white/70 group-focus-within:text-purple-500' : 'text-gray-400 group-focus-within:text-purple-500'}`} />
-                                        <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className={`pl-9 pr-4 py-2 w-32 focus:w-48 rounded-full text-sm border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all ${scrolledToTop && !darkMode ? 'bg-white/20 text-white placeholder-white/70 focus:bg-white focus:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 dark:text-white'}`} />
+                                        <input type="text" placeholder={L.footer.search_placeholder} value={searchValue} onChange={handleSearch} className={`pl-9 pr-4 py-2 w-32 focus:w-48 rounded-full text-sm border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all ${scrolledToTop && !darkMode ? 'bg-white/20 text-white placeholder-white/70 focus:bg-white focus:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 dark:text-white'}`} />
                                     </div>
 
                                     <div className="flex gap-2">
@@ -973,7 +973,7 @@ export const Navbar = ({
                         <div className="px-4 pt-4 pb-6 space-y-2">
                             <div className="relative mb-6">
                                 <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                <input type="text" placeholder={L.footer.search_placeholder} value={searchTerm} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
+                                <input type="text" placeholder={L.footer.search_placeholder} value={searchValue} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
                             </div>
                             {['home', 'articles', 'news', 'guide', 'commands', 'map'].map((key) => {
                                 if (key === 'map') {
@@ -1317,60 +1317,6 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
 export const ForumPage = ({ L, user, db, appId }) => {
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState('');
-    const [name, setName] = useState('');
-    const [isSending, setIsSending] = useState(false);
-
-    // Fetch posts from Firestore (Real)
-    useEffect(() => {
-        if (!db || !appId) return;
-
-        // Use artifacts path to avoid permission errors on root collection
-        const forumPath = `artifacts/${appId}/public/data/forum_posts`;
-
-        const q = query(
-            collection(db, forumPath),
-            orderBy('createdAt', 'desc'),
-            limit(50)
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const loadedPosts = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setPosts(loadedPosts);
-        }, (error) => {
-            console.error("Forum Error:", error);
-            if (error.code === 'permission-denied') {
-                // Handle permission error
-            }
-        });
-
-        return () => unsubscribe();
-    }, [user, db, appId]);
-
-    const handlePost = async (e) => {
-        e.preventDefault();
-        if (!newPost.trim() || !user) return;
-        setIsSending(true);
-
-        try {
-            const forumPath = `artifacts/${appId}/public/data/forum_posts`;
-            await addDoc(collection(db, forumPath), {
-                text: newPost,
-                name: name.trim() || L.forum.anonymous,
-                uid: user.uid,
-                createdAt: serverTimestamp()
-            });
-            setNewPost('');
-        } catch (error) {
-            console.error("Error posting:", error);
-            alert("投稿に失敗しました。(権限エラーの可能性があります)");
-        } finally {
-            setIsSending(false);
-        }
-    };
-
     return (
         <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
             <div className="text-center mb-16"><h2 className="text-4xl font-black mb-4 dark:text-white">{L.forum.title}</h2></div>
@@ -2498,30 +2444,47 @@ const CustomStyles = () => (
 );
 
 export default function App() {
+    // State Definitions
     const [darkMode, setDarkMode] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [page, setPage] = useState('home');
     const [serverStatus, setServerStatus] = useState({ online: false, players: 0, loading: true });
-    const [toastMessage, setToastMessage] = useState(null);
     const [quizState, setQuizState] = useState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null });
     const [activeAccordion, setActiveAccordion] = useState(null);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [currentLang, setCurrentLang] = useState('ja');
-    const [searchTerm, setSearchTerm] = useState('');
 
-    // Loading states
-    const [isAppLoading, setIsAppLoading] = useState(true); // Splash screen
-    const [isPageLoading, setIsPageLoading] = useState(false); // Navigation bar
+    // Search State
+    const [searchTerm, setSearchTerm] = useState(''); // Debounced
+    const [searchValue, setSearchValue] = useState(''); // Immediate Input
+    const searchTimeoutRef = useRef(null);
 
+    // Initial Loading
+    const [isAppLoading, setIsAppLoading] = useState(true);
+    const [isPageLoading, setIsPageLoading] = useState(false);
+
+    // Data
     const [newsData, setNewsData] = useState([]);
     const [hasUnreadNews, setHasUnreadNews] = useState(false);
+    const [toastMessage, setToastMessage] = useState(null);
 
-    // Firebase State
+    // Firebase
     const [user, setUser] = useState(null);
     const [db, setDb] = useState(null);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+    // Search Handler (FIX: Updates input immediately, debounces effect)
+    const handleSearch = useCallback((e) => {
+        const value = e.target.value;
+        setSearchValue(value);
+        clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = setTimeout(() => {
+            setSearchTerm(value);
+        }, 500);
+    }, []);
+
     const L = LANGUAGES[currentLang];
+
 
     const handleGeminiCall = useCallback(async (userPrompt) => {
         const apiEndpoint = '/api/generate';
@@ -2771,15 +2734,7 @@ export default function App() {
 
     const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
 
-    // Debounced search (500ms delay)
-    const searchTimeoutRef = useRef(null);
-    const handleSearch = useCallback((e) => {
-        const value = e.target.value;
-        clearTimeout(searchTimeoutRef.current);
-        searchTimeoutRef.current = setTimeout(() => {
-            setSearchTerm(value);
-        }, 500);
-    }, []);
+
 
     // Handle Quiz (Memoized with error handling)
     const handleQuizAnswer = useCallback((selectedOption) => {
