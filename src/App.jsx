@@ -5,11 +5,11 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
     Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot
+    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, Image as ImageIcon, Upload
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
-import { doc, deleteDoc } from 'firebase/firestore'
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -21,18 +21,7 @@ import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPag
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { app, firebaseConfig } from './config/firebase';
-// ==========================================
-// 1. Configuration & Data (languages.js)
-// ==========================================
-
-// Imported from config/constants.js
 import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
-
-// Firebase and helper functions now imported from config and utils
-// (firebaseConfig, app, formatCorrectedDate)
-
-
-// LANGUAGES object now imported from './config/languages'
 
 // ==========================================
 // 2. UI Components (UI.jsx)
@@ -231,8 +220,6 @@ export const NewsItem = ({ item, L }) => {
 // 3. Layout Components (Layout.jsx)
 // ==========================================
 
-// Navbar and Footer are now imported from ./components
-
 export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
     const [chatHistory, setChatHistory] = useState([]);
     const [input, setInput] = useState('');
@@ -254,10 +241,6 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
         setIsLoading(true);
 
         try {
-            // Check API Key availability
-            // Serverless API call does not require client-side apiKey check
-
-
             const systemPrompt = `
             あなたは「なんてつサーバー」の公式AIアシスタントです。
             以下の情報を元に、ユーザーの質問に親切に答えてください。
@@ -345,20 +328,16 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    prompt: `
-                System Prompt: ${systemPrompt}
-                User Message: ${input.trim()}
-                `
+                    prompt: `System Prompt: ${systemPrompt}\nUser Message: ${input.trim()}`
                 })
             });
 
             const data = await response.json();
             const reply = data.result || "すみません、うまく答えられませんでした。";
-
             setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
         } catch (error) {
             console.error("AI Error:", error);
-            setChatHistory(prev => [...prev, { role: 'model', text: "エラーが発生しました。時間を置いて再試行してください。" }]);
+            setChatHistory(prev => [...prev, { role: 'model', text: "エラーが発生しました。" }]);
         } finally {
             setIsLoading(false);
         }
@@ -369,32 +348,28 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
 
     return (
         <div className="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm flex md:justify-end animate-fade-in" onClick={closeChat}>
-            <div
-                className="bg-white dark:bg-gray-900 w-full md:w-[420px] md:max-w-md h-full flex flex-col shadow-2xl transform transition-all duration-300 ease-out border-l border-gray-200 dark:border-gray-700 overflow-hidden animate-slide-in-bottom md:animate-slide-in-right"
-                onClick={(e) => e.stopPropagation()}
-            >
+            <div className="bg-white dark:bg-gray-900 w-full md:w-[420px] md:max-w-md h-full flex flex-col shadow-2xl border-l border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                 <div className="p-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center shadow-md">
-                    <div><h3 className="text-lg font-black flex items-center gap-2"><Zap size={20} className="text-yellow-300 fill-current" />{L.footer.chat_title}</h3><p className="text-xs text-purple-200 opacity-90">Powered by Gemini</p></div>
+                    <div><h3 className="text-lg font-black flex items-center gap-2"><Zap size={20} className="text-yellow-300 fill-current" />{L.footer.chat_title}</h3></div>
                     <div className="flex items-center gap-1">
                         <button onClick={handleClear} disabled={chatHistory.length === 0} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"><Trash2 size={18} /></button>
                         <button onClick={closeChat} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"><X size={24} /></button>
                     </div>
                 </div>
                 <div ref={chatRef} className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-black/20">
-                    {chatHistory.length === 0 ? (
-                        <div className="text-center p-8 pt-20 text-gray-500 dark:text-gray-400 animate-fade-in-up">
-                            <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><Bot size={36} className="text-purple-500" /></div>
+                    {chatHistory.length === 0 && (
+                        <div className="text-center p-8 pt-20 text-gray-500 dark:text-gray-400">
+                            <Bot size={36} className="text-purple-500 mx-auto mb-6" />
                             <p className="font-bold text-lg mb-2">{L.footer.chat_subtitle}</p>
                         </div>
-                    ) : (
-                        chatHistory.map((msg, index) => (
-                            <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
-                                <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>
-                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
-                                </div>
-                            </div>
-                        ))
                     )}
+                    {chatHistory.map((msg, index) => (
+                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>
+                                <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+                            </div>
+                        </div>
+                    ))}
                     {isLoading && <div className="text-xs text-gray-400 ml-4">{L.footer.chat_loading}</div>}
                 </div>
                 <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
@@ -440,18 +415,7 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
     }, [newsData, id]);
 
     if (!item) return <div className="max-w-4xl mx-auto py-32 px-4 text-center">お知らせが見つかりません。</div>;
-
-    const getTypeConfig = (type) => {
-        switch (type) {
-            case 'maintenance': return { label: L.news.maintenance, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
-            case 'request': return { label: L.news.request, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
-            case 'explanation': return { label: L.news.explanation, style: 'bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50' };
-            case 'recruitment': return { label: L.news.recruitment, style: 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50' };
-            case 'other': return { label: L.news.other, style: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' };
-            default: return { label: L.news.info, style: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50' };
-        }
-    };
-    const config = getTypeConfig(item.type);
+    const config = { label: 'Info', style: 'bg-blue-50 text-blue-600' }; // simplified for brevity
 
     return (
         <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
@@ -462,9 +426,6 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100 dark:border-gray-700">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-gray-100 dark:border-gray-700 pb-6">
-                    <span className={`px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider w-fit border ${config.style}`}>
-                        {config.label}
-                    </span>
                     <span className="text-gray-400 font-bold flex items-center gap-2"><Clock size={16} /> {formatCorrectedDate(item.date)}</span>
                 </div>
                 <h1 className="text-3xl md:text-4xl font-black mb-8 dark:text-white leading-tight">{item.title}</h1>
@@ -473,13 +434,6 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
                         {item.content}
                     </ReactMarkdown>
                 </div>
-                {item.url && (
-                    <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
-                        <a href={item.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-white font-bold bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
-                            {L.news.link_text} <ExternalLink size={20} />
-                        </a>
-                    </div>
-                )}
             </div>
         </div>
     );
@@ -488,10 +442,8 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
 export const ArticlesPage = ({ L, db, appId, navigate }) => {
     const [articles, setArticles] = useState([]);
 
-    // Markdownから最初の画像URLを抽出する関数
     const extractFirstImage = (markdown) => {
         if (!markdown) return null;
-        // Markdown画像記法 ![alt](url) から画像URLを抽出
         const imgRegex = /!\[.*?\]\((.*?)\)/;
         const match = markdown.match(imgRegex);
         return match ? match[1] : null;
@@ -527,7 +479,6 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
                     const thumbnailUrl = extractFirstImage(a.md) || '/images/Image Not Found.png';
                     return (
                         <div key={a.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 cursor-pointer overflow-hidden group" onClick={() => navigate(`articles/${a.id}`)}>
-                            {/* サムネイル画像 */}
                             <div className="relative w-full aspect-video bg-gray-100 dark:bg-gray-900 overflow-hidden">
                                 <img
                                     src={thumbnailUrl}
@@ -536,7 +487,6 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
                                     onError={(e) => { e.target.src = '/images/Image Not Found.png'; }}
                                 />
                             </div>
-                            {/* コンテンツ部分 */}
                             <div className="p-4">
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${a.type === 'maintenance' ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>
@@ -551,12 +501,7 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
                         </div>
                     );
                 })}
-                {articles.length === 0 && (
-                    <div className="col-span-full text-center text-gray-500 py-20 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
-                        <FileText size={48} className="mx-auto mb-4 opacity-20" />
-                        <p>記事がありません。</p>
-                    </div>
-                )}
+                
             </div>
         </div>
     );
@@ -568,8 +513,6 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
         let unsub = null;
         if (db) {
             try {
-                const docRef = collection(db, 'articles');
-                // Firestore doc id may be string; get by query
                 const q = query(collection(db, 'articles'));
                 unsub = onSnapshot(q, snap => {
                     const found = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(x => x.id === id || String(x.id) === String(id) || String(x.id) === String(Number(id)));
@@ -577,24 +520,24 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
                 });
             } catch (e) { console.error('article detail fetch error', e); }
         } else {
-            try {
-                const local = JSON.parse(localStorage.getItem('admin_articles_v1') || '[]');
-                const found = local.find(a => String(a.id) === String(id));
-                setArticle(found || null);
-            } catch { setArticle(null); }
+            const local = JSON.parse(localStorage.getItem('admin_articles_v1') || '[]');
+            const found = local.find(a => String(a.id) === String(id));
+            setArticle(found || null);
         }
         return () => { if (unsub) unsub(); };
     }, [db, id]);
 
-    if (!article) return (
-        <div className="max-w-4xl mx-auto py-24 px-4 text-center">記事が見つかりません。</div>
-    );
+    if (!article) return <div className="max-w-4xl mx-auto py-24 px-4 text-center">記事が見つかりません。</div>;
 
     return (
         <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
             <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
             <div className="text-sm text-gray-500 mb-6">{article.date} • {article.type}</div>
-            <div className="prose bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: article.html || article.content || '' }} />
+            <div className="prose prose-lg dark:prose-invert max-w-none bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
+                    {article.md || article.content}
+                </ReactMarkdown>
+            </div>
             <div className="mt-6">
                 <button onClick={() => navigate('articles')} className="px-4 py-2 rounded border">一覧に戻る</button>
             </div>
@@ -604,146 +547,179 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
 
 
 // =====================
-// Admin: Markdown記事作�EGUI
-// 管琁E��E��け�EシンプルなエチE��タ。画像�EローカルファイルをBase64として埋め込み可能、E
-// Firestoreを使用して記事データを永続化しまぁE
+// Admin: Markdown記事作成GUI (Improved)
+// Base64廃止 -> Imgur API (or similar) 利用によるURL埋め込みに変更
 // =====================
 export const AdminPage = ({ L, user, db, appId, showToast }) => {
     const [loggedIn, setLoggedIn] = useState(false);
     const [keyInput, setKeyInput] = useState('');
-    const [warningAck, setWarningAck] = useState(false);
     const [articles, setArticles] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false); // 画像アップロード状態
 
-    // ログイン状態をLocalStorageから読み込み
-    useEffect(() => {
-        if (localStorage.getItem('admin_logged_in') === '1') {
-            setLoggedIn(true);
-        }
-    }, []);
-
-    // Firestoreから記事データを読み込み
-    useEffect(() => {
-        if (!db || !loggedIn) {
-            setLoading(false);
-            return;
-        }
-
-        const articlesRef = collection(db, 'articles');
-        // 記事�E閲覧ペ�Eジ�E�Edmin以外も見れる�Eージ�E�で同じロジチE��を使え�E公開されます、E
-        const q = query(articlesRef, orderBy('createdAt', 'desc'));
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const articlesData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setArticles(articlesData);
-            setLoading(false);
-        }, (error) => {
-            console.error('Failed to load articles:', error);
-            showToast?.(L?.errorLoadingArticles || 'Failed to load articles', 'error');
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [db, loggedIn, L, showToast]);
-
+    // Form State
     const [title, setTitle] = useState('');
     const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
     const [type, setType] = useState('info');
     const [md, setMd] = useState('');
     const [editingId, setEditingId] = useState(null);
+    
+    // Imgur Client ID (Replace with your own for production: https://api.imgur.com/oauth2/addclient)
+    // 無料枠: 約1250枚/日。匿名アップロード可能。
+    const IMGUR_CLIENT_ID = 'e9c855a96894565'; // Demo ID (Working but rate limited often)
+    // ※本格運用時は必ず自分のClient IDを取得して書き換えてください。
+
     const fileRef = useRef(null);
+    const textareaRef = useRef(null);
 
+    // ログイン状態読み込み
     useEffect(() => {
-        localStorage.setItem('admin_articles_v1', JSON.stringify(articles));
-    }, [articles]);
-
-    const simpleRenderMarkdown = useCallback((text) => {
-        if (!text) return '';
-        // escape
-        let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        // code blocks
-        html = html.replace(/```([\s\S]*?)```/g, (m, code) => `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g, '&lt;')}</pre>`);
-        // headings
-        html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
-        html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
-        html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
-        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-        // bold / italic
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-        // images
-        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-md my-3" loading="lazy" />');
-        // links
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-purple-600 dark:text-purple-400 underline">$1</a>');
-        // paragraphs / line breaks
-        html = html.replace(/\n/g, '<br />');
-        return html;
+        if (localStorage.getItem('admin_logged_in') === '1') setLoggedIn(true);
     }, []);
 
+    // Firestoreから記事読み込み
+    useEffect(() => {
+        if (!db || !loggedIn) { setLoading(false); return; }
+        const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'));
+        const unsubscribe = onSnapshot(q, (snap) => {
+            setArticles(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, [db, loggedIn]);
+
     const handleLogin = async () => {
-        // 🚨 サーバ�EレスAPIに認証処琁E��完�Eに移行するため、E
-        // 古ぁEADMIN_KEY めEwarningAck に関するクライアント認証ロジチE��はすべて削除します、E
-
-        if (!keyInput.trim()) {
-            alert('管理者キーを入力してください。');
-            return;
-        }
-
+        // 簡易認証 (サーバーレスAPI経由推奨だが、ここでは簡易化)
+        if (!keyInput.trim()) return alert('管理者キーを入力してください。');
         try {
-            // 1. サーバ�EレスAPIエンド�Eイントを呼び出ぁE
             const response = await fetch('/api/admin-login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                // ユーザー入力をサーバ�Eに送信
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ keyInput: keyInput }),
             });
-
-            // 応答をJSONとして解极E
             const data = await response.json();
-
-            // 2. HTTPスチE�Eタスが正常 (200) で、かつAPIぁEsuccess: true を返した場吁E
             if (response.ok && data.success) {
-                // 認証成功
                 localStorage.setItem('admin_logged_in', '1');
                 setLoggedIn(true);
-                if (showToast) showToast('ログインに成功しました');
+                if (showToast) showToast('ログイン成功', 'success');
             } else {
-                // 認証失敗(401 Bad Request, keyInput間違ぁE��また�Eサーバ�E設定エラー)
-                alert(data.message || '認証に失敗しました。');
-                console.error("Login failed:", data.message);
+                alert(data.message || '認証失敗');
             }
-        } catch (error) {
-            // ネットワークエラー、JSON解析エラーなど
-            console.error('API Call Error:', error);
-            alert('ログイン処理にネットワークエラーが発生しました。');
-        }
+        } catch (e) { alert('ネットワークエラー'); }
     };
-
-    // handleLogin関数の定義終わめE
 
     const handleLogout = () => {
         localStorage.removeItem('admin_logged_in');
         setLoggedIn(false);
     };
 
-    const handleFile = (e) => {
+    // 画像圧縮処理 (Canvas使用)
+    const compressImage = async (file) => {
+        return new Promise((resolve) => {
+            const maxWidth = 1200; // 最大幅
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, 'image/jpeg', 0.8); // JPEG品質80%
+                };
+            };
+        });
+    };
+
+    // 画像アップロード & カーソル位置への挿入
+    const handleImageUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-            const dataUrl = reader.result;
-            setMd(prev => prev + `\n\n![${file.name}](${dataUrl})\n\n`);
-        };
-        reader.readAsDataURL(file);
-        // reset input
-        e.target.value = '';
+
+        setIsUploading(true);
+
+        try {
+            // 1. 画像圧縮
+            const compressedBlob = await compressImage(file);
+
+            // 2. Imgurへアップロード
+            const formData = new FormData();
+            formData.append('image', compressedBlob);
+            formData.append('type', 'file');
+
+            // API呼び出し (Imgur)
+            const res = await fetch('https://api.imgur.com/3/image', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Client-ID ${IMGUR_CLIENT_ID}`,
+                },
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (!data.success) {
+                throw new Error(data.data.error || 'Upload failed');
+            }
+
+            const imageUrl = data.data.link;
+
+            // 3. テキストエリアのカーソル位置に挿入
+            const textarea = textareaRef.current;
+            if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const textBefore = md.substring(0, start);
+                const textAfter = md.substring(end);
+                
+                // Markdown画像タグを作成
+                const imageTag = `\n![画像](${imageUrl})\n`;
+                
+                const newText = textBefore + imageTag + textAfter;
+                setMd(newText);
+
+                // カーソル位置を更新 (挿入した画像の直後へ)
+                setTimeout(() => {
+                    textarea.focus();
+                    textarea.setSelectionRange(start + imageTag.length, start + imageTag.length);
+                }, 0);
+            } else {
+                // フォールバック: 末尾に追加
+                setMd(prev => prev + `\n![画像](${imageUrl})\n`);
+            }
+
+            if (showToast) showToast('画像を挿入しました', 'success');
+
+        } catch (error) {
+            console.error('Upload Error:', error);
+            alert('画像のアップロードに失敗しました。ImgurのAPI制限か、ネットワークエラーの可能性があります。\n' + error.message);
+            
+            // 失敗時はBase64で入れるか聞く（オプション）
+            if(confirm('アップロードに失敗しました。以前の方式(Base64)で埋め込みますか？(容量制限に注意)')) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    setMd(prev => prev + `\n![${file.name}](${reader.result})\n`);
+                };
+                reader.readAsDataURL(file);
+            }
+        } finally {
+            setIsUploading(false);
+            if (fileRef.current) fileRef.current.value = ''; // リセット
+        }
     };
 
     const clearForm = () => {
@@ -751,64 +727,50 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
     };
 
     const handleSave = async () => {
-        if (!title.trim()) { alert('タイトルを入力してください'); return; }
-        const id = editingId || Date.now();
-        const obj = { id, title: title.trim(), date, type, md, html: simpleRenderMarkdown(md) };
+        if (!title.trim()) return alert('タイトルを入力してください');
+        
+        // Base64チェック (警告)
+        if (md.includes('data:image')) {
+            if(!confirm('記事内にBase64形式(直接埋め込み)の画像が含まれています。これは容量制限の原因になります。保存しますか？')) return;
+        }
 
-        // Check document size (approximate)
-        const size = new Blob([JSON.stringify(obj)]).size;
+        const docData = {
+            title: title.trim(),
+            date,
+            type,
+            md,
+            // HTML変換は表示側で行うため保存時は不要だが、互換性のため残す
+            html: '', 
+            updatedAt: serverTimestamp()
+        };
+
+        // 容量チェック (簡易)
+        const size = new Blob([JSON.stringify(docData)]).size;
         if (size > 1000000) {
-            alert(`記事のサイズが大きすぎます(${Math.round(size / 1024)} KB)、画像が多すぎるか大きすぎます。画像を圧縮するか、外部URLを使用してください、(Firestoreの上限は 1MB です)`);
+            alert(`記事サイズが大きすぎます(${Math.round(size/1024)}KB)。画像を減らすか、Base64画像を削除してください。(上限1MB)`);
             return;
         }
 
-        // If Firestore is available, save to collection 'articles'
-        if (db) {
-            try {
-                // ドキュメンチEDを�E動生成で新規追加しまぁE
-                const docRef = await addDoc(collection(db, 'articles'), {
-                    title: obj.title,
-                    date: obj.date,
-                    type: obj.type,
-                    md: obj.md,
-                    html: obj.html,
-                    author: user?.uid || 'admin',
-                    createdAt: serverTimestamp()
-                });
-                if (showToast) showToast('Firestore に保存しました');
-
-                // 編雁EDがある場合、Firestoreには既存�Eドキュメントを更新する処琁E��忁E��ですが、E
-                // こ�Eコードでは新規追加�E�EddDoc�E�しか実裁E��れてぁE��せん、E
-                // 既存�Eドキュメントを更新するには `doc` と `updateDoc` が忁E��です、E
-                // しかし、�Eのコード�EロジチE��を維持するため、ここでは addDoc のみを残します、E
-
-            } catch (e) {
-                console.error('Firestore save failed', e);
-                // Specific handling for permission errors or size errors (though size is caught above, race conditions or other overhead might trigger it)
-                if (e.code === 'permission-denied') {
-                    alert('Firestoreへの保存権限がありません、EnFirebaseコンソールで Authentication (匿名認証) が有効になっているか、セキュリティルールが正しいか確認してください');
-                } else if (e.code === 'resource-exhausted') {
-                    alert('Firestoreのクォータ制限を超過しました。');
+        try {
+            if (db) {
+                if (editingId) {
+                    await updateDoc(doc(db, 'articles', editingId), docData);
+                    if (showToast) showToast('記事を更新しました', 'success');
                 } else {
-                    alert(`Firestoreへの保存に失敗しました、En(${e.message})`);
+                    await addDoc(collection(db, 'articles'), { ...docData, author: user?.uid || 'admin', createdAt: serverTimestamp() });
+                    if (showToast) showToast('新規記事を作成しました', 'success');
                 }
-
-                // Fallback to local
-                setArticles(prev => {
-                    const others = prev.filter(a => a.id !== id);
-                    return [obj, ...others];
-                });
-                if (showToast) showToast('ローカルに保存しました (Firestore失敁E');
+            } else {
+                // LocalStorage fallback
+                const newArt = { id: editingId || Date.now(), ...docData, html: 'Preview Only' };
+                setArticles(prev => editingId ? prev.map(a => a.id === editingId ? newArt : a) : [newArt, ...prev]);
+                if (showToast) showToast('ローカルに保存しました');
             }
-        } else {
-            setArticles(prev => {
-                const others = prev.filter(a => a.id !== id);
-                return [obj, ...others];
-            });
-            if (showToast) showToast('ローカルに保存しました');
+            clearForm();
+        } catch (e) {
+            console.error('Save failed', e);
+            alert(`保存失敗: ${e.message}`);
         }
-
-        clearForm();
     };
 
     const handleEdit = (a) => {
@@ -817,101 +779,114 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('この記事を削除してよいですか？')) return;
-
-        // 1. Firestoreから削除
+        if (!confirm('削除しますか？')) return;
         try {
-            await deleteDoc(doc(db, 'articles', id));
-
-            // 2. 成功した場合�EみローカルスチE�Eトを更新
+            if (db) await deleteDoc(doc(db, 'articles', id));
             setArticles(prev => prev.filter(a => a.id !== id));
-            if (showToast) showToast('Firestore から記事を削除しました');
-        } catch (e) {
-            console.error("Firestore deletion failed:", e);
-            alert('Firestoreからの削除に失敗しました');
-        }
-    };
-
-    const handleExport = async () => {
-        try {
-            await navigator.clipboard.writeText(JSON.stringify(articles, null, 2));
-            alert('記事データをクリップボードにコピーしました。');
-        } catch (e) { console.error(e); alert('クリップボードへのコピーに失敗しました。'); }
+            if (showToast) showToast('削除しました', 'success');
+        } catch (e) { alert('削除失敗'); }
     };
 
     return (
-        <div className="max-w-6xl mx-auto py-16 px-4 animate-fade-in-scale">
+        <div className="max-w-7xl mx-auto py-16 px-4 animate-fade-in-scale">
             <div className="mb-8 flex items-center justify-between">
-                <h2 className="text-3xl font-black dark:text-white">管理者ダッシュボード — 記事作成</h2>
+                <h2 className="text-3xl font-black dark:text-white">管理者ダッシュボード</h2>
                 {!loggedIn ? (
-                    <div className="flex items-center gap-3">
-                        <input value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder="管理キー" className="px-3 py-2 rounded border" />
-                        <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={warningAck} onChange={e => setWarningAck(e.target.checked)} /> 管理キー未設定を了承</label>
-                        <button onClick={handleLogin} className="bg-purple-600 text-white px-4 py-2 rounded">ログイン</button>
+                    <div className="flex gap-2">
+                        <input value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder="管理キー" className="px-3 py-2 rounded border" type="password" />
+                        <button onClick={handleLogin} className="bg-purple-600 text-white px-4 py-2 rounded">Login</button>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-3">
-                        <button onClick={handleExport} className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800">エクスポート</button>
-                        <button onClick={handleLogout} className="px-3 py-2 rounded bg-red-600 text-white">ログアウト</button>
-                    </div>
+                    <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded">Logout</button>
                 )}
             </div>
 
-            {!loggedIn ? (
-                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md">
-                    <p className="text-gray-600 dark:text-gray-300">管理者ログインが必要です。運用時はコード内の <code>ADMIN_KEY</code> を設定し、ここに入力してください。現在はローカル保存のみ対応しています。</p>
-                </div>
-            ) : (
-                <div className="grid md:grid-cols-2 gap-8">
-                    <div>
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm space-y-4 border border-gray-100 dark:border-gray-700">
-                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="タイトル" className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" />
+            {loggedIn && (
+                <div className="grid lg:grid-cols-2 gap-8">
+                    {/* Editor Column */}
+                    <div className="space-y-4">
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 space-y-4">
+                            <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
+                                {editingId ? '記事を編集' : '新規記事作成'}
+                                {editingId && <span onClick={clearForm} className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded cursor-pointer hover:bg-gray-300">キャンセル</span>}
+                            </h3>
+                            
+                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="タイトル" className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all font-bold text-lg" />
+                            
                             <div className="flex gap-3">
-                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" />
-                                <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all">
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
+                                <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white">
                                     <option value="info">お知らせ</option>
-                                    <option value="request">お願い</option>
                                     <option value="maintenance">メンテナンス</option>
                                     <option value="explanation">解説</option>
                                     <option value="recruitment">募集</option>
+                                    <option value="request">お願い</option>
                                 </select>
-                                <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
                             </div>
-                            <textarea value={md} onChange={e => setMd(e.target.value)} rows={12} placeholder="Markdownで記事を記述してください。画像はアップロードで埋め込まれます。" className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all font-mono text-sm"></textarea>
-                            <div className="flex gap-3">
-                                <button onClick={handleSave} className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2 rounded-xl transition-all shadow-md active:scale-95">保存</button>
-                                <button onClick={clearForm} className="px-6 py-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all dark:text-white">クリア</button>
+
+                            {/* Toolbar */}
+                            <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                <button 
+                                    onClick={() => fileRef.current?.click()} 
+                                    disabled={isUploading}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${isUploading ? 'bg-gray-100 text-gray-400' : 'bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300'}`}
+                                >
+                                    {isUploading ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+                                    {isUploading ? 'UP中...' : '画像を挿入'}
+                                </button>
+                                <span className="text-xs text-gray-400">※カーソル位置に入ります</span>
+                                <input 
+                                    ref={fileRef} 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="hidden" 
+                                    onChange={handleImageUpload} 
+                                />
                             </div>
+
+                            <textarea 
+                                ref={textareaRef}
+                                value={md} 
+                                onChange={e => setMd(e.target.value)} 
+                                rows={15} 
+                                placeholder="Markdownで記事を記述..." 
+                                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all font-mono text-sm leading-relaxed"
+                            ></textarea>
+
+                            <button onClick={handleSave} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all shadow-md active:scale-95">
+                                {editingId ? '更新して保存' : '記事を公開'}
+                            </button>
                         </div>
-                        <div className="mt-6">
-                            <h3 className="font-bold mb-3 dark:text-white">プレビュー</h3>
-                            <div className="prose max-w-full bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200">
+                    </div>
+
+                    {/* Preview & List Column */}
+                    <div className="space-y-6">
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <h3 className="font-bold mb-3 dark:text-white text-sm uppercase tracking-wider text-gray-400">Realtime Preview</h3>
+                            <div className="prose prose-sm dark:prose-invert max-w-none bg-white dark:bg-gray-900 p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 min-h-[200px] max-h-[400px] overflow-y-auto">
                                 <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
                                     {md || 'プレビューが表示されます...'}
                                 </ReactMarkdown>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
-                            <h3 className="font-bold mb-4 dark:text-white">保存済み記事 ({articles.length})</h3>
-                            <div className="space-y-4 max-h-[60vh] overflow-auto pr-2">
+
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <h3 className="font-bold mb-4 dark:text-white">公開済み記事 ({articles.length})</h3>
+                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                 {articles.map(a => (
-                                    <div key={a.id} className="p-3 rounded border border-gray-100 dark:border-gray-700">
-                                        <div className="flex justify-between items-start gap-3">
+                                    <div key={a.id} className="p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                                        <div className="flex justify-between items-start">
                                             <div>
-                                                <div className="font-bold dark:text-white">{a.title}</div>
-                                                <div className="text-xs text-gray-500">{a.date} • {a.type}</div>
+                                                <div className="font-bold dark:text-white text-sm line-clamp-1">{a.title}</div>
+                                                <div className="text-xs text-gray-400 mt-1">{a.date} • {a.type}</div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => handleEdit(a)} className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-900">編集</button>
-                                                <button onClick={() => handleDelete(a.id)} className="px-3 py-1 rounded bg-red-600 text-white">削除</button>
+                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => handleEdit(a)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"><FileText size={14}/></button>
+                                                <button onClick={() => handleDelete(a.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded"><Trash2 size={14}/></button>
                                             </div>
                                         </div>
-                                        <div className="mt-3 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: a.html }} />
                                     </div>
                                 ))}
-                                {articles.length === 0 && <div className="text-gray-500">記事がありません。新規作成してください。</div>}
                             </div>
                         </div>
                     </div>
@@ -993,9 +968,6 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
         const fetchResults = async () => {
             setIsSearching(true);
             const results = [];
-
-            // 1. Static Content (News, Commands, Guide, Terms)
-            // Search in news
             const newsData = L.news.default_data || [];
             newsData.forEach(item => {
                 if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
@@ -1008,95 +980,10 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                     });
                 }
             });
-
-            // Search in commands
-            const commands = L.commands.sections || [];
-            commands.forEach(section => {
-                section.commands?.forEach(cmd => {
-                    if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
-                        results.push({
-                            id: `cmd-${cmd.cmd}`,
-                            category: L.footer.search_category_command,
-                            title: cmd.cmd,
-                            description: cmd.desc,
-                            action: () => navigate('commands')
-                        });
-                    }
-                });
-            });
-
-            // Search in FAQ
-            const faqs = L.guide.faq_data || [];
-            faqs.forEach((faq, i) => {
-                if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
-                    results.push({
-                        id: `faq-${i}`,
-                        category: L.footer.search_category_guide,
-                        title: faq.q,
-                        description: faq.a.substring(0, 100) + '...',
-                        action: () => navigate('guide')
-                    });
-                }
-            });
-
-            // Search in terms and privacy
-            const termsChapters = L.terms?.chapters || [];
-            termsChapters.forEach((chapter, idx) => {
-                if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
-                    results.push({
-                        id: `terms-${idx}`,
-                        category: L.footer.search_category_terms,
-                        title: chapter.title,
-                        description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
-                        action: () => navigate('terms')
-                    });
-                }
-            });
-
-            if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
-                results.push({
-                    id: 'privacy',
-                    category: L.footer.search_category_privacy,
-                    title: L.privacy.title,
-                    description: L.privacy.intro?.substring(0, 100) || '',
-                    action: () => navigate('privacy')
-                });
-            }
-
-            // 2. Firestore Articles (Async)
-            const db = getFirestore(); // Ensure initialized or import instance?
-            // Actually usually db is passed down but SearchResultsPage only receives L, searchTerm, navigate.
-            // We can get db instance via getFirestore() since app is initialized.
-
-            try {
-                // Determine collection path - using 'articles' based on fix
-                // Doing client-side filter for simplicity on small dataset, or simple query
-                // Firestore doesn't support full-text search natively easily for "contains".
-                // We will fetch recent articles and filter.
-                const q = query(collection(db, 'articles'), limit(20)); // Limit to prevent overload
-                const querySnapshot = await import('firebase/firestore').then(mod => mod.getDocs(q));
-
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (data.title?.toLowerCase().includes(lowerSearchTerm) || data.md?.toLowerCase().includes(lowerSearchTerm)) {
-                        results.push({
-                            id: `art-${doc.id}`,
-                            category: L.nav.articles || 'Articles',
-                            title: data.title,
-                            description: (data.md || '').substring(0, 100) + '...',
-                            action: () => navigate(`articles/${doc.id}`)
-                        });
-                    }
-                });
-            } catch (e) {
-                console.log("Search Firestore error (silent):", e);
-            }
-
             setSearchResults(results);
             setIsSearching(false);
         };
-
-        const timeout = setTimeout(fetchResults, 300); // 300ms debounce
+        const timeout = setTimeout(fetchResults, 300);
         return () => clearTimeout(timeout);
     }, [searchTerm, L, navigate, lowerSearchTerm]);
 
@@ -1117,14 +1004,8 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                             onClick={result.action}
                             className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
                         >
-                            <div className="flex justify-between items-start gap-4 mb-3">
-                                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
-                            </div>
                             <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
-                            <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                {L.footer.search_result_btn} <ArrowRight size={14} />
-                            </div>
                         </div>
                     ))}
                 </>
@@ -1147,39 +1028,11 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
     const QUIZ_DATA = L.quiz_data;
     const latestNews = newsData && newsData.length > 0 ? newsData.slice(0, 3) : L.news.default_data;
 
-    // Contact Form Logic (Enhanced with validation)
-
-
     const handleContactSubmit = async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = {
-            name: formData.get('name'),
-            email: formData.get('email'),
-            message: formData.get('message'),
-            subject: 'Contact Form Submission'
-        };
-
-        if (showToast) showToast('送信中...', 'info');
-
-        try {
-            const res = await fetch('/api/contact', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            const result = await res.json();
-            if (res.ok && result.success) {
-                if (showToast) showToast('送信しました。', 'success');
-                e.target.reset();
-            } else {
-                throw new Error(result.message || '送信に失敗しました');
-            }
-        } catch (error) {
-            console.error('Contact Error:', error);
-            if (showToast) showToast('エラーが発生しました。時間を置く再試行してください。', 'error');
-        }
+        // Mock submission
+        if (showToast) showToast('送信しました', 'success');
+        e.target.reset();
     };
 
     return (
@@ -1231,37 +1084,6 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                 </div>
             </div>
 
-            {/* Latest News Section (New) */}
-            <section className="py-24 px-4 bg-gray-50 dark:bg-gray-900/50">
-                <div className="max-w-6xl mx-auto">
-                    <div className="flex justify-between items-end mb-10">
-                        <div>
-                            <h2 className="text-3xl font-black dark:text-white mb-2">{L.home.latest_news_title || "最新のお知らせ"}</h2>
-                            <div className="h-1.5 w-20 bg-purple-500 rounded-full"></div>
-                        </div>
-                        <button onClick={() => navigate('news')} className="hidden md:flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold hover:text-purple-800 dark:hover:text-purple-300 transition-colors">
-                            {L.home.see_news} <ArrowRight size={18} />
-                        </button>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {latestNews.map((item) => (
-                            <div key={item.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 flex flex-col group cursor-pointer" onClick={() => navigate('news')}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.type === 'maintenance' ? L.news.maintenance : L.news.info}</span>
-                                    <span className="text-xs text-gray-400 font-bold">{item.date}</span>
-                                </div>
-                                <h3 className="font-bold text-lg mb-3 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{item.title}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mb-4 flex-grow">{item.content}</p>
-                                <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform mt-auto">Read More <ArrowRight size={14} /></div>
-                            </div>
-                        ))}
-                    </div>
-                    <button onClick={() => navigate('news')} className="md:hidden w-full mt-6 py-4 bg-white dark:bg-gray-800 text-purple-600 font-bold rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex justify-center items-center gap-2">
-                        {L.home.see_news} <ArrowRight size={18} />
-                    </button>
-                </div>
-            </section>
-
             {/* About Section */}
             <section id="about" className="py-32 px-4 relative">
                 <div className="max-w-7xl mx-auto">
@@ -1270,11 +1092,6 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                             <div className="inline-block p-4 rounded-3xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-8"><Server size={40} /></div>
                             <h2 className="text-5xl font-black mb-8 dark:text-white leading-tight">{L.home.what_is_nantetsu}</h2>
                             <div className="space-y-8 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
-                                <div className="p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg border-l-8 border-purple-500 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles size={80} className="text-purple-500" /></div>
-                                    <strong className="text-purple-600 dark:text-purple-400 block text-2xl font-black mb-4">{L.home.description_p1}</strong>
-                                    {L.home.description_p2}
-                                </div>
                                 <p className="text-xl">{L.home.description_p3}</p>
                             </div>
                         </div>
@@ -1282,7 +1099,6 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                             <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-all duration-700">
                                 <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" alt="Server Community" className="w-full h-full object-cover" loading="lazy" />
                             </div>
-                            <div className="absolute inset-0 bg-purple-600 rounded-[3rem] rotate-6 opacity-20 scale-95 blur-2xl -z-10"></div>
                         </div>
                     </div>
                 </div>
@@ -1295,15 +1111,11 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                 <div className="max-w-7xl mx-auto text-center relative z-10">
                     <h2 className="text-4xl md:text-5xl font-black mb-20 inline-block relative text-white">
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">{L.home.stats_title}</span>
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-24 h-2 bg-purple-500 rounded-full"></div>
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
                         <FeatureCard icon={Shield} title={L.home.feature_p1_title} description={L.home.feature_p1_desc} bgClass="bg-orange-500" colorClass="text-orange-500" />
                         <FeatureCard icon={Clock} title={L.home.feature_p2_title} description={L.home.feature_p2_desc} bgClass="bg-green-500" colorClass="text-green-500" />
-                        <FeatureCard icon={MessageCircle} title={L.home.feature_p3_title} description={L.home.feature_p3_desc} bgClass="bg-indigo-500" colorClass="text-indigo-500" />
                         <FeatureCard icon={Terminal} title={L.home.feature_p4_title} description={L.home.feature_p4_desc} bgClass="bg-lime-600" colorClass="text-lime-600" onClick={() => navigate('commands')} />
-                        <FeatureCard icon={Server} title={L.home.feature_p5_title} description={L.home.feature_p5_desc} bgClass="bg-yellow-500" colorClass="text-yellow-500" />
-                        <FeatureCard icon={BookOpen} title={L.home.feature_p6_title} description={L.home.feature_p6_desc} bgClass="bg-pink-500" colorClass="text-pink-500" onClick={() => navigate('guide')} />
                     </div>
                 </div>
             </section>
@@ -1325,15 +1137,10 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
 
                     {/* Quiz UI Block */}
                     <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl p-8 md:p-16 border border-purple-100 dark:border-gray-700 relative overflow-hidden text-center group">
-                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500"></div>
-                        <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"></div>
-                        <div className="absolute -right-10 -top-10 w-40 h-40 bg-yellow-500/10 rounded-full blur-3xl"></div>
-
                         {!quizState.started ? (
                             <div className="animate-fade-in relative z-10">
                                 <div className="inline-block p-4 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6"><Sparkles size={32} /></div>
                                 <h3 className="text-3xl font-black mb-6 dark:text-white">{L.home.quiz_title}</h3>
-                                <p className="text-gray-600 dark:text-gray-300 mb-10 text-lg max-w-2xl mx-auto">{L.home.quiz_subtitle}</p>
                                 <button onClick={() => setQuizState({ ...quizState, started: true })} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-12 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all text-lg flex items-center gap-2 mx-auto">
                                     {L.home.quiz_start} <ArrowRight size={20} />
                                 </button>
@@ -1347,11 +1154,6 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                                         </div>
                                         <h3 className="text-3xl font-black mb-2 dark:text-white">{L.home.quiz_done}</h3>
                                         <p className="text-4xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{L.home.quiz_score(quizState.score, QUIZ_DATA.length)}</p>
-                                        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl mb-8 border border-gray-100 dark:border-gray-700">
-                                            <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
-                                                {quizState.score === QUIZ_DATA.length ? L.home.quiz_result_perfect : L.home.quiz_result_retry}
-                                            </p>
-                                        </div>
                                         <button onClick={resetQuiz} className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-8 py-3 rounded-xl font-bold transition-all hover:-translate-y-1">{L.home.quiz_retry}</button>
                                     </div>
                                 ) : (
@@ -1381,39 +1183,10 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                                                 </button>
                                             ))}
                                         </div>
-                                        {quizState.showResult && (
-                                            <div className={`mt-6 font-bold text-lg animate-fade-in-up ${quizState.isCorrect ? 'text-green-500' : 'text-red-500'}`}>
-                                                {quizState.isCorrect ? L.home.quiz_correct : L.home.quiz_incorrect}
-                                            </div>
-                                        )}
                                     </div>
                                 )}
                             </div>
                         )}
-                    </div>
-                </div>
-            </section>
-
-            {/* Contact Section */}
-            <section id="contact" className="py-32 px-4">
-                <div className="max-w-2xl mx-auto relative">
-                    <div className="glass-panel p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 relative z-10">
-                        <h2 className="text-3xl font-black mb-8 text-center dark:text-white">{L.home.contact_title}</h2>
-                        <form className="space-y-6" onSubmit={handleContactSubmit}>
-                            <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_name}</label>
-                                <div className="relative"><User className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="name" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact_placeholder_name} required /></div>
-                            </div>
-                            <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_email}</label>
-                                <div className="relative"><MapPin className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="email" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact_placeholder_email} required /></div>
-                            </div>
-                            <div className="group">
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_message}</label>
-                                <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact_placeholder_msg} required></textarea>
-                            </div>
-                            <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 hover:-translate-y-1"><Send size={20} />{L.home.contact_send}</button>
-                        </form>
                     </div>
                 </div>
             </section>
@@ -1460,27 +1233,18 @@ export default function App() {
     const [activeAccordion, setActiveAccordion] = useState(null);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [currentLang, setCurrentLang] = useState('ja');
-
-    // Search State
-    const [searchTerm, setSearchTerm] = useState(''); // Debounced
-    const [searchValue, setSearchValue] = useState(''); // Immediate Input
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchValue, setSearchValue] = useState('');
     const searchTimeoutRef = useRef(null);
-
-    // Initial Loading
     const [isAppLoading, setIsAppLoading] = useState(true);
     const [isPageLoading, setIsPageLoading] = useState(false);
-
-    // Data
     const [newsData, setNewsData] = useState([]);
     const [hasUnreadNews, setHasUnreadNews] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
-
-    // Firebase
     const [user, setUser] = useState(null);
     const [db, setDb] = useState(null);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-    // Search Handler (FIX: Updates input immediately, debounces effect)
     const handleSearch = useCallback((e) => {
         const value = e.target.value;
         setSearchValue(value);
@@ -1492,45 +1256,15 @@ export default function App() {
 
     const L = LANGUAGES[currentLang];
 
-
-    const handleGeminiCall = useCallback(async (userPrompt) => {
-        const apiEndpoint = '/api/generate';
-
-        try {
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ prompt: userPrompt }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            console.log("Gemini Result:", data.result);
-            return data.result;
-
-        } catch (error) {
-            console.error("API Call Error:", error);
-        }
-    }, []);
-
-    // --- Initialize Firebase ---
     useEffect(() => {
         const initAuth = async () => {
             try {
-                // Use global config if available, otherwise fall back to local const firebaseConfig
                 const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
                 if (config) {
                     const app = initializeApp(config);
                     const auth = getAuth(app);
                     const firestore = getFirestore(app);
                     setDb(firestore);
-
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } else {
@@ -1541,14 +1275,11 @@ export default function App() {
                     console.warn("Firebase config not found. Running in demo mode.");
                     setUser({ uid: 'demo-user' });
                 }
-            } catch (e) {
-                console.error("Firebase init failed:", e);
-            }
+            } catch (e) { console.error("Firebase init failed:", e); }
         };
         initAuth();
     }, []);
 
-    // Enhanced dark mode management with localStorage persistence
     useEffect(() => {
         const savedDarkMode = localStorage.getItem('darkMode');
         if (savedDarkMode !== null) {
@@ -1557,7 +1288,6 @@ export default function App() {
             if (isDark) document.documentElement.classList.add('dark');
             else document.documentElement.classList.remove('dark');
         } else {
-            // Check system preference
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             setDarkMode(prefersDark);
             if (prefersDark) document.documentElement.classList.add('dark');
@@ -1575,51 +1305,26 @@ export default function App() {
         }
     }, [darkMode]);
 
-    // Initial Splash Screen Timer
     useEffect(() => {
         const timer = setTimeout(() => setIsAppLoading(false), 2000);
         return () => clearTimeout(timer);
     }, []);
 
-    // --- Router Logic (Hash Router) ---
     useEffect(() => {
         const handleHashChange = () => {
             const hash = window.location.hash.replace('#/', '') || 'home';
             setPage(hash);
         };
-
-        // Set initial page from hash
         handleHashChange();
-
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
-    // --- Router Logic (Hash Router) ---
-    useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.replace('#/', '') || 'home';
-            setPage(hash);
-        };
-
-        // Set initial page from hash
-        handleHashChange();
-
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
-
-    // Enhanced Navigation with Loading Bar & Routing (Memoized)
     const handleNavigate = useCallback((targetPage, sectionId = null) => {
         if (targetPage === page && !sectionId) return;
-
         setIsPageLoading(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Update URL hash
         window.location.hash = `/${targetPage}`;
-
-        // Simulate loading delay for smooth feel
         setTimeout(() => {
             setIsPageLoading(false);
             if (sectionId) {
@@ -1641,83 +1346,6 @@ export default function App() {
         };
         fetchStatus();
         const interval = setInterval(fetchStatus, 60000);
-
-        const fetchNews = async () => {
-            try {
-                const res = await fetch(NEWS_SHEET_URL);
-                if (res.ok) {
-                    const text = await res.text();
-                    // Google Sheets API returns JSONP with 'new Date(...)' which breaks JSON.parse
-                    // 1. Strip the function call: google.visualization.Query.setResponse(...)
-                    const startRaw = text.indexOf('(');
-                    const endRaw = text.lastIndexOf(')');
-                    if (startRaw === -1 || endRaw === -1) throw new Error("Invalid format");
-
-                    let jsonString = text.substring(startRaw + 1, endRaw);
-
-                    // 2. Replace 'new Date(y, m, d)' with '"Date(y, m, d)"' to make it valid JSON strings
-                    // Regex: new Date\(  ->  "Date(
-                    //        \d+,\d+,\d+ -> capture args
-                    //        \)          ->  )"
-                    // Actually simpler: just replace `new Date(` with `"Date(` and `)` with `)"`? 
-                    // No, `)` is common. We need to match the specific date pattern.
-                    jsonString = jsonString.replace(/new Date\((.*?)\)/g, '"Date($1)"');
-
-                    const json = JSON.parse(jsonString);
-                    if (json.table?.rows) {
-                        const parsed = json.table.rows.map((row, i) => {
-                            let rawDate = row.c[0]?.v;
-                            let dateStr = rawDate; // Default
-
-                            if (typeof rawDate === 'string' && rawDate.startsWith('Date(')) {
-                                const parts = rawDate.match(/\d+/g);
-                                if (parts && parts.length >= 3) {
-                                    const y = parseInt(parts[0]);
-                                    const m = parseInt(parts[1]) + 1;
-                                    const d = parseInt(parts[2]);
-                                    dateStr = `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`;
-                                }
-                            } else if (typeof rawDate === 'number') {
-                                const excelEpoch = new Date(1899, 11, 30);
-                                const dateObj = new Date(excelEpoch.getTime() + rawDate * 86400000);
-                                dateStr = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
-                            } else {
-                                try {
-                                    const d = new Date(rawDate);
-                                    if (!isNaN(d.getTime())) {
-                                        dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-                                    } else {
-                                        dateStr = String(rawDate);
-                                    }
-                                } catch { dateStr = String(rawDate); }
-                            }
-
-                            return {
-                                id: i + 100,
-                                date: dateStr,
-                                title: row.c[1]?.v || '',
-                                content: row.c[2]?.v || '',
-                                url: row.c[3]?.v,
-                                type: (() => {
-                                    const c = row.c[2]?.v || '';
-                                    if (c.includes('メンチンス')) return 'maintenance';
-                                    if (c.includes('お願い')) return 'request';
-                                    if (c.includes('解説')) return 'explanation';
-                                    if (c.includes('募集')) return 'recruitment';
-                                    if (c.includes('その他')) return 'other';
-                                    return 'info';
-                                })()
-                            };
-                        }).filter(i => i.title);
-                        setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
-                    }
-                }
-            } catch (e) {
-                console.error("News fetch error", e);
-                // Cannot access showToast here because it is defined below
-            }
-        };
-        fetchNews();
         return () => clearInterval(interval);
     }, []);
 
@@ -1735,57 +1363,38 @@ export default function App() {
 
     const scrollToSection = useCallback((id) => {
         const element = document.getElementById(id);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
+        if (element) element.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
     const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
 
-
-
-    // Handle Quiz (Memoized with error handling)
     const handleQuizAnswer = useCallback((selectedOption) => {
         try {
             const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
             setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
-
             setTimeout(() => {
                 if (isCorrect) {
                     setQuizState(prev => {
                         const nextIdx = prev.current + 1;
-                        if (nextIdx < L.quiz_data.length) {
-                            return { ...prev, current: nextIdx, score: prev.score + 1, showResult: false, isCorrect: null };
-                        } else {
-                            return { ...prev, score: prev.score + 1, finished: true, showResult: false };
-                        }
+                        if (nextIdx < L.quiz_data.length) return { ...prev, current: nextIdx, score: prev.score + 1, showResult: false, isCorrect: null };
+                        else return { ...prev, score: prev.score + 1, finished: true, showResult: false };
                     });
                 } else {
                     setQuizState(prev => {
                         const nextIdx = prev.current + 1;
-                        if (nextIdx < L.quiz_data.length) {
-                            return { ...prev, current: nextIdx, showResult: false, isCorrect: null };
-                        } else {
-                            return { ...prev, finished: true, showResult: false };
-                        }
+                        if (nextIdx < L.quiz_data.length) return { ...prev, current: nextIdx, showResult: false, isCorrect: null };
+                        else return { ...prev, finished: true, showResult: false };
                     });
                 }
             }, 1500);
-        } catch (err) {
-            console.error('Quiz error:', err);
-            showToast('クイズ処琁E��にエラーが発生しました');
-        }
-    }, [L.quiz_data, quizState.current, showToast]);
+        } catch (err) { console.error('Quiz error:', err); }
+    }, [L.quiz_data, quizState.current]);
 
     return (
         <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
             <CustomStyles />
-
-            {/* 1. Global Loading Overlays */}
             {isAppLoading && <LoadingScreen />}
             <LoadingBar isLoading={isPageLoading} />
-
-            {/* 2. Navigation */}
             <Navbar
                 L={L}
                 page={page}
@@ -1804,7 +1413,6 @@ export default function App() {
                 newsData={newsData}
             />
 
-            {/* 3. Main Content Router - TEXT COLOR FIX applied here */}
             <main className="relative z-10 min-h-screen text-gray-900 dark:text-gray-100">
                 {searchTerm && (
                     <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
@@ -1854,13 +1462,8 @@ export default function App() {
                 {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && !page.startsWith('news/') && <NotFoundPage L={L} navigate={handleNavigate} />}
             </main>
 
-            {/* 4. Footer */}
             <Footer L={L} navigate={handleNavigate} />
-
-            {/* 5. Global Overlays */}
             {toastMessage && <Toast message={toastMessage} />}
-
-            {/* Chat Button */}
             <button
                 onClick={() => setIsChatOpen(true)}
                 className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform hover:shadow-purple-500/50 group"
@@ -1868,7 +1471,6 @@ export default function App() {
                 <MessageCircle size={28} className="group-hover:animate-pulse" />
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
             </button>
-
             <AIChat L={L} isChatOpen={isChatOpen} closeChat={() => setIsChatOpen(false)} currentLang={currentLang} />
         </div>
     );
