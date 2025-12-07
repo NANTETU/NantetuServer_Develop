@@ -1,0 +1,44 @@
+export const ArticlesPage = ({ L, db, appId, navigate }) => {
+    const [articles, setArticles] = useState([]);
+
+    useEffect(() => {
+        let unsub = null;
+        if (db) {
+            try {
+                const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'));
+                unsub = onSnapshot(q, snap => {
+                    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setArticles(data);
+                });
+            } catch (e) { console.error('articles fetch error', e); }
+        } else {
+            try {
+                const local = JSON.parse(localStorage.getItem('admin_articles_v1') || '[]');
+                setArticles(local);
+            } catch { setArticles([]); }
+        }
+        return () => { if (unsub) unsub(); };
+    }, [db]);
+
+    return (
+        <div className="max-w-6xl mx-auto py-24 px-4 animate-fade-in-scale">
+            <div className="text-center mb-12">
+                <h2 className="text-3xl font-black dark:text-white mb-2">{L.nav.articles}</h2>
+                <p className="text-gray-600 dark:text-gray-400">最新の記事一覧を表示します。</p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {articles.map(a => (
+                    <div key={a.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 cursor-pointer" onClick={() => navigate(`articles/${a.id}`)}>
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${a.type === 'maintenance' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>{a.type}</span>
+                            <span className="text-xs text-gray-400">{a.date}</span>
+                        </div>
+                        <h3 className="font-bold text-lg mb-2 dark:text-white line-clamp-2">{a.title}</h3>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3" dangerouslySetInnerHTML={{ __html: a.html || a.md || '' }} />
+                    </div>
+                ))}
+                {articles.length === 0 && <div className="col-span-full text-center text-gray-500 py-20">記事がありません。</div>}
+            </div>
+        </div>
+    );
+};
