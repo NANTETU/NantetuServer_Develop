@@ -5,8 +5,8 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
     Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, ShieldExclamation, ChevronLeft, CloudArrowUp, ArrowLeftOnRectangle, GlobeAsiaAustralia,
-    Pencil, Trash, CheckCircle as CheckCircleIcon, ArrowLeftOnRectangle as ArrowLeftOnRectangleIcon, CloudArrowUp as CloudArrowUpIcon, ShieldExclamation as ShieldExclamationIcon
+    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, Shield, ChevronLeft, UploadCloud, ArrowLeftOnRectangle, GlobeAsiaAustralia,
+    Pencil, Trash, CheckCircle as CheckCircleIcon, ArrowLeftOnRectangle as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon, Shield as ShieldExclamationIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
