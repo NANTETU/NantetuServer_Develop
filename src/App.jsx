@@ -5,7 +5,8 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
     Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot
+    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, ShieldExclamation, ChevronLeft, CloudArrowUp, ArrowLeftOnRectangle, GlobeAsiaAustralia,
+    Pencil, Trash, CheckCircle as CheckCircleIcon, ArrowLeftOnRectangle as ArrowLeftOnRectangleIcon, CloudArrowUp as CloudArrowUpIcon, ShieldExclamation as ShieldExclamationIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
@@ -192,7 +193,7 @@ export const NewsItem = ({ item, L }) => {
                     </div>
                 </div>
 
-                <h3 className="text-xl md:text-2xl font-bold mb-3 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-tight">{item.title}</h3>
+                <h3 className="text-xl md:text-2xl font-bold mb-3 dark:text-white leading-tight">{item.title}</h3>
 
                 <div className={`text-gray-600 dark:text-gray-300 leading-relaxed transition-all duration-300 text-sm md:text-base ${isOpen ? 'line-clamp-none' : 'line-clamp-2'}`}>
                     {item.content}
@@ -544,7 +545,7 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
                                     </span>
                                     <span className="text-xs text-gray-400">{a.date}</span>
                                 </div>
-                                <h3 className="font-bold text-base md:text-lg mb-2 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                                <h3 className="font-bold text-base md:text-lg mb-2 dark:text-white line-clamp-2">
                                     {a.title}
                                 </h3>
                             </div>
@@ -564,6 +565,8 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
 
 export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     const [article, setArticle] = useState(null);
+    const [content, setContent] = useState('');
+
     useEffect(() => {
         let unsub = null;
         if (db) {
@@ -590,11 +593,46 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
         <div className="max-w-4xl mx-auto py-24 px-4 text-center">記事が見つかりません。</div>
     );
 
+    // Simple markdown renderer
+    const simpleRenderMarkdown = useCallback((text) => {
+        if (!text) return '';
+        // escape
+        let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // code blocks
+        html = html.replace(/```([\s\S]*?)```/g, (m, code) => 
+            `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g, '&lt;')}</pre>`
+        );
+        // headings
+        html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+        html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+        html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+        // bold / italic
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        // images
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, 
+            '<img src="$2" alt="$1" class="max-w-full rounded-md my-3" loading="lazy" />');
+        // links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+            '<a href="$2" target="_blank" rel="noreferrer" class="text-purple-600 dark:text-purple-400 underline">$1</a>');
+        // paragraphs / line breaks
+        return html.replace(/\n/g, '<br />');
+    }, []);
+
+    useEffect(() => {
+        if (article) {
+            setContent(simpleRenderMarkdown(article.md));
+        }
+    }, [article, simpleRenderMarkdown]);
+
     return (
         <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
             <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
             <div className="text-sm text-gray-500 mb-6">{article.date} • {article.type}</div>
-            <div className="prose bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: article.html || article.content || '' }} />
+            <div className="prose bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: content }} />
             <div className="mt-6">
                 <button onClick={() => navigate('articles')} className="px-4 py-2 rounded border">一覧に戻る</button>
             </div>
@@ -604,9 +642,9 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
 
 
 // =====================
-// Admin: Markdown記事作�EGUI
-// 管琁E��E��け�EシンプルなエチE��タ。画像�EローカルファイルをBase64として埋め込み可能、E
-// Firestoreを使用して記事データを永続化しまぁE
+// Admin: Markdown記事作成GUI
+// 管理者用のシンプルなエディター。画像は外部URLを指定して埋め込み可能
+// Firestoreを使用して記事データを永続化します
 // =====================
 export const AdminPage = ({ L, user, db, appId, showToast }) => {
     const [loggedIn, setLoggedIn] = useState(false);
@@ -630,7 +668,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         }
 
         const articlesRef = collection(db, 'articles');
-        // 記事�E閲覧ペ�Eジ�E�Edmin以外も見れる�Eージ�E�で同じロジチE��を使え�E公開されます、E
+        // 記事の作成日時の降順でソート
         const q = query(articlesRef, orderBy('createdAt', 'desc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -646,7 +684,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => unsubscribe(); // クリーンアップ
     }, [db, loggedIn, L, showToast]);
 
     const [title, setTitle] = useState('');
@@ -956,7 +994,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
     // --- メインレンダリング ---
 
     return (
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 min-h-screen font-inter">
+        <div className="max-w-7xl mx-auto py-12 px-4 bg-gray-50 dark:bg-gray-900 min-h-screen font-inter">
             <header className="mb-10 flex items-center justify-between border-b pb-4 border-gray-200 dark:border-gray-700">
                 <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                     CMS ダッシュボード
@@ -1002,6 +1040,21 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                     <p className="text-gray-600 dark:text-gray-400">
                         記事の作成・編集を行うには、管理キーを入力してログインしてください。
                     </p>
+                    <div className="flex flex-col gap-4">
+                        <input 
+                            type="password" 
+                            value={keyInput} 
+                            onChange={e => setKeyInput(e.target.value)} 
+                            placeholder="管理キーを入力" 
+                            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                        />
+                        <button 
+                            onClick={handleLogin} 
+                            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                            ログイン
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <div className="grid lg:grid-cols-3 gap-10">
