@@ -81,11 +81,7 @@ export const LANGUAGES = {
             other: "その他",
             fetch_error: "お知らせの読み込みに失敗しました。",
             link_text: "リンクを開く",
-            default_data: [
-                { id: 1, date: "2025.11.10", title: "サーバー稼働安定化のお知らせ", content: "サーバーのメモリ割り当てを調整し、多人数接続時のラグを解消しました。", type: "maintenance" },
-                { id: 2, date: "2025.09.01", title: "なんてつサーバー 正式オープン！", content: "統合版サバイバルサーバー「なんてつサーバー」がついにオープンしました！皆様の参加をお待ちしています。", type: "info" },
-                { id: 3, date: "2025.08.25", title: "ベータテスト終了のお知らせ", content: "多くのご協力をいただきありがとうございました。正式リリースに向けて最終調整を行います。", type: "info" }
-            ],
+            default_data: [],
         },
         forum: {
             title: "コミュニティフォーラム",
@@ -375,11 +371,7 @@ export const LANGUAGES = {
             other: "Other",
             fetch_error: "Failed to load announcements.",
             link_text: "Open Link",
-            default_data: [
-                { id: 1, date: "2025.11.10", title: "Server Stability Improvement Announcement", content: "Adjusted server memory allocation to resolve lag during high player counts.", type: "maintenance" },
-                { id: 2, date: "2025.09.01", title: "Nantetu Server Official Opening!", content: "The Bedrock survival server 'Nantetu Server' is finally open! We look forward to your participation.", type: "info" },
-                { id: 3, date: "2025.08.25", title: "End of Beta Test Announcement", content: "Thank you for your extensive cooperation. We will proceed with final adjustments for the official release.", type: "info" }
-            ],
+            default_data: [],
         },
         forum: {
             title: "Community Forum",

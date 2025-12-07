@@ -260,6 +260,7 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
             const systemPrompt = `
             あなたは「なんてつサーバー」の公式AIアシスタントです。
             以下の情報を元に、ユーザーの質問に親切に答えてください。
+            また、嘘の情報を言わずに、本当の情報だけを言い、サーバーに関係のない話には、「私は なんてつサーバー 以外の情報は提供できません。」と答えましょう。
 
             【サーバー情報】
             - 統合版(Bedrock)専用
@@ -274,17 +275,70 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
             - 他人の拠点から5マス以上離れて建築すること
 
             【コマンド】
-            - /tpa <プレイヤー>: テレポートリクエスト
-                - /sethome: ホーム設定
-                - /home: ホームへ移動
-                - /tty: 土地保護設定
+            移動・テレポート系 (Essentials)
+            - /tpa <プレイヤー名>
+            - 指定したプレイヤーにテレポートをリクエストします。
 
-                【初心者ガイド】
-                - スポーンしたら混雑していない場所へ移動
-                - 5ブロック離れて建築
-                - /ttyで土地保護
-                - Discordに参加推奨
-                `;
+            - /tpaccept
+            - /tpa のリクエストを承認します。
+
+            - /tpdeny
+            - /tpa のリクエストを拒否します。
+
+            - /back
+            - 最後にテレポートした場所、または死んだ場所に戻ります。
+
+            - /sethome
+            - 現在地をホームポイントとして設定します。
+
+            - /home
+            - 設定したホームにテレポートします。
+
+            - /spawn
+            - サーバーの初期スポーン地点に戻ります。
+
+            - /warp
+            - 運営が設定した公共施設へ移動します。
+
+            領地・保護・ログ系 (Territory / Tianyan)
+            - /tty
+            - 自分の領地として設定します。(事前に範囲座標のメモが必要)
+
+            - /tygui
+            - 監査ログをGUIで確認します。荒らし特定に便利です。
+
+            - /ty x y z <時間> <半径>
+            - チャットで検索し監査ログを確認します。（上級者向け）
+
+            経済・コミュニケーション (UMoney / Essentials)
+            - /um
+            - 自分の所持金（マネー）を確認します。
+
+            - /um → <送金>
+            - 指定したプレイヤーにお金を送金します。
+
+            - /um → <ランキング>
+            - 所持金のサーバー内ランキングを確認します。
+
+            - /msg <プレイヤー名> <内容>
+            - 指定したプレイヤーに個人メッセージ（DM）を送ります。
+
+            - /ping
+            - サーバーとの接続遅延(Ping値)を確認します。
+
+            - /notice
+            - サーバーからのお知らせを確認します。
+
+            ロールプレイ系 (RolePlay)
+            - /e <アクション>
+            - チャットにアクション（感情表現）を送信します。（例: /e happy）
+
+            【初心者ガイド】
+            - スポーンしたら混雑していない場所へ移動
+            - 5ブロック離れて建築
+            - /ttyで土地保護
+            - Discordに参加推奨
+            `;
 
             const response = await fetch('/api/generate', {
                 method: 'POST',
@@ -313,8 +367,11 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
     if (!isChatOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm flex items-end justify-end md:justify-center p-0 md:p-8 animate-fade-in">
-            <div className="bg-white dark:bg-gray-900 w-full md:max-w-md h-full md:h-[650px] flex flex-col rounded-t-2xl md:rounded-2xl shadow-2xl transform transition-all duration-300 ease-out animate-slide-in-up border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm flex md:justify-end animate-fade-in" onClick={closeChat}>
+            <div
+                className="bg-white dark:bg-gray-900 w-full md:w-[420px] md:max-w-md h-full flex flex-col shadow-2xl transform transition-all duration-300 ease-out border-l border-gray-200 dark:border-gray-700 overflow-hidden animate-slide-in-bottom md:animate-slide-in-right"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="p-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center shadow-md">
                     <div><h3 className="text-lg font-black flex items-center gap-2"><Zap size={20} className="text-yellow-300 fill-current" />{L.footer.chat_title}</h3><p className="text-xs text-purple-200 opacity-90">Powered by Gemini</p></div>
                     <div className="flex items-center gap-1">
@@ -428,6 +485,16 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
 
 export const ArticlesPage = ({ L, db, appId, navigate }) => {
     const [articles, setArticles] = useState([]);
+
+    // Markdownから最初の画像URLを抽出する関数
+    const extractFirstImage = (markdown) => {
+        if (!markdown) return null;
+        // Markdown画像記法 ![alt](url) から画像URLを抽出
+        const imgRegex = /!\[.*?\]\((.*?)\)/;
+        const match = markdown.match(imgRegex);
+        return match ? match[1] : null;
+    };
+
     useEffect(() => {
         let unsub = null;
         if (db) {
@@ -446,6 +513,7 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
         }
         return () => { if (unsub) unsub(); };
     }, [db]);
+
     return (
         <div className="max-w-6xl mx-auto py-24 px-4 animate-fade-in-scale">
             <div className="text-center mb-12">
@@ -453,17 +521,40 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
                 <p className="text-gray-600 dark:text-gray-400">最新の記事一覧を表示します。</p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {articles.map(a => (
-                    <div key={a.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 cursor-pointer" onClick={() => navigate(`articles/${a.id}`)}>
-                        <div className="flex items-center gap-2 mb-3">
-                            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${a.type === 'maintenance' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>{a.type}</span>
-                            <span className="text-xs text-gray-400">{a.date}</span>
+                {articles.map(a => {
+                    const thumbnailUrl = extractFirstImage(a.md) || '/images/Image Not Found.png';
+                    return (
+                        <div key={a.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 cursor-pointer overflow-hidden group" onClick={() => navigate(`articles/${a.id}`)}>
+                            {/* サムネイル画像 */}
+                            <div className="relative w-full aspect-video bg-gray-100 dark:bg-gray-900 overflow-hidden">
+                                <img
+                                    src={thumbnailUrl}
+                                    alt={a.title}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    onError={(e) => { e.target.src = '/images/Image Not Found.png'; }}
+                                />
+                            </div>
+                            {/* コンテンツ部分 */}
+                            <div className="p-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${a.type === 'maintenance' ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>
+                                        {a.type}
+                                    </span>
+                                    <span className="text-xs text-gray-400">{a.date}</span>
+                                </div>
+                                <h3 className="font-bold text-base md:text-lg mb-2 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                                    {a.title}
+                                </h3>
+                            </div>
                         </div>
-                        <h3 className="font-bold text-lg mb-2 dark:text-white line-clamp-2">{a.title}</h3>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3" dangerouslySetInnerHTML={{ __html: a.html || a.md || '' }} />
+                    );
+                })}
+                {articles.length === 0 && (
+                    <div className="col-span-full text-center text-gray-500 py-20 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
+                        <FileText size={48} className="mx-auto mb-4 opacity-20" />
+                        <p>記事がありません。</p>
                     </div>
-                ))}
-                {articles.length === 0 && <div className="col-span-full text-center text-gray-500 py-20">記事がありません。</div>}
+                )}
             </div>
         </div>
     );
@@ -665,7 +756,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         // Check document size (approximate)
         const size = new Blob([JSON.stringify(obj)]).size;
         if (size > 1000000) {
-            alert(`記事�EチE�Eタサイズが大きすぎまぁE(${Math.round(size / 1024)} KB)、En画像が多すぎるか大きすぎます。画像を圧縮するか、外部URLを使用してください、En(Firestoreの上限は 1MB でぁE`);
+            alert(`記事のサイズが大きすぎます(${Math.round(size / 1024)} KB)、画像が多すぎるか大きすぎます。画像を圧縮するか、外部URLを使用してください、(Firestoreの上限は 1MB です)`);
             return;
         }
 
