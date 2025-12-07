@@ -1,40 +1,44 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-    CheckCircle, Server, Clock, MessageCircle, Terminal,
-    Send, ExternalLink, Bell, BookOpen,
-    User, Search, Trash2, Zap, Sparkles, ArrowRight,
-    MapPin, Shield, HelpCircle, ChevronDown, ChevronUp, Gamepad2, Bot, X, Copy
-} from 'lucide-react';
-
-// Firebase imports (v9 modular SDK)
-import { initializeApp } from "firebase/app";
-import { 
-    getFirestore, collection, addDoc, query, orderBy, limit, 
-    onSnapshot, serverTimestamp, doc, deleteDoc, updateDoc, getDocs 
-} from 'firebase/firestore';
-import { 
-    signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth 
-} from 'firebase/auth';
-
-// Other libraries
 import { openDB } from 'idb';
+import {
+    Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
+    Server, Users, Shield, Clock, MessageCircle, MapPin,
+    HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
+    Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
+    User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
+    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot
+} from 'lucide-react';
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
+import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import { openDB } from 'idb';
 
-// ==========================================
-// External Imports
-// ==========================================
-// ※以下のファイルはローカル環境に存在することを前提としています。
+// Extracted components
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { app, firebaseConfig } from './config/firebase';
-import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL } from './config/constants';
+// ==========================================
+// 1. Configuration & Data (languages.js)
+// ==========================================
+
+// Imported from config/constants.js
+import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
+
+// Firebase and helper functions now imported from config and utils
+// (firebaseConfig, app, formatCorrectedDate)
+
+
+// LANGUAGES object now imported from './config/languages'
 
 // ==========================================
-// 1. UI Components (Internal to App.jsx)
+// 2. UI Components (UI.jsx)
 // ==========================================
 
 export const LoadingScreen = () => (
@@ -84,6 +88,7 @@ export const FeatureCard = ({ icon: Icon, title, description, colorClass, bgClas
     </div>
 );
 
+// Improved CopyBox Component
 export const CopyBox = ({ label, value, onCopy, lang }) => {
     const [isCopied, setIsCopied] = useState(false);
 
@@ -113,11 +118,12 @@ export const CopyBox = ({ label, value, onCopy, lang }) => {
                     {isCopied ? <CheckCircle size={18} className="animate-bounce" /> : <Copy size={18} />}
                     <span className="uppercase text-sm">
                         {isCopied
-                            ? LANGUAGES[lang]?.join.copy_success || 'Copied!'
-                            : LANGUAGES[lang]?.join.copy_action || 'Copy'}
+                            ? LANGUAGES[lang].join.copy_success
+                            : LANGUAGES[lang].join.copy_action || 'Copy'}
                     </span>
                 </button>
             </div>
+            {/* Decorative background element */}
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/5 to-transparent rounded-bl-full -mr-8 -mt-8 transition-all group-hover:scale-150 group-hover:from-purple-500/10 pointer-events-none"></div>
         </div>
     );
@@ -225,8 +231,10 @@ export const NewsItem = ({ item, L }) => {
 };
 
 // ==========================================
-// 2. Chat & AI Components
+// 3. Layout Components (Layout.jsx)
 // ==========================================
+
+// Navbar and Footer are now imported from ./components
 
 export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
     const [chatHistory, setChatHistory] = useState([]);
@@ -249,6 +257,10 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
         setIsLoading(true);
 
         try {
+            // Check API Key availability
+            // Serverless API call does not require client-side apiKey check
+
+
             const systemPrompt = `
             あなたは「なんてつサーバー」の公式AIアシスタントです。
             以下の情報を元に、ユーザーの質問に親切に答えてください。
@@ -336,12 +348,16 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    prompt: `System Prompt: ${systemPrompt}\nUser Message: ${input.trim()}`
+                    prompt: `
+                System Prompt: ${systemPrompt}
+                User Message: ${input.trim()}
+                `
                 })
             });
 
             const data = await response.json();
             const reply = data.result || "すみません、うまく答えられませんでした。";
+
             setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
         } catch (error) {
             console.error("AI Error:", error);
@@ -396,7 +412,7 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
 };
 
 // ==========================================
-// 3. Sub Pages & Sections
+// 4. Sub Pages (SubPages.jsx)
 // ==========================================
 
 export const NewsPage = ({ L, newsData }) => {
@@ -429,9 +445,12 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
     if (!item) return <div className="max-w-4xl mx-auto py-32 px-4 text-center">お知らせが見つかりません。</div>;
 
     const getTypeConfig = (type) => {
-        // NewsItemと同じロジックまたは共通化推奨
         switch (type) {
             case 'maintenance': return { label: L.news.maintenance, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
+            case 'request': return { label: L.news.request, style: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' };
+            case 'explanation': return { label: L.news.explanation, style: 'bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50' };
+            case 'recruitment': return { label: L.news.recruitment, style: 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50' };
+            case 'other': return { label: L.news.other, style: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' };
             default: return { label: L.news.info, style: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50' };
         }
     };
@@ -457,6 +476,13 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
                         {item.content}
                     </ReactMarkdown>
                 </div>
+                {item.url && (
+                    <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
+                        <a href={item.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-white font-bold bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
+                            {L.news.link_text} <ExternalLink size={20} />
+                        </a>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -465,8 +491,10 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
 export const ArticlesPage = ({ L, db, appId, navigate }) => {
     const [articles, setArticles] = useState([]);
 
+    // Markdownから最初の画像URLを抽出する関数
     const extractFirstImage = (markdown) => {
         if (!markdown) return null;
+        // Markdown画像記法 ![alt](url) から画像URLを抽出
         const imgRegex = /!\[.*?\]\((.*?)\)/;
         const match = markdown.match(imgRegex);
         return match ? match[1] : null;
@@ -502,6 +530,7 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
                     const thumbnailUrl = extractFirstImage(a.md) || '/images/Image Not Found.png';
                     return (
                         <div key={a.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 cursor-pointer overflow-hidden group" onClick={() => navigate(`articles/${a.id}`)}>
+                            {/* サムネイル画像 */}
                             <div className="relative w-full aspect-video bg-gray-100 dark:bg-gray-900 overflow-hidden">
                                 <img
                                     src={thumbnailUrl}
@@ -510,6 +539,7 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
                                     onError={(e) => { e.target.src = '/images/Image Not Found.png'; }}
                                 />
                             </div>
+                            {/* コンテンツ部分 */}
                             <div className="p-4">
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${a.type === 'maintenance' ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>
@@ -541,10 +571,11 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
         let unsub = null;
         if (db) {
             try {
-                // Firestore doc id may be string; get by query if strict id match fails
+                const docRef = collection(db, 'articles');
+                // Firestore doc id may be string; get by query
                 const q = query(collection(db, 'articles'));
                 unsub = onSnapshot(q, snap => {
-                    const found = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(x => x.id === id);
+                    const found = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(x => x.id === id || String(x.id) === String(id) || String(x.id) === String(Number(id)));
                     setArticle(found || null);
                 });
             } catch (e) { console.error('article detail fetch error', e); }
@@ -574,8 +605,11 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     );
 };
 
+
 // =====================
-// Admin Page (Fixed)
+// Admin: Markdown記事作成GUI
+// 管理者用のシンプルなエディター。画像はローカルファイルをBase64として埋め込み可能、または
+// Firestoreを使用して記事データを永続化します。
 // =====================
 export const AdminPage = ({ L, user, db, appId, showToast }) => {
     const [loggedIn, setLoggedIn] = useState(false);
@@ -585,29 +619,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
     const [loading, setLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [imageDb, setImageDb] = useState(null);
-
-    // 環境変数などから取得することを想定（デモ用にデフォルト値設定）
-    // NOTE: import.meta.envの使用はVite等の環境に依存します。
-    // エラー回避のため、ここではprocess.envまたはプレースホルダーを使用します。
-    const ADMIN_KEY = (typeof process !== 'undefined' && process.env?.REACT_APP_ADMIN_KEY) || "admin-secret";
-
-    // Login Logic (FIXED: Added missing handlers)
-    const handleLogin = () => {
-        if (keyInput === ADMIN_KEY || warningAck) {
-            setLoggedIn(true);
-            localStorage.setItem('admin_logged_in', '1');
-            if (showToast) showToast('管理者としてログインしました', 'success');
-        } else {
-            alert('管理キーが正しくありません');
-        }
-    };
-
-    const handleLogout = () => {
-        setLoggedIn(false);
-        localStorage.removeItem('admin_logged_in');
-        if (showToast) showToast('ログアウトしました', 'info');
-    };
-
+    
     // Initialize IndexedDB
     useEffect(() => {
         const initDb = async () => {
@@ -620,6 +632,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                 setImageDb(db);
             } catch (error) {
                 console.error('Failed to initialize IndexedDB:', error);
+                alert('画像ストレージの初期化に失敗しました');
             }
         };
         initDb();
@@ -638,8 +651,11 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
             setLoading(false);
             return;
         }
+
         const articlesRef = collection(db, 'articles');
+        // 記事の閲覧ページでは管理者以外も見れるように同じロジックを使えます、公開されます。
         const q = query(articlesRef, orderBy('createdAt', 'desc'));
+
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const articlesData = snapshot.docs.map(doc => ({
                 id: doc.id,
@@ -647,9 +663,14 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
             }));
             setArticles(articlesData);
             setLoading(false);
+        }, (error) => {
+            console.error('Failed to load articles:', error);
+            showToast?.(L?.errorLoadingArticles || 'Failed to load articles', 'error');
+            setLoading(false);
         });
+
         return () => unsubscribe();
-    }, [db, loggedIn]);
+    }, [db, loggedIn, L, showToast]);
 
     const [title, setTitle] = useState('');
     const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -658,34 +679,67 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
     const [editingId, setEditingId] = useState(null);
     const fileRef = useRef(null);
 
-    // Helper for rendering
+    useEffect(() => {
+        localStorage.setItem('admin_articles_v1', JSON.stringify(articles));
+    }, [articles]);
+
     const simpleRenderMarkdown = useCallback((text) => {
         if (!text) return '';
+        
+        // Escape HTML
         let html = text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
+        
+        // Handle image references
         html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, imageId) => {
             return `<img src="image:${imageId}" alt="${alt}" class="max-w-full rounded-md my-3" loading="lazy" />`;
         });
+
+        // Rest of your markdown processing...
         html = html.replace(/```([\s\S]*?)```/g, (m, code) => 
             `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g, '&lt;')}</pre>`
         );
+        // ... rest of your markdown processing ...
+
         return html;
     }, []);
 
     const handleFile = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // ファイルサイズのチェック (2MB制限)
         if (file.size > 2 * 1024 * 1024) {
             alert('画像サイズは2MB以下にしてください。');
             return;
         }
+
         setIsUploading(true);
         try {
+            // 画像用のユニークなIDを生成
             const imageId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            // ファイルをArrayBufferとして読み込む
             const arrayBuffer = await file.arrayBuffer();
-            if (imageDb) {
+            
+            // IndexedDBに保存
+            if (!imageDb) {
+                const db = await openDB('ArticleImages', 1, {
+                    upgrade(db) {
+                        db.createObjectStore('images', { keyPath: 'id' });
+                    },
+                });
+                setImageDb(db);
+                await db.put('images', {
+                    id: imageId,
+                    name: file.name,
+                    type: file.type,
+                    data: arrayBuffer,
+                    uploadedAt: new Date().toISOString()
+                });
+            } else {
                 await imageDb.put('images', {
                     id: imageId,
                     name: file.name,
@@ -694,7 +748,10 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                     uploadedAt: new Date().toISOString()
                 });
             }
+
+            // 画像参照を含むマークダウンを挿入
             setMd(prev => prev + `\n\n![${file.name}](${imageId})\n\n`);
+            
             if (showToast) showToast('画像を挿入しました');
         } catch (error) {
             console.error('画像のアップロードエラー:', error);
@@ -710,7 +767,10 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
     };
 
     const handleSave = async () => {
-        if (!title.trim()) { alert('タイトルを入力してください'); return; }
+        if (!title.trim()) { 
+            alert('タイトルを入力してください'); 
+            return; 
+        }
 
         const obj = { 
             title: title.trim(), 
@@ -723,9 +783,11 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
 
         try {
             if (editingId) {
+                // Update existing document
                 await updateDoc(doc(db, 'articles', editingId), obj);
                 if (showToast) showToast('記事を更新しました');
             } else {
+                // Create new document
                 await addDoc(collection(db, 'articles'), {
                     ...obj,
                     author: user?.uid || 'admin',
@@ -736,15 +798,18 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
             clearForm();
         } catch (e) {
             console.error('Save failed', e);
-            // Fallback
+            alert(`保存に失敗しました: ${e.message}`);
+            
+            // Fallback to local if Firestore fails
             const id = editingId || Date.now();
             setArticles(prev => {
                 const others = prev.filter(a => a.id !== id);
                 return [{ id, ...obj }, ...others];
             });
             if (showToast) showToast('ローカルに保存しました (Firestoreエラー)');
-            clearForm();
         }
+
+        clearForm();
     };
 
     const handleEdit = (a) => {
@@ -754,12 +819,17 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
 
     const handleDelete = async (id) => {
         if (!confirm('この記事を削除してよいですか？')) return;
+
+        // 1. Firestoreから削除
         try {
             await deleteDoc(doc(db, 'articles', id));
+
+            // 2. 成功した場合のみローカルストレージを更新
+            setArticles(prev => prev.filter(a => a.id !== id));
             if (showToast) showToast('Firestore から記事を削除しました');
         } catch (e) {
-            setArticles(prev => prev.filter(a => a.id !== id));
-            alert('Firestoreからの削除に失敗、ローカル表示のみ削除しました');
+            console.error("Firestore deletion failed:", e);
+            alert('Firestoreからの削除に失敗しました');
         }
     };
 
@@ -767,31 +837,63 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         try {
             await navigator.clipboard.writeText(JSON.stringify(articles, null, 2));
             alert('記事データをクリップボードにコピーしました。');
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error(e); alert('クリップボードへのコピーに失敗しました。'); }
     };
 
-    // Sub-component for Admin Page
     const ImagePreview = ({ src, alt, className }) => {
         const [imageUrl, setImageUrl] = useState('');
+        const [error, setError] = useState(false);
+        const [loading, setLoading] = useState(true);
+
         useEffect(() => {
             const loadImage = async () => {
                 if (!src?.startsWith('image:')) {
                     setImageUrl(src);
+                    setLoading(false);
                     return;
                 }
+
                 const imageId = src.replace('image:', '');
                 try {
                     const db = await openDB('ArticleImages', 1);
                     const imageData = await db.get('images', imageId);
                     if (imageData) {
                         const blob = new Blob([imageData.data], { type: imageData.type });
-                        setImageUrl(URL.createObjectURL(blob));
+                        const url = URL.createObjectURL(blob);
+                        setImageUrl(url);
+                    } else {
+                        setError(true);
                     }
-                } catch (err) { console.error('Error loading image:', err); }
+                } catch (err) {
+                    console.error('Error loading image:', err);
+                    setError(true);
+                } finally {
+                    setLoading(false);
+                }
             };
+
             loadImage();
+
+            return () => {
+                if (imageUrl && imageUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(imageUrl);
+                }
+            };
         }, [src]);
-        return <img src={imageUrl || '/placeholder.png'} alt={alt} className={className} />;
+
+        if (loading) {
+            return <div className={`${className} bg-gray-100 dark:bg-gray-800 animate-pulse`}></div>;
+        }
+
+        if (error || !imageUrl) {
+            return (
+                <div className={`${className} bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400`}>
+                    画像を読み込めません
+                </div>
+            );
+        }
+
+        return <img src={imageUrl} alt={alt} className={className} onError={() => setError(true)} />;
     };
 
     return (
@@ -800,7 +902,7 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                 <h2 className="text-3xl font-black dark:text-white">管理者ダッシュボード — 記事作成</h2>
                 {!loggedIn ? (
                     <div className="flex items-center gap-3">
-                        <input value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder="管理キー" type="password" className="px-3 py-2 rounded border" />
+                        <input value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder="管理キー" className="px-3 py-2 rounded border" />
                         <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={warningAck} onChange={e => setWarningAck(e.target.checked)} /> 管理キー未設定を了承</label>
                         <button onClick={handleLogin} className="bg-purple-600 text-white px-4 py-2 rounded">ログイン</button>
                     </div>
@@ -812,45 +914,71 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                 )}
             </div>
 
-            {loggedIn && (
+            {!loggedIn ? (
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md">
+                    <p className="text-gray-600 dark:text-gray-300">管理者ログインが必要です。運用時はコード内の <code>ADMIN_KEY</code> を設定し、ここに入力してください。現在はローカル保存のみ対応しています。</p>
+                </div>
+            ) : (
                 <div className="grid md:grid-cols-2 gap-8">
-                    {/* Editor Column */}
                     <div>
                         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm space-y-4 border border-gray-100 dark:border-gray-700">
                             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="タイトル" className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" />
                             <div className="flex gap-3">
-                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700" />
-                                <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" />
+                                <select value={type} onChange={e => setType(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all">
                                     <option value="info">お知らせ</option>
+                                    <option value="request">お願い</option>
                                     <option value="maintenance">メンテナンス</option>
+                                    <option value="explanation">解説</option>
+                                    <option value="recruitment">募集</option>
                                 </select>
                                 <div className="relative">
                                     <input 
-                                        ref={fileRef} type="file" accept="image/*" onChange={handleFile} disabled={isUploading}
-                                        className={`px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 ${isUploading ? 'opacity-50' : ''}`} 
+                                        ref={fileRef} 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={handleFile} 
+                                        disabled={isUploading}
+                                        className={`px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`} 
                                     />
+                                    {isUploading && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-xl">
+                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                            <textarea value={md} onChange={e => setMd(e.target.value)} rows={12} placeholder="Markdown..." className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono text-sm"></textarea>
-                            <button onClick={handleSave} className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700">保存</button>
-                            
-                            <div className="mt-6 border-t pt-4">
-                                <h3 className="font-bold mb-3 dark:text-white">プレビュー</h3>
-                                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 prose dark:prose-invert">
-                                    <ReactMarkdown
-                                        rehypePlugins={[rehypeRaw]}
-                                        remarkPlugins={[remarkGfm]}
-                                        components={{
-                                            img: ({ node, ...props }) => <ImagePreview key={props.src} {...props} className="max-w-full rounded-md" />
-                                        }}
-                                    >
-                                        {md}
-                                    </ReactMarkdown>
+                            <textarea value={md} onChange={e => setMd(e.target.value)} rows={12} placeholder="Markdownで記事を記述してください。画像はアップロードで埋め込まれます。" className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all font-mono text-sm"></textarea>
+                            <div className="flex gap-3">
+                                <div className="mt-6">
+                                    <h3 className="font-bold mb-3 dark:text-white">プレビュー</h3>
+                                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                        {md ? (
+                                            <div className="prose dark:prose-invert max-w-none">
+                                                <ReactMarkdown
+                                                    rehypePlugins={[rehypeRaw]}
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        img: ({ node, ...props }) => (
+                                                            <ImagePreview 
+                                                                key={props.src} 
+                                                                {...props} 
+                                                                className="max-w-full rounded-md my-3" 
+                                                            />
+                                                        )
+                                                    }}
+                                                >
+                                                    {md}
+                                                </ReactMarkdown>
+                                            </div>
+                                        ) : (
+                                            <div className="text-gray-400">プレビューが表示されます...</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {/* List Column */}
                     <div>
                         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
                             <h3 className="font-bold mb-4 dark:text-white">保存済み記事 ({articles.length})</h3>
@@ -863,12 +991,14 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                                                 <div className="text-xs text-gray-500">{a.date} • {a.type}</div>
                                             </div>
                                             <div className="flex gap-2">
-                                                <button onClick={() => handleEdit(a)} className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-900">編集</button>
-                                                <button onClick={() => handleDelete(a.id)} className="px-2 py-1 text-xs rounded bg-red-600 text-white">削除</button>
+                                                <button onClick={() => handleEdit(a)} className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-900">編集</button>
+                                                <button onClick={() => handleDelete(a.id)} className="px-3 py-1 rounded bg-red-600 text-white">削除</button>
                                             </div>
                                         </div>
+                                        <div className="mt-3 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: a.html }} />
                                     </div>
                                 ))}
+                                {articles.length === 0 && <div className="text-gray-500">記事がありません。新規作成してください。</div>}
                             </div>
                         </div>
                     </div>
@@ -942,13 +1072,17 @@ export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
 
 export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
     const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(true);
     const lowerSearchTerm = searchTerm.toLowerCase();
 
+    // Using simple useEffect to aggregate results allows async Firestore call
     useEffect(() => {
         const fetchResults = async () => {
+            setIsSearching(true);
             const results = [];
-            
-            // Search in local data
+
+            // 1. Static Content (News, Commands, Guide, Terms)
+            // Search in news
             const newsData = L.news.default_data || [];
             newsData.forEach(item => {
                 if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
@@ -957,13 +1091,13 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                         category: L.footer.search_category_news,
                         title: item.title,
                         description: item.content.substring(0, 100) + '...',
-                        action: () => navigate('news')
+                        action: () => navigate('news') // Could navigate to specific news if updated
                     });
                 }
             });
 
-            // Search in commands (example structure)
-            const commands = L.commands?.sections || [];
+            // Search in commands
+            const commands = L.commands.sections || [];
             commands.forEach(section => {
                 section.commands?.forEach(cmd => {
                     if (cmd.cmd.toLowerCase().includes(lowerSearchTerm) || cmd.desc.toLowerCase().includes(lowerSearchTerm)) {
@@ -978,10 +1112,81 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                 });
             });
 
+            // Search in FAQ
+            const faqs = L.guide.faq_data || [];
+            faqs.forEach((faq, i) => {
+                if (faq.q.toLowerCase().includes(lowerSearchTerm) || faq.a.toLowerCase().includes(lowerSearchTerm)) {
+                    results.push({
+                        id: `faq-${i}`,
+                        category: L.footer.search_category_guide,
+                        title: faq.q,
+                        description: faq.a.substring(0, 100) + '...',
+                        action: () => navigate('guide')
+                    });
+                }
+            });
+
+            // Search in terms and privacy
+            const termsChapters = L.terms?.chapters || [];
+            termsChapters.forEach((chapter, idx) => {
+                if (chapter.title.toLowerCase().includes(lowerSearchTerm)) {
+                    results.push({
+                        id: `terms-${idx}`,
+                        category: L.footer.search_category_terms,
+                        title: chapter.title,
+                        description: chapter.articles?.[0]?.content?.substring(0, 100) || '',
+                        action: () => navigate('terms')
+                    });
+                }
+            });
+
+            if (L.privacy?.title?.toLowerCase().includes(lowerSearchTerm)) {
+                results.push({
+                    id: 'privacy',
+                    category: L.footer.search_category_privacy,
+                    title: L.privacy.title,
+                    description: L.privacy.intro?.substring(0, 100) || '',
+                    action: () => navigate('privacy')
+                });
+            }
+
+            // 2. Firestore Articles (Async)
+            const db = getFirestore(); // Ensure initialized or import instance?
+            // Actually usually db is passed down but SearchResultsPage only receives L, searchTerm, navigate.
+            // We can get db instance via getFirestore() since app is initialized.
+
+            try {
+                // Determine collection path - using 'articles' based on fix
+                // Doing client-side filter for simplicity on small dataset, or simple query
+                // Firestore doesn't support full-text search natively easily for "contains".
+                // We will fetch recent articles and filter.
+                const q = query(collection(db, 'articles'), limit(20)); // Limit to prevent overload
+                const querySnapshot = await import('firebase/firestore').then(mod => mod.getDocs(q));
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.title?.toLowerCase().includes(lowerSearchTerm) || data.md?.toLowerCase().includes(lowerSearchTerm)) {
+                        results.push({
+                            id: `art-${doc.id}`,
+                            category: L.nav.articles || 'Articles',
+                            title: data.title,
+                            description: (data.md || '').substring(0, 100) + '...',
+                            action: () => navigate(`articles/${doc.id}`)
+                        });
+                    }
+                });
+            } catch (e) {
+                console.log("Search Firestore error (silent):", e);
+            }
+
             setSearchResults(results);
+            setIsSearching(false);
         };
-        fetchResults();
+
+        const timeout = setTimeout(fetchResults, 300); // 300ms debounce
+        return () => clearTimeout(timeout);
     }, [searchTerm, L, navigate, lowerSearchTerm]);
+
 
     return (
         <div className="space-y-6">
@@ -997,11 +1202,16 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                         <div
                             key={result.id}
                             onClick={result.action}
-                            className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer group"
+                            className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
                         >
-                            <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
-                            <h3 className="text-lg font-bold my-2 dark:text-white group-hover:text-purple-600 transition-colors">{result.title}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{result.description}</p>
+                            <div className="flex justify-between items-start gap-4 mb-3">
+                                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
+                            </div>
+                            <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
+                            <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                {L.footer.search_result_btn} <ArrowRight size={14} />
+                            </div>
                         </div>
                     ))}
                 </>
@@ -1010,23 +1220,53 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
     );
 };
 
+
 export const JoinPage = ({ L, serverStatus, handleCopy, navigate }) => (
     <div className="pt-24"><JoinSection L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={navigate} /></div>
 );
 
+
 // ==========================================
-// 4. Home Page
+// 5. Home Page (Home.jsx)
 // ==========================================
 
-export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast, newsData }) => {
+export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast, newsData, hasUnreadNews }) => {
     const QUIZ_DATA = L.quiz_data;
     const latestNews = newsData && newsData.length > 0 ? newsData.slice(0, 3) : L.news.default_data;
 
+    // Contact Form Logic (Enhanced with validation)
+
+
     const handleContactSubmit = async (e) => {
         e.preventDefault();
-        // 実際のエンドポイントがないため、ここではモック処理のみ
-        if (showToast) showToast('送信しました（デモ）', 'success');
-        e.target.reset();
+        const formData = new FormData(e.target);
+        const data = {
+            name: formData.get('name'),
+            email: formData.get('email'),
+            message: formData.get('message'),
+            subject: 'Contact Form Submission'
+        };
+
+        if (showToast) showToast('送信中...', 'info');
+
+        try {
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            if (res.ok && result.success) {
+                if (showToast) showToast('送信しました。', 'success');
+                e.target.reset();
+            } else {
+                throw new Error(result.message || '送信に失敗しました');
+            }
+        } catch (error) {
+            console.error('Contact Error:', error);
+            if (showToast) showToast('エラーが発生しました。時間を置く再試行してください。', 'error');
+        }
     };
 
     return (
@@ -1036,6 +1276,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                 <div className="absolute inset-0 z-0">
                     <img src="https://images.unsplash.com/photo-1607016284345-c5478694085f?q=80&w=2070&auto=format&fit=crop" alt="Minecraft Landscape" className="w-full h-full object-cover transform scale-105 animate-float" style={{ animationDuration: '20s' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/images/banner.jpg"; }} />
                     <div className="absolute inset-0 bg-gradient-to-b from-gray-900/70 via-gray-900/50 to-gray-900"></div>
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
                 </div>
                 <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center">
                     <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-bold animate-fade-in-up">
@@ -1050,6 +1291,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
                         <button onClick={() => scrollToSection('join')} className="group relative px-10 py-5 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 text-xl font-black rounded-full shadow-[0_10px_20px_rgba(245,158,11,0.4)] hover:shadow-[0_20px_40px_rgba(245,158,11,0.6)] transition-all transform hover:-translate-y-1 overflow-hidden">
                             <span className="relative z-10 flex items-center gap-3"><Gamepad2 size={28} />{L.home.join_now}</span>
+                            <div className="absolute inset-0 bg-white/30 transform -skew-x-12 -translate-x-full group-hover:animate-shine"></div>
                         </button>
                         <button onClick={() => scrollToSection('about')} className="px-10 py-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-xl font-bold rounded-full transition-all flex items-center gap-3 hover:scale-105">
                             <HelpCircle size={28} />{L.home.see_details}
@@ -1058,7 +1300,25 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                 </div>
             </header>
 
-            {/* Latest News */}
+            {/* Stats Bar */}
+            <div className="relative z-20 -mt-24 max-w-6xl mx-auto px-4">
+                <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 dark:border-gray-700 p-10 grid grid-cols-2 md:grid-cols-4 gap-8 hover:transform hover:-translate-y-1 transition-transform duration-500">
+                    {[
+                        { val: "150+", label: L.home.stat_cumulative_players, icon: Users, color: "text-blue-500" },
+                        { val: "70%", label: L.home.stat_retention_rate, icon: CheckCircle, color: "text-green-500" },
+                        { val: "99.9%", label: L.home.stat_uptime, icon: Server, color: "text-purple-500" },
+                        { val: "15+", label: L.home.stat_max_online, icon: Zap, color: "text-yellow-500" }
+                    ].map((stat, i) => (
+                        <div key={i} className="flex flex-col items-center text-center group">
+                            <stat.icon className={`${stat.color} mb-4 transform group-hover:scale-110 transition-transform duration-300 drop-shadow-sm`} size={36} />
+                            <div className="text-4xl font-black text-gray-800 dark:text-white mb-2">{stat.val}</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">{stat.label}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Latest News Section (New) */}
             <section className="py-24 px-4 bg-gray-50 dark:bg-gray-900/50">
                 <div className="max-w-6xl mx-auto">
                     <div className="flex justify-between items-end mb-10">
@@ -1079,9 +1339,13 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                                 </div>
                                 <h3 className="font-bold text-lg mb-3 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{item.title}</h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mb-4 flex-grow">{item.content}</p>
+                                <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform mt-auto">Read More <ArrowRight size={14} /></div>
                             </div>
                         ))}
                     </div>
+                    <button onClick={() => navigate('news')} className="md:hidden w-full mt-6 py-4 bg-white dark:bg-gray-800 text-purple-600 font-bold rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex justify-center items-center gap-2">
+                        {L.home.see_news} <ArrowRight size={18} />
+                    </button>
                 </div>
             </section>
 
@@ -1090,8 +1354,14 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                 <div className="max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-2 gap-16 items-center">
                         <div className="relative z-10 order-2 md:order-1">
+                            <div className="inline-block p-4 rounded-3xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-8"><Server size={40} /></div>
                             <h2 className="text-5xl font-black mb-8 dark:text-white leading-tight">{L.home.what_is_nantetsu}</h2>
                             <div className="space-y-8 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
+                                <div className="p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg border-l-8 border-purple-500 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles size={80} className="text-purple-500" /></div>
+                                    <strong className="text-purple-600 dark:text-purple-400 block text-2xl font-black mb-4">{L.home.description_p1}</strong>
+                                    {L.home.description_p2}
+                                </div>
                                 <p className="text-xl">{L.home.description_p3}</p>
                             </div>
                         </div>
@@ -1099,7 +1369,28 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                             <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-all duration-700">
                                 <img src="https://github.com/NANTETU/Nantetu-Server/blob/main/images/867244da-775d-4a50-8d80-41b3ba7b7dcb.jpg?raw=true" alt="Server Community" className="w-full h-full object-cover" loading="lazy" />
                             </div>
+                            <div className="absolute inset-0 bg-purple-600 rounded-[3rem] rotate-6 opacity-20 scale-95 blur-2xl -z-10"></div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Features Grid */}
+            <section id="features" className="py-32 bg-gray-900 px-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-30"></div>
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
+                <div className="max-w-7xl mx-auto text-center relative z-10">
+                    <h2 className="text-4xl md:text-5xl font-black mb-20 inline-block relative text-white">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">{L.home.stats_title}</span>
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-24 h-2 bg-purple-500 rounded-full"></div>
+                    </h2>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+                        <FeatureCard icon={Shield} title={L.home.feature_p1_title} description={L.home.feature_p1_desc} bgClass="bg-orange-500" colorClass="text-orange-500" />
+                        <FeatureCard icon={Clock} title={L.home.feature_p2_title} description={L.home.feature_p2_desc} bgClass="bg-green-500" colorClass="text-green-500" />
+                        <FeatureCard icon={MessageCircle} title={L.home.feature_p3_title} description={L.home.feature_p3_desc} bgClass="bg-indigo-500" colorClass="text-indigo-500" />
+                        <FeatureCard icon={Terminal} title={L.home.feature_p4_title} description={L.home.feature_p4_desc} bgClass="bg-lime-600" colorClass="text-lime-600" onClick={() => navigate('commands')} />
+                        <FeatureCard icon={Server} title={L.home.feature_p5_title} description={L.home.feature_p5_desc} bgClass="bg-yellow-500" colorClass="text-yellow-500" />
+                        <FeatureCard icon={BookOpen} title={L.home.feature_p6_title} description={L.home.feature_p6_desc} bgClass="bg-pink-500" colorClass="text-pink-500" onClick={() => navigate('guide')} />
                     </div>
                 </div>
             </section>
@@ -1119,13 +1410,18 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         ))}
                     </div>
 
-                    {/* Quiz UI */}
+                    {/* Quiz UI Block */}
                     <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl p-8 md:p-16 border border-purple-100 dark:border-gray-700 relative overflow-hidden text-center group">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500"></div>
+                        <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"></div>
+                        <div className="absolute -right-10 -top-10 w-40 h-40 bg-yellow-500/10 rounded-full blur-3xl"></div>
+
                         {!quizState.started ? (
                             <div className="animate-fade-in relative z-10">
                                 <div className="inline-block p-4 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6"><Sparkles size={32} /></div>
                                 <h3 className="text-3xl font-black mb-6 dark:text-white">{L.home.quiz_title}</h3>
-                                <button onClick={() => setQuizState({ ...quizState, started: true })} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-12 rounded-full shadow-xl transition-all text-lg flex items-center gap-2 mx-auto">
+                                <p className="text-gray-600 dark:text-gray-300 mb-10 text-lg max-w-2xl mx-auto">{L.home.quiz_subtitle}</p>
+                                <button onClick={() => setQuizState({ ...quizState, started: true })} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-12 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all text-lg flex items-center gap-2 mx-auto">
                                     {L.home.quiz_start} <ArrowRight size={20} />
                                 </button>
                             </div>
@@ -1133,8 +1429,16 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                             <div className="animate-fade-in relative z-10">
                                 {quizState.finished ? (
                                     <div className="animate-fade-in-up">
+                                        <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <CheckCircle size={48} className="text-green-500" />
+                                        </div>
                                         <h3 className="text-3xl font-black mb-2 dark:text-white">{L.home.quiz_done}</h3>
                                         <p className="text-4xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{L.home.quiz_score(quizState.score, QUIZ_DATA.length)}</p>
+                                        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl mb-8 border border-gray-100 dark:border-gray-700">
+                                            <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                                                {quizState.score === QUIZ_DATA.length ? L.home.quiz_result_perfect : L.home.quiz_result_retry}
+                                            </p>
+                                        </div>
                                         <button onClick={resetQuiz} className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-8 py-3 rounded-xl font-bold transition-all hover:-translate-y-1">{L.home.quiz_retry}</button>
                                     </div>
                                 ) : (
@@ -1154,13 +1458,21 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                                                         ? opt === QUIZ_DATA[quizState.current].answer
                                                             ? "bg-green-50 dark:bg-green-900/20 border-green-500 text-green-700 dark:text-green-400"
                                                             : "opacity-50 border-transparent bg-gray-50 dark:bg-gray-800"
-                                                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-500"
+                                                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-500 dark:hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5"
                                                         }`}
                                                 >
-                                                    {opt}
+                                                    <span className="relative z-10 flex justify-between items-center">
+                                                        {opt}
+                                                        {quizState.showResult && opt === QUIZ_DATA[quizState.current].answer && <CheckCircle className="text-green-500" />}
+                                                    </span>
                                                 </button>
                                             ))}
                                         </div>
+                                        {quizState.showResult && (
+                                            <div className={`mt-6 font-bold text-lg animate-fade-in-up ${quizState.isCorrect ? 'text-green-500' : 'text-red-500'}`}>
+                                                {quizState.isCorrect ? L.home.quiz_correct : L.home.quiz_incorrect}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1183,6 +1495,10 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_email}</label>
                                 <div className="relative"><MapPin className="absolute left-4 top-3.5 text-gray-400" size={20} /><input type="text" name="email" className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact_placeholder_email} required /></div>
                             </div>
+                            <div className="group">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{L.home.contact_message}</label>
+                                <textarea name="message" rows="5" className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none focus:ring-2 focus:ring-purple-500 transition-all" placeholder={L.home.contact_placeholder_msg} required></textarea>
+                            </div>
                             <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 hover:-translate-y-1"><Send size={20} />{L.home.contact_send}</button>
                         </form>
                     </div>
@@ -1193,11 +1509,36 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
 };
 
 // ==========================================
-// 5. Main App Entry
+// 6. Main App Component (App.jsx)
 // ==========================================
 
+const CustomStyles = () => (
+    <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+    :root { --font-sans: 'Noto Sans JP', sans-serif; }
+    body { font-family: var(--font-sans); }
+    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+    @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes fadeInUps { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes progress { 0% { width: 0%; margin-left: 0; } 50% { width: 70%; margin-left: 0; } 100% { width: 100%; margin-left: 0; } }
+    @keyframes shine { 100% { left: 125%; } }
+    .animate-float { animation: float 6s ease-in-out infinite; }
+    .animate-progress { animation: progress 1.5s ease-in-out infinite; }
+    .animate-fade-in-scale { animation: fadeInScale 0.5s ease-out forwards; }
+    .animate-fade-in-up { animation: fadeInUps 0.6s ease-out forwards; }
+    .animate-fade-out { animation: fadeOut 0.5s ease-out forwards 1.5s; /* Delay 1.5s then fade */ }
+    .animate-shine { animation: shine 1s; }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-thumb { background: #8b5cf6; border-radius: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); }
+    .dark .glass-panel { background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); }
+  `}</style>
+);
+
 export default function App() {
-    // State
+    // State Definitions
     const [darkMode, setDarkMode] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [page, setPage] = useState('home');
@@ -1206,71 +1547,166 @@ export default function App() {
     const [activeAccordion, setActiveAccordion] = useState(null);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [currentLang, setCurrentLang] = useState('ja');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchValue, setSearchValue] = useState('');
+
+    // Search State
+    const [searchTerm, setSearchTerm] = useState(''); // Debounced
+    const [searchValue, setSearchValue] = useState(''); // Immediate Input
+    const searchTimeoutRef = useRef(null);
+
+    // Initial Loading
     const [isAppLoading, setIsAppLoading] = useState(true);
     const [isPageLoading, setIsPageLoading] = useState(false);
+
+    // Data
     const [newsData, setNewsData] = useState([]);
     const [hasUnreadNews, setHasUnreadNews] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
-    
-    // Firebase State
+
+    // Firebase
     const [user, setUser] = useState(null);
     const [db, setDb] = useState(null);
-    
-    // Constants
-    const searchTimeoutRef = useRef(null);
-    const appId = "nantetu-app"; // Default app ID
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    // Search Handler (FIX: Updates input immediately, debounces effect)
+    const handleSearch = useCallback((e) => {
+        const value = e.target.value;
+        setSearchValue(value);
+        clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = setTimeout(() => {
+            setSearchTerm(value);
+        }, 500);
+    }, []);
+
     const L = LANGUAGES[currentLang];
 
-    // Initialization
+
+    const handleGeminiCall = useCallback(async (userPrompt) => {
+        const apiEndpoint = '/api/generate';
+
+        try {
+            const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: userPrompt }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            console.log("Gemini Result:", data.result);
+            return data.result;
+
+        } catch (error) {
+            console.error("API Call Error:", error);
+        }
+    }, []);
+
+    // --- Initialize Firebase ---
     useEffect(() => {
-        // Firebase Auth init logic from original file
         const initAuth = async () => {
             try {
-                if (typeof app !== 'undefined') {
+                // Use global config if available, otherwise fall back to local const firebaseConfig
+                const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+                if (config) {
+                    const app = initializeApp(config);
                     const auth = getAuth(app);
                     const firestore = getFirestore(app);
                     setDb(firestore);
-                    await signInAnonymously(auth);
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
                     onAuthStateChanged(auth, setUser);
+                } else {
+                    console.warn("Firebase config not found. Running in demo mode.");
+                    setUser({ uid: 'demo-user' });
                 }
-            } catch (e) { console.error("Firebase init failed:", e); }
+            } catch (e) {
+                console.error("Firebase init failed:", e);
+            }
         };
         initAuth();
-
-        // Dark mode
-        const savedMode = localStorage.getItem('darkMode');
-        const isDark = savedMode ? JSON.parse(savedMode) : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setDarkMode(isDark);
-        if (isDark) document.documentElement.classList.add('dark');
-        
-        // Splash screen
-        setTimeout(() => setIsAppLoading(false), 2000);
     }, []);
 
-    // Dark Mode Toggle
+    // Enhanced dark mode management with localStorage persistence
+    useEffect(() => {
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode !== null) {
+            const isDark = JSON.parse(savedDarkMode);
+            setDarkMode(isDark);
+            if (isDark) document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+        } else {
+            // Check system preference
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setDarkMode(prefersDark);
+            if (prefersDark) document.documentElement.classList.add('dark');
+        }
+    }, []);
+
     useEffect(() => {
         localStorage.setItem('darkMode', JSON.stringify(darkMode));
-        document.documentElement.classList.toggle('dark', darkMode);
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+        }
     }, [darkMode]);
 
-    // Router
+    // Initial Splash Screen Timer
+    useEffect(() => {
+        const timer = setTimeout(() => setIsAppLoading(false), 2000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // --- Router Logic (Hash Router) ---
     useEffect(() => {
         const handleHashChange = () => {
             const hash = window.location.hash.replace('#/', '') || 'home';
             setPage(hash);
         };
+
+        // Set initial page from hash
         handleHashChange();
+
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
+    // --- Router Logic (Hash Router) ---
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace('#/', '') || 'home';
+            setPage(hash);
+        };
+
+        // Set initial page from hash
+        handleHashChange();
+
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
+
+    // Enhanced Navigation with Loading Bar & Routing (Memoized)
     const handleNavigate = useCallback((targetPage, sectionId = null) => {
         if (targetPage === page && !sectionId) return;
+
         setIsPageLoading(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Update URL hash
         window.location.hash = `/${targetPage}`;
+
+        // Simulate loading delay for smooth feel
         setTimeout(() => {
             setIsPageLoading(false);
             if (sectionId) {
@@ -1282,17 +1718,6 @@ export default function App() {
         }, 400);
     }, [page]);
 
-    // Search
-    const handleSearch = useCallback((e) => {
-        const value = e.target.value;
-        setSearchValue(value);
-        clearTimeout(searchTimeoutRef.current);
-        searchTimeoutRef.current = setTimeout(() => {
-            setSearchTerm(value);
-        }, 500);
-    }, []);
-
-    // Server Status & News Fetcher
     useEffect(() => {
         const fetchStatus = async () => {
             try {
@@ -1305,49 +1730,149 @@ export default function App() {
         const interval = setInterval(fetchStatus, 60000);
 
         const fetchNews = async () => {
-            if (!NEWS_SHEET_URL.includes('YOUR_SPREADSHEET_ID')) {
-                try {
-                    const res = await fetch(NEWS_SHEET_URL);
+            try {
+                const res = await fetch(NEWS_SHEET_URL);
+                if (res.ok) {
                     const text = await res.text();
-                    // ... parsing logic (truncated for brevity but logic is preserved)
-                } catch (e) { console.error(e); }
+                    // Google Sheets API returns JSONP with 'new Date(...)' which breaks JSON.parse
+                    // 1. Strip the function call: google.visualization.Query.setResponse(...)
+                    const startRaw = text.indexOf('(');
+                    const endRaw = text.lastIndexOf(')');
+                    if (startRaw === -1 || endRaw === -1) throw new Error("Invalid format");
+
+                    let jsonString = text.substring(startRaw + 1, endRaw);
+
+                    // 2. Replace 'new Date(y, m, d)' with '"Date(y, m, d)"' to make it valid JSON strings
+                    // Regex: new Date\(  ->  "Date(
+                    //        \d+,\d+,\d+ -> capture args
+                    //        \)          ->  )"
+                    // Actually simpler: just replace `new Date(` with `"Date(` and `)` with `)"`? 
+                    // No, `)` is common. We need to match the specific date pattern.
+                    jsonString = jsonString.replace(/new Date\((.*?)\)/g, '"Date($1)"');
+
+                    const json = JSON.parse(jsonString);
+                    if (json.table?.rows) {
+                        const parsed = json.table.rows.map((row, i) => {
+                            let rawDate = row.c[0]?.v;
+                            let dateStr = rawDate; // Default
+
+                            if (typeof rawDate === 'string' && rawDate.startsWith('Date(')) {
+                                const parts = rawDate.match(/\d+/g);
+                                if (parts && parts.length >= 3) {
+                                    const y = parseInt(parts[0]);
+                                    const m = parseInt(parts[1]) + 1;
+                                    const d = parseInt(parts[2]);
+                                    dateStr = `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`;
+                                }
+                            } else if (typeof rawDate === 'number') {
+                                const excelEpoch = new Date(1899, 11, 30);
+                                const dateObj = new Date(excelEpoch.getTime() + rawDate * 86400000);
+                                dateStr = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
+                            } else {
+                                try {
+                                    const d = new Date(rawDate);
+                                    if (!isNaN(d.getTime())) {
+                                        dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+                                    } else {
+                                        dateStr = String(rawDate);
+                                    }
+                                } catch { dateStr = String(rawDate); }
+                            }
+
+                            return {
+                                id: i + 100,
+                                date: dateStr,
+                                title: row.c[1]?.v || '',
+                                content: row.c[2]?.v || '',
+                                url: row.c[3]?.v,
+                                type: (() => {
+                                    const c = row.c[2]?.v || '';
+                                    if (c.includes('メンチンス')) return 'maintenance';
+                                    if (c.includes('お願い')) return 'request';
+                                    if (c.includes('解説')) return 'explanation';
+                                    if (c.includes('募集')) return 'recruitment';
+                                    if (c.includes('その他')) return 'other';
+                                    return 'info';
+                                })()
+                            };
+                        }).filter(i => i.title);
+                        setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
+                    }
+                }
+            } catch (e) {
+                console.error("News fetch error", e);
+                // Cannot access showToast here because it is defined below
             }
         };
         fetchNews();
         return () => clearInterval(interval);
-    }, [L.server.ip, L.server.port]);
+    }, []);
 
-    const showToast = useCallback((msg, type = 'info') => {
+    const showToast = useCallback((msg) => {
         setToastMessage(msg);
         setTimeout(() => setToastMessage(null), 3000);
     }, []);
 
     const handleCopy = useCallback((text) => {
-        navigator.clipboard.writeText(text).then(() => showToast('コピーしました', 'success'))
-        .catch(() => showToast('コピーに失敗しました', 'error'));
+        navigator.clipboard.writeText(text).catch(err => {
+            console.error('Failed to copy:', err);
+            showToast('コピーに失敗しました');
+        });
     }, [showToast]);
 
-    const scrollToSection = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    const resetQuiz = () => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null });
-    
-    const handleQuizAnswer = (selectedOption) => {
-        const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
-        setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
-        setTimeout(() => {
-            setQuizState(prev => {
-                const nextIdx = prev.current + 1;
-                return nextIdx < L.quiz_data.length
-                    ? { ...prev, current: nextIdx, score: isCorrect ? prev.score + 1 : prev.score, showResult: false, isCorrect: null }
-                    : { ...prev, score: isCorrect ? prev.score + 1 : prev.score, finished: true, showResult: false };
-            });
-        }, 1500);
-    };
+    const scrollToSection = useCallback((id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, []);
+
+    const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
+
+
+
+    // Handle Quiz (Memoized with error handling)
+    const handleQuizAnswer = useCallback((selectedOption) => {
+        try {
+            const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
+            setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
+
+            setTimeout(() => {
+                if (isCorrect) {
+                    setQuizState(prev => {
+                        const nextIdx = prev.current + 1;
+                        if (nextIdx < L.quiz_data.length) {
+                            return { ...prev, current: nextIdx, score: prev.score + 1, showResult: false, isCorrect: null };
+                        } else {
+                            return { ...prev, score: prev.score + 1, finished: true, showResult: false };
+                        }
+                    });
+                } else {
+                    setQuizState(prev => {
+                        const nextIdx = prev.current + 1;
+                        if (nextIdx < L.quiz_data.length) {
+                            return { ...prev, current: nextIdx, showResult: false, isCorrect: null };
+                        } else {
+                            return { ...prev, finished: true, showResult: false };
+                        }
+                    });
+                }
+            }, 1500);
+        } catch (err) {
+            console.error('Quiz error:', err);
+            showToast('クイズ処琁E��にエラーが発生しました');
+        }
+    }, [L.quiz_data, quizState.current, showToast]);
 
     return (
         <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
+            <CustomStyles />
+
+            {/* 1. Global Loading Overlays */}
             {isAppLoading && <LoadingScreen />}
             <LoadingBar isLoading={isPageLoading} />
 
+            {/* 2. Navigation */}
             <Navbar
                 L={L}
                 page={page}
@@ -1366,37 +1891,63 @@ export default function App() {
                 newsData={newsData}
             />
 
+            {/* 3. Main Content Router - TEXT COLOR FIX applied here */}
             <main className="relative z-10 min-h-screen text-gray-900 dark:text-gray-100">
-                {searchTerm ? (
+                {searchTerm && (
                     <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
                         <h2 className="text-4xl font-black mb-8 dark:text-white">{L.footer.search_results_title}</h2>
                         <SearchResultsPage L={L} searchTerm={searchTerm} navigate={handleNavigate} />
                     </div>
-                ) : (
-                    <>
-                        {page === 'home' && <HomePage L={L} serverStatus={serverStatus} quizState={quizState} setQuizState={setQuizState} resetQuiz={resetQuiz} handleQuizAnswer={handleQuizAnswer} handleCopy={handleCopy} scrollToSection={scrollToSection} navigate={handleNavigate} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} showToast={showToast} newsData={newsData} />}
-                        {page === 'news' && <NewsPage L={L} newsData={newsData} />}
-                        {page.startsWith('news/') && <NewsDetail L={L} id={page.split('/')[1]} newsData={newsData} navigate={handleNavigate} />}
-                        {page === 'articles' && <ArticlesPage L={L} db={db} appId={appId} navigate={handleNavigate} />}
-                        {page.startsWith('articles/') && <ArticleDetail L={L} id={page.split('/')[1]} db={db} appId={appId} navigate={handleNavigate} />}
-                        {page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
-                        {page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
-                        {page === 'commands' && <CommandsPage L={L} />}
-                        {page === 'terms' && <TermsPage L={L} />}
-                        {page === 'privacy' && <PrivacyPage L={L} />}
-                        {page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
-                        {page === 'admin' && <AdminPage L={L} db={db} user={user} appId={appId} showToast={showToast} />}
-                        {/* Fallback for 404 */}
-                        {!['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && 
-                         !page.startsWith('articles/') && !page.startsWith('news/') && 
-                         <NotFoundPage L={L} navigate={handleNavigate} />}
-                    </>
                 )}
+                {!searchTerm && page === 'home' && (
+                    <HomePage
+                        L={L}
+                        serverStatus={serverStatus}
+                        quizState={quizState}
+                        setQuizState={setQuizState}
+                        resetQuiz={resetQuiz}
+                        handleQuizAnswer={handleQuizAnswer}
+                        handleCopy={handleCopy}
+                        scrollToSection={scrollToSection}
+                        navigate={handleNavigate}
+                        activeAccordion={activeAccordion}
+                        setActiveAccordion={setActiveAccordion}
+                        showToast={showToast}
+                        newsData={newsData}
+                        hasUnreadNews={hasUnreadNews}
+                    />
+                )}
+                {!searchTerm && page === 'news' && <NewsPage L={L} newsData={newsData} />}
+                {!searchTerm && page.startsWith && page.startsWith('news/') && (
+                    (() => {
+                        const id = page.split('/')[1];
+                        return <NewsDetail L={L} id={id} newsData={newsData} navigate={handleNavigate} />;
+                    })()
+                )}
+                {!searchTerm && page === 'articles' && <ArticlesPage L={L} db={db} appId={appId} navigate={handleNavigate} />}
+                {!searchTerm && page.startsWith && page.startsWith('articles/') && (
+                    (() => {
+                        const id = page.split('/')[1];
+                        return <ArticleDetail L={L} id={id} db={db} appId={appId} navigate={handleNavigate} />;
+                    })()
+                )}
+                {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
+                {!searchTerm && page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
+                {!searchTerm && page === 'commands' && <CommandsPage L={L} />}
+                {!searchTerm && page === 'terms' && <TermsPage L={L} />}
+                {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
+                {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
+                {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} appId={appId} showToast={showToast} />}
+                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && !page.startsWith('news/') && <NotFoundPage L={L} navigate={handleNavigate} />}
             </main>
 
+            {/* 4. Footer */}
             <Footer L={L} navigate={handleNavigate} />
+
+            {/* 5. Global Overlays */}
             {toastMessage && <Toast message={toastMessage} />}
 
+            {/* Chat Button */}
             <button
                 onClick={() => setIsChatOpen(true)}
                 className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform hover:shadow-purple-500/50 group"
