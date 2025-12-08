@@ -45,31 +45,24 @@ import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from '
 
 // 画像のスタイル
 const styles = `
-  /* 画像の最大幅を制限 */
-  .prose img {
+  /* 画像のスタイル */
+  .article-content img {
     max-width: 100%;
     height: auto;
     display: block;
     margin: 1.5rem auto;
     border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  /* 画像ホバー時のエフェクト */
-  .prose img:hover {
-    transform: scale(1.02);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
     transition: transform 0.2s ease-in-out;
   }
 
-  /* モバイル表示の調整 */
-  @media (max-width: 768px) {
-    .prose img {
-      margin: 1rem auto;
-    }
+  .article-content img:hover {
+    transform: scale(1.02);
   }
 
-  /* 画像モーダルのスタイル */
-  #image-modal-container {
+  /* 画像モーダル */
+  .image-modal-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -83,13 +76,25 @@ const styles = `
     padding: 1rem;
   }
 
-  #image-modal {
+  .image-modal {
     max-width: 90%;
     max-height: 90%;
     object-fit: contain;
   }
 
-  /* コピーボタンのスタイル */
+  .close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 1001;
+  }
+
+  /* コピー通知 */
   .copy-notification {
     position: fixed;
     bottom: 1rem;
@@ -780,52 +785,52 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
         html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
 
         // 11. 画像
-html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
-    // 相対パスの場合はベースURLを追加
-    let safeSrc = src;
-    if (!src.startsWith('http') && !src.startsWith('data:image') && !src.startsWith('/')) {
-        safeSrc = `/${src}`;
-    }
-    
-    return `
-        <div class="my-6 relative group">
-            <img 
-                src="${safeSrc}" 
-                alt="${alt || '画像'}" 
-                class="w-full h-auto rounded-lg shadow-md cursor-zoom-in" 
-                loading="lazy"
-                onclick="
-                    const modal = document.getElementById('image-modal');
-                    const container = document.getElementById('image-modal-container');
-                    if (modal && container) {
-                        modal.src = '${safeSrc}';
-                        container.classList.remove('hidden');
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+        let safeSrc = src;
+        if (!src.startsWith('http') && !src.startsWith('data:image') && !src.startsWith('/')) {
+            safeSrc = `/${src}`;
+        }
+        
+        return `
+            <div class="relative group">
+                <img 
+                    src="${safeSrc}" 
+                    alt="${alt || '画像'}" 
+                    class="w-full h-auto rounded-lg shadow-md cursor-zoom-in" 
+                    loading="lazy"
+                    onclick="
+                        const modal = document.createElement('div');
+                        modal.className = 'image-modal-container';
+                        modal.innerHTML = '
+                            <button class=\"close-button\" onclick=\"this.parentElement.remove(); document.body.style.overflow = \'auto\'\">&times;</button>
+                            <img src=\'${safeSrc}\' class=\"image-modal\" />
+                        ';
                         document.body.style.overflow = 'hidden';
-                    }
-                "
-                onerror="this.onerror=null; this.src='https://placehold.co/800x450/808080/FFFFFF?text=Image+Not+Found'"
-                style="max-width: 100%; height: auto; display: block;"
-            />
-            <button 
-                class="absolute top-3 right-3 p-2 bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                onclick="
-                    navigator.clipboard.writeText('${safeSrc}');
-                    const notification = document.createElement('div');
-                    notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg flex items-center';
-                    notification.innerHTML = '<svg class=\"w-4 h-4 mr-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 13l4 4L19 7\"></path></svg>画像URLをコピーしました';
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 2000);
-                    event.stopPropagation();
-                "
-                title="画像URLをコピー"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
-                </svg>
-            </button>
-        </div>
-    `;
-});
+                        document.body.appendChild(modal);
+                        event.stopPropagation();
+                    "
+                    onerror="this.onerror=null; this.src='https://placehold.co/800x450/808080/FFFFFF?text=Image+Not+Found'"
+                />
+                <button 
+                    class="absolute top-3 right-3 p-2 bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    onclick="
+                        navigator.clipboard.writeText('${safeSrc}');
+                        const notification = document.createElement('div');
+                        notification.className = 'copy-notification';
+                        notification.innerHTML = '<svg class=\"w-4 h-4 mr-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 13l4 4L19 7\"></path></svg>画像URLをコピーしました';
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 2000);
+                        event.stopPropagation();
+                    "
+                    title="画像URLをコピー"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+    });
 
         // 12. リンク
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
@@ -844,57 +849,68 @@ html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
         // 空の<p>タグを削除
         html = html.replace(/<p[^>]*>\s*<\/p>/g, '');
 
-        return html;
-    }, []);
+            return html;
+  }, []);
 
     // 記事データの取得
-    useEffect(() => {
-        if (!db || !id) return;
-
-        const fetchArticle = async () => {
-            try {
-                const docRef = doc(db, 'articles', id);
-                const docSnap = await getDoc(docRef);
+// 記事データの取得
+useEffect(() => {
+    if (!db || !id) return;
+    
+    const fetchArticle = async () => {
+        try {
+            const docRef = doc(db, `apps/${appId}/articles`, id);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setArticle(data);
+                const renderedContent = simpleRenderMarkdown(data.md || '');
+                setContent(renderedContent);
                 
-                if (docSnap.exists()) {
-                    const articleData = {
-                        id: docSnap.id,
-                        ...docSnap.data()
-                    };
-                    setArticle(articleData);
-                    setContent(simpleRenderMarkdown(articleData.md || ''));
-                    
-                    // Add copy buttons to code blocks after content is rendered
-                    setTimeout(() => {
-                        if (contentRef.current) {
-                            const codeBlocks = contentRef.current.querySelectorAll('pre');
-                            codeBlocks.forEach((block) => {
-                                const wrapper = document.createElement('div');
-                                wrapper.className = 'relative group';
-                                
+                // コンテンツがレンダリングされた後にコードブロックのコピーボタンを追加
+                setTimeout(() => {
+                    if (contentRef.current) {
+                        const codeBlocks = contentRef.current.querySelectorAll('pre');
+                        codeBlocks.forEach((block) => {
+                            // すでにボタンが追加されていないか確認
+                            if (!block.querySelector('.copy-code-button')) {
                                 const button = document.createElement('button');
-                                button.className = 'absolute top-2 right-2 p-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors';
+                                button.className = 'copy-code-button absolute top-2 right-2 p-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors';
                                 button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
                                 button.title = 'コードをコピー';
                                 button.onclick = () => {
                                     const code = block.querySelector('code')?.innerText || '';
-                                    copyToClipboard(code);
+                                    navigator.clipboard.writeText(code).then(() => {
+                                        const originalText = button.innerHTML;
+                                        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                                        button.title = 'コピーしました！';
+                                        setTimeout(() => {
+                                            button.innerHTML = originalText;
+                                            button.title = 'コードをコピー';
+                                        }, 2000);
+                                    });
                                 };
                                 
-                                wrapper.appendChild(block.cloneNode(true));
+                                const wrapper = document.createElement('div');
+                                wrapper.className = 'relative group';
+                                block.parentNode.insertBefore(wrapper, block);
+                                wrapper.appendChild(block);
                                 wrapper.appendChild(button);
-                                block.parentNode.replaceChild(wrapper, block);
-                            });
-                        }
-                    }, 100);
-                }
-            } catch (error) {
-                console.error("記事の読み込み中にエラーが発生しました:", error);
+                            }
+                        });
+                    }
+                }, 100);
+            } else {
+                console.log('No such document!');
             }
-        };
+        } catch (error) {
+            console.error('Error fetching article:', error);
+        }
+    };
 
-        fetchArticle();
-    }, [db, id, simpleRenderMarkdown]);
+    fetchArticle();
+}, [db, id, appId, simpleRenderMarkdown]);
 
     if (!article) {
         return <div className="max-w-4xl mx-auto py-24 px-4 text-center">読み込み中...</div>;
