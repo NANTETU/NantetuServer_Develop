@@ -3,12 +3,19 @@ import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
     Server, Users, Shield, Clock, MessageCircle, MapPin,
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
-    Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
+    Send, ExternalLink, Share2,Maximize2, Home, FileText, List, Bell, BookOpen,
     User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
     Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, ChevronLeft, UploadCloud, LogOut, Globe as GlobeIcon,
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
+import 'prismjs/themes/prism-tomorrow.css';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+import 'prismjs/plugins/line-numbers/prism-line-numbers';
+import 'prismjs/plugins/toolbar/prism-toolbar.css';
+import 'prismjs/plugins/toolbar/prism-toolbar';
+import 'prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard';
+import Prism from 'prismjs';
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
@@ -567,118 +574,191 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
 const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     const [article, setArticle] = useState(null);
     const [content, setContent] = useState('');
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [copied, setCopied] = useState(false);
+    const contentRef = useRef(null);
 
-    // マークダウン変換関数をトップレベルで定義
-const simpleRenderMarkdown = useCallback((text) => {
-    if (!text) return '';
-
-    // 1. HTMLエスケープ
-    let html = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-
-    // 2. コードブロック (```で囲まれた部分)
-    html = html.replace(/```([\s\S]*?)```/g, (_, code) => 
-        `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto"><code>${code}</code></pre>`
-    );
-
-    // 3. インラインコード
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">$1</code>');
-
-    // 4. 見出し
-    html = html.replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold my-4">$1</h1>');
-    html = html.replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold my-3">$1</h2>');
-    html = html.replace(/^### (.*$)/gm, '<h3 class="text-xl font-bold my-2">$1</h3>');
-    html = html.replace(/^#### (.*$)/gm, '<h4 class="text-lg font-bold my-2">$1</h4>');
-    html = html.replace(/^##### (.*$)/gm, '<h5 class="text-base font-bold my-2">$1</h5>');
-    html = html.replace(/^###### (.*$)/gm, '<h6 class="text-sm font-bold my-2">$1</h6>');
-
-    // 5. リスト
-    // 番号付きリスト
-    html = html.replace(/^(\d+)\. (.*$)/gm, '<li class="ml-6">$2</li>');
-    // 箇条書きリスト
-    html = html.replace(/^[-*+] (.*$)/gm, '<li class="ml-6">$1</li>');
-    // リストのラッピング
-    html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
-        if (match.startsWith('<li class="ml-6">')) {
-            return match;
+    // Initialize Prism for syntax highlighting
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.Prism) {
+            window.Prism.highlightAll();
         }
-        return match.replace(/<li>([\s\S]*?)<\/li>/g, '<li class="ml-6">$1</li>');
-    });
-    html = html.replace(/(<li class="ml-6">.*<\/li>)(?=\n[^<])/gs, (match) => {
-        return `<ul class="list-disc my-2 pl-6">${match}</ul>`;
-    });
+    }, [content]);
 
-    // 6. テーブル
-    html = html.replace(/\|(.+)\n\|( *[-:]+[-| :]*)\n((?:.*\n)*?)\n(?=\S|$)/g, (match, header, align, rows) => {
-        const columns = header.split('|').map(col => col.trim());
-        const aligns = align.split('|').map(col => {
-            const a = col.trim();
-            if (a.startsWith(':') && a.endsWith(':')) return 'center';
-            if (a.endsWith(':')) return 'right';
-            return 'left';
+    // Handle image click for gallery
+    const handleImageClick = (src) => {
+        setSelectedImage(src);
+        document.body.style.overflow = 'hidden';
+    };
+
+    const closeImageModal = () => {
+        setSelectedImage(null);
+        document.body.style.overflow = 'auto';
+    };
+
+    // Copy to clipboard function
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         });
-        
-        let table = '<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse"><thead><tr>';
-        columns.forEach((col, i) => {
-            if (col) {
-                table += `<th class="border border-gray-300 px-4 py-2 text-left" style="text-align: ${aligns[i] || 'left'}">${col}</th>`;
+    };
+
+    // Share article
+    const shareArticle = async () => {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: article?.title,
+                    text: article?.description || '',
+                    url: window.location.href,
+                });
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                alert('リンクをコピーしました！');
             }
+        } catch (err) {
+            console.error('Error sharing:', err);
+        }
+    };
+
+    // Simple markdown renderer
+    const simpleRenderMarkdown = useCallback((text) => {
+        if (!text) return '';
+
+        // 1. HTMLエスケープ
+        let html = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        // 2. コードブロック (```で囲まれた部分)
+        html = html.replace(/```([\s\S]*?)```/g, (_, code) => 
+            `<pre class="language-javascript"><code class="language-javascript">${code}</code></pre>`
+        );
+
+        // 3. インラインコード
+        html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">$1</code>');
+
+        // 4. 見出し
+        html = html.replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold my-4">$1</h1>');
+        html = html.replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold my-3">$1</h2>');
+        html = html.replace(/^### (.*$)/gm, '<h3 class="text-xl font-bold my-2">$1</h3>');
+        html = html.replace(/^#### (.*$)/gm, '<h4 class="text-lg font-bold my-2">$1</h4>');
+        html = html.replace(/^##### (.*$)/gm, '<h5 class="text-base font-bold my-2">$1</h5>');
+        html = html.replace(/^###### (.*$)/gm, '<h6 class="text-sm font-bold my-2">$1</h6>');
+
+        // 5. リスト
+        // 番号付きリスト
+        html = html.replace(/^(\d+)\. (.*$)/gm, '<li class="ml-6">$2</li>');
+        // 箇条書きリスト
+        html = html.replace(/^[-*+] (.*$)/gm, '<li class="ml-6">$1</li>');
+        // リストのラッピング
+        html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
+            if (match.startsWith('<li class="ml-6">')) {
+                return match;
+            }
+            return match.replace(/<li>([\s\S]*?)<\/li>/g, '<li class="ml-6">$1</li>');
         });
-        table += '</tr></thead><tbody>';
-        
-        const rowData = rows.split('\n').filter(row => row.trim() !== '');
-        rowData.forEach(row => {
-            const cells = row.split('|').map(cell => cell.trim());
-            table += '<tr>';
-            cells.forEach((cell, i) => {
-                if (i > 0 && i < cells.length) {
-                    table += `<td class="border border-gray-300 px-4 py-2" style="text-align: ${aligns[i] || 'left'}">${cell}</td>`;
+        html = html.replace(/(<li class="ml-6">.*<\/li>)(?=\n[^<])/gs, (match) => {
+            return `<ul class="list-disc my-2 pl-6">${match}</ul>`;
+        });
+
+        // 6. テーブル
+        html = html.replace(/\|(.+)\n\|( *[-:]+[-| :]*)\n((?:.*\n)*?)\n(?=\S|$)/g, (match, header, align, rows) => {
+            const columns = header.split('|').map(col => col.trim());
+            const aligns = align.split('|').map(col => {
+                const a = col.trim();
+                if (a.startsWith(':') && a.endsWith(':')) return 'center';
+                if (a.endsWith(':')) return 'right';
+                return 'left';
+            });
+            
+            let table = '<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse"><thead><tr>';
+            columns.forEach((col, i) => {
+                if (col) {
+                    table += `<th class="border border-gray-300 px-4 py-2 text-left" style="text-align: ${aligns[i] || 'left'}">${col}</th>`;
                 }
             });
-            table += '</tr>';
+            table += '</tr></thead><tbody>';
+            
+            const rowData = rows.split('\n').filter(row => row.trim() !== '');
+            rowData.forEach(row => {
+                const cells = row.split('|').map(cell => cell.trim());
+                table += '<tr>';
+                cells.forEach((cell, i) => {
+                    if (i > 0 && i < cells.length) {
+                        table += `<td class="border border-gray-300 px-4 py-2" style="text-align: ${aligns[i] || 'left'}">${cell}</td>`;
+                    }
+                });
+                table += '</tr>';
+            });
+            
+            table += '</tbody></table></div>';
+            return table;
         });
-        
-        table += '</tbody></table></div>';
-        return table;
-    });
 
-    // 7. チェックボックス (GFM)
-    html = html.replace(/^(\s*)- \[ \] (.*$)/gm, '<li class="flex items-center ml-6"><input type="checkbox" class="mr-2" disabled> $2</li>');
-    html = html.replace(/^(\s*)- \[x\] (.*$)/gim, '<li class="flex items-center ml-6"><input type="checkbox" class="mr-2" checked disabled> $2</li>');
+        // 7. チェックボックス (GFM)
+        html = html.replace(/^(\s*)- \[ \] (.*$)/gm, '<li class="flex items-center ml-6"><input type="checkbox" class="mr-2" disabled> $2</li>');
+        html = html.replace(/^(\s*)- \[x\] (.*$)/gim, '<li class="flex items-center ml-6"><input type="checkbox" class="mr-2" checked disabled> $2</li>');
 
-    // 8. 引用
-    html = html.replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 my-2 text-gray-600 dark:text-gray-300">$1</blockquote>');
+        // 8. 引用
+        html = html.replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 my-2 text-gray-600 dark:text-gray-300">$1</blockquote>');
 
-    // 9. 水平線
-    html = html.replace(/^\s*([-*_]\s*){3,}\s*$/gm, '<hr class="my-4 border-t border-gray-300">');
+        // 9. 水平線
+        html = html.replace(/^\s*([-*_]\s*){3,}\s*$/gm, '<hr class="my-4 border-t border-gray-300">');
 
-    // 10. 強調
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
-    html = html.replace(/_(.*?)_/g, '<em>$1</em>');
-    html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
+        // 10. 強調
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+        html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
 
-    // 11. 画像
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
-        const safeSrc = src.startsWith('https://') ? src : '';
-        return `<div class="my-4"><img src="${safeSrc}" alt="${alt}" class="max-w-full rounded-md" loading="lazy" onerror="this.style.display='none'"></div>`;
-    });
+        // 11. 画像
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+            const safeSrc = src.startsWith('https://') ? src : '';
+            return `
+                <div class="my-4 relative group">
+                    <img 
+                        src="${safeSrc}" 
+                        alt="${alt}" 
+                        class="max-w-full rounded-md cursor-zoom-in transition-transform duration-200 hover:shadow-lg" 
+                        loading="lazy" 
+                        onclick="document.getElementById('image-modal').src='${safeSrc}'; document.getElementById('image-modal-container').classList.remove('hidden'); document.body.style.overflow='hidden';"
+                    />
+                    <button 
+                        class="absolute top-2 right-2 p-1 bg-black bg-opacity-50 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        onclick="navigator.clipboard.writeText('${safeSrc}'); alert('画像URLをコピーしました'); event.stopPropagation();"
+                        title="画像URLをコピー"
+                    >
+                        <Copy size={16} />
+                    </button>
+                </div>
+            `;
+        });
 
-    // 12. リンク
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
-        '<a href="$2" target="_blank" rel="noopener noreferrer nofollow" class="text-purple-600 dark:text-purple-400 underline hover:text-purple-800 dark:hover:text-purple-300">$1</a>'
-    );
+        // 12. リンク
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+            '<a href="$2" target="_blank" rel="noopener noreferrer nofollow" class="text-purple-600 dark:text-purple-400 underline hover:text-purple-800 dark:hover:text-purple-300">$1</a>'
+        );
 
-    // 13. 改行
-    html = html.replace(/\n/g, '<br>');
+        html = html.replace(/(<\/li>\s*<\/ul>)\s*/g, '$1\n\n');
+        html = html.replace(/(<\/li>\s*<\/ol>)\s*/g, '$1\n\n');
 
-    return html;
-}, []);
+        // 14. 改行（通常の改行は<br>に、連続する改行は<p>タグに変換）
+        html = html.replace(/\n{3,}/g, '\n\n');  // 3つ以上の連続した改行を2つに
+        html = html.replace(/\n\n/g, '</p><p class="my-4">');  // 2つの改行を段落区切りに
+        html = html.replace(/\n/g, '<br>');  // 単一の改行は<br>に
+        html = '<p>' + html + '</p>';  // 全体を<p>で囲む
+
+        // 空の<p>タグを削除
+        html = html.replace(/<p[^>]*>\s*<\/p>/g, '');
+
+        return html;
+    }, []);
 
     // 記事データの取得
     useEffect(() => {
@@ -696,6 +776,30 @@ const simpleRenderMarkdown = useCallback((text) => {
                     };
                     setArticle(articleData);
                     setContent(simpleRenderMarkdown(articleData.md || ''));
+                    
+                    // Add copy buttons to code blocks after content is rendered
+                    setTimeout(() => {
+                        if (contentRef.current) {
+                            const codeBlocks = contentRef.current.querySelectorAll('pre');
+                            codeBlocks.forEach((block) => {
+                                const wrapper = document.createElement('div');
+                                wrapper.className = 'relative group';
+                                
+                                const button = document.createElement('button');
+                                button.className = 'absolute top-2 right-2 p-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors';
+                                button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+                                button.title = 'コードをコピー';
+                                button.onclick = () => {
+                                    const code = block.querySelector('code')?.innerText || '';
+                                    copyToClipboard(code);
+                                };
+                                
+                                wrapper.appendChild(block.cloneNode(true));
+                                wrapper.appendChild(button);
+                                block.parentNode.replaceChild(wrapper, block);
+                            });
+                        }
+                    }, 100);
                 }
             } catch (error) {
                 console.error("記事の読み込み中にエラーが発生しました:", error);
@@ -710,23 +814,81 @@ const simpleRenderMarkdown = useCallback((text) => {
     }
 
     return (
-        <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in">
-            <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
-            <div className="text-sm text-gray-500 mb-6">
-                {article.date} • {article.type}
-            </div>
+        <div className="max-w-4xl mx-auto py-12 px-4 animate-fade-in">
+            <article className="prose dark:prose-invert max-w-none" ref={contentRef}>
+                <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
+                <div className="flex items-center justify-between mb-8">
+                    <div className="text-sm text-gray-500">
+                        {article.date} • {article.type}
+                    </div>
+                    <button
+                        onClick={shareArticle}
+                        className="flex items-center text-sm text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                        title="共有する"
+                    >
+                        <Share2 size={16} className="mr-1" /> 共有
+                    </button>
+                </div>
+
+                <div dangerouslySetInnerHTML={{ __html: content }} />
+
+                {/* Related Articles */}
+                {article.relatedArticles && article.relatedArticles.length > 0 && (
+                    <div className="mt-12 border-t border-gray-200 dark:border-gray-700 pt-8">
+                        <h3 className="text-xl font-bold mb-4">関連記事</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            {article.relatedArticles.map((related) => (
+                                <a
+                                    key={related.id}
+                                    href={`#/articles/${related.id}`}
+                                    className="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                >
+                                    <h4 className="font-medium">{related.title}</h4>
+                                    <p className="text-sm text-gray-500 mt-1">{related.date}</p>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </article>
+
+            {/* Image Modal */}
             <div 
-                className="prose dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: content }} 
-            />
-            <div className="mt-6">
-                <button 
-                    onClick={() => navigate(articles)} 
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                id="image-modal-container" 
+                className="fixed inset-0 bg-black bg-opacity-90 z-50 items-center justify-center hidden"
+                onClick={() => {
+                    document.getElementById('image-modal-container').classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }}
+            >
+                <button
+                    className="absolute top-4 right-4 text-white hover:text-gray-300"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        document.getElementById('image-modal-container').classList.add('hidden');
+                        document.body.style.overflow = 'auto';
+                    }}
                 >
-                    戻る
+                    <X size={32} />
                 </button>
+                <div className="max-w-4xl w-full max-h-[90vh] flex items-center justify-center p-4">
+                    <img
+                        id="image-modal"
+                        src=""
+                        alt="Enlarged content"
+                        className="max-w-full max-h-[80vh] object-contain"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
             </div>
+
+            {/* Copy Notification */}
+            {copied && (
+                <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg flex items-center">
+                    <CheckCircle size={16} className="mr-2" />
+                    コピーしました！
+                </div>
+            )}
         </div>
     );
 };
