@@ -569,48 +569,116 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     const [content, setContent] = useState('');
 
     // マークダウン変換関数をトップレベルで定義
-    const simpleRenderMarkdown = useCallback((text) => {
-        if (!text) return '';
-        
-        // 1. HTMLエスケープ
-        let html = text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+const simpleRenderMarkdown = useCallback((text) => {
+    if (!text) return '';
 
-        // 2. コードブロック
-        html = html.replace(/```([\s\S]*?)```/g, (_, code) => 
-            `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto">${code}</pre>`
-        );
+    // 1. HTMLエスケープ
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 
-        // 3. 見出し
-        html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold my-4">$1</h1>');
-        html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold my-3">$1</h2>');
-        html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold my-2">$1</h3>');
-        html = html.replace(/^#### (.*$)/gim, '<h4 class="text-base font-bold my-2">$1</h4>');
-        html = html.replace(/^##### (.*$)/gim, '<h5 class="text-sm font-bold my-2">$1</h5>');
-        html = html.replace(/^###### (.*$)/gim, '<h6 class="text-xs font-bold my-2">$1</h6>');
+    // 2. コードブロック (```で囲まれた部分)
+    html = html.replace(/```([\s\S]*?)```/g, (_, code) => 
+        `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto"><code>${code}</code></pre>`
+    );
 
-        // 4. 太字・斜体
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // 3. インラインコード
+    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">$1</code>');
 
-        // 5. 画像
-        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
-            const safeSrc = src.startsWith('https://') ? src : '';
-            return `<img src="${safeSrc}" alt="${alt}" class="max-w-full rounded-md my-3" loading="lazy" onerror="this.style.display='none'" />`;
+    // 4. 見出し
+    html = html.replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold my-4">$1</h1>');
+    html = html.replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold my-3">$1</h2>');
+    html = html.replace(/^### (.*$)/gm, '<h3 class="text-xl font-bold my-2">$1</h3>');
+    html = html.replace(/^#### (.*$)/gm, '<h4 class="text-lg font-bold my-2">$1</h4>');
+    html = html.replace(/^##### (.*$)/gm, '<h5 class="text-base font-bold my-2">$1</h5>');
+    html = html.replace(/^###### (.*$)/gm, '<h6 class="text-sm font-bold my-2">$1</h6>');
+
+    // 5. リスト
+    // 番号付きリスト
+    html = html.replace(/^(\d+)\. (.*$)/gm, '<li class="ml-6">$2</li>');
+    // 箇条書きリスト
+    html = html.replace(/^[-*+] (.*$)/gm, '<li class="ml-6">$1</li>');
+    // リストのラッピング
+    html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
+        if (match.startsWith('<li class="ml-6">')) {
+            return match;
+        }
+        return match.replace(/<li>([\s\S]*?)<\/li>/g, '<li class="ml-6">$1</li>');
+    });
+    html = html.replace(/(<li class="ml-6">.*<\/li>)(?=\n[^<])/gs, (match) => {
+        return `<ul class="list-disc my-2 pl-6">${match}</ul>`;
+    });
+
+    // 6. テーブル
+    html = html.replace(/\|(.+)\n\|( *[-:]+[-| :]*)\n((?:.*\n)*?)\n(?=\S|$)/g, (match, header, align, rows) => {
+        const columns = header.split('|').map(col => col.trim());
+        const aligns = align.split('|').map(col => {
+            const a = col.trim();
+            if (a.startsWith(':') && a.endsWith(':')) return 'center';
+            if (a.endsWith(':')) return 'right';
+            return 'left';
         });
+        
+        let table = '<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse"><thead><tr>';
+        columns.forEach((col, i) => {
+            if (col) {
+                table += `<th class="border border-gray-300 px-4 py-2 text-left" style="text-align: ${aligns[i] || 'left'}">${col}</th>`;
+            }
+        });
+        table += '</tr></thead><tbody>';
+        
+        const rowData = rows.split('\n').filter(row => row.trim() !== '');
+        rowData.forEach(row => {
+            const cells = row.split('|').map(cell => cell.trim());
+            table += '<tr>';
+            cells.forEach((cell, i) => {
+                if (i > 0 && i < cells.length) {
+                    table += `<td class="border border-gray-300 px-4 py-2" style="text-align: ${aligns[i] || 'left'}">${cell}</td>`;
+                }
+            });
+            table += '</tr>';
+        });
+        
+        table += '</tbody></table></div>';
+        return table;
+    });
 
-        // 6. リンク
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
-            '<a href="$2" target="_blank" rel="noopener noreferrer nofollow" class="text-purple-600 dark:text-purple-400 underline hover:text-purple-800 dark:hover:text-purple-300">$1</a>'
-        );
+    // 7. チェックボックス (GFM)
+    html = html.replace(/^(\s*)- \[ \] (.*$)/gm, '<li class="flex items-center ml-6"><input type="checkbox" class="mr-2" disabled> $2</li>');
+    html = html.replace(/^(\s*)- \[x\] (.*$)/gim, '<li class="flex items-center ml-6"><input type="checkbox" class="mr-2" checked disabled> $2</li>');
 
-        // 7. 改行
-        return html.replace(/\n/g, '<br />');
-    }, []);
+    // 8. 引用
+    html = html.replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 my-2 text-gray-600 dark:text-gray-300">$1</blockquote>');
+
+    // 9. 水平線
+    html = html.replace(/^\s*([-*_]\s*){3,}\s*$/gm, '<hr class="my-4 border-t border-gray-300">');
+
+    // 10. 強調
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+    html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+    html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
+
+    // 11. 画像
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+        const safeSrc = src.startsWith('https://') ? src : '';
+        return `<div class="my-4"><img src="${safeSrc}" alt="${alt}" class="max-w-full rounded-md" loading="lazy" onerror="this.style.display='none'"></div>`;
+    });
+
+    // 12. リンク
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+        '<a href="$2" target="_blank" rel="noopener noreferrer nofollow" class="text-purple-600 dark:text-purple-400 underline hover:text-purple-800 dark:hover:text-purple-300">$1</a>'
+    );
+
+    // 13. 改行
+    html = html.replace(/\n/g, '<br>');
+
+    return html;
+}, []);
 
     // 記事データの取得
     useEffect(() => {
@@ -653,7 +721,7 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
             />
             <div className="mt-6">
                 <button 
-                    onClick={() => navigate(-1)} 
+                    onClick={() => navigate(articles)} 
                     className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 >
                     戻る
