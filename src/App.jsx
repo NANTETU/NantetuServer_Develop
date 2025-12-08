@@ -9,7 +9,7 @@ import {
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
-import 'prismjs/themes/prism-tomorrow.css';
+import 'prismjs/themes/prism-tomorrow.min.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers';
 import 'prismjs/plugins/toolbar/prism-toolbar.css';
