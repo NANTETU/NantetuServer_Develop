@@ -15,7 +15,6 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers';
 import 'prismjs/plugins/toolbar/prism-toolbar.css';
 import 'prismjs/plugins/toolbar/prism-toolbar';
-import { BrowserRouter } from 'react-router-dom';
 import 'prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard';
 import Prism from 'prismjs';
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
