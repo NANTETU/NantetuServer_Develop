@@ -43,6 +43,68 @@ import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from '
 
 // LANGUAGES object now imported from './config/languages'
 
+// 画像のスタイル
+const styles = `
+  /* 画像の最大幅を制限 */
+  .prose img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5rem auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  /* 画像ホバー時のエフェクト */
+  .prose img:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s ease-in-out;
+  }
+
+  /* モバイル表示の調整 */
+  @media (max-width: 768px) {
+    .prose img {
+      margin: 1rem auto;
+    }
+  }
+
+  /* 画像モーダルのスタイル */
+  #image-modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 1rem;
+  }
+
+  #image-modal {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+  }
+
+  /* コピーボタンのスタイル */
+  .copy-notification {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background-color: #10B981;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 1100;
+  }
+`;
+
 // ==========================================
 // 2. UI Components (UI.jsx)
 // ==========================================
@@ -721,16 +783,16 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
 html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
     // 相対パスの場合はベースURLを追加
     let safeSrc = src;
-    if (!src.startsWith('http') && !src.startsWith('data:image')) {
-        safeSrc = src.startsWith('/') ? src : `/${src}`;
+    if (!src.startsWith('http') && !src.startsWith('data:image') && !src.startsWith('/')) {
+        safeSrc = `/${src}`;
     }
     
     return `
-        <div class="my-4 relative group">
+        <div class="my-6 relative group">
             <img 
                 src="${safeSrc}" 
                 alt="${alt || '画像'}" 
-                class="max-w-full rounded-md cursor-zoom-in transition-transform duration-200 hover:shadow-lg" 
+                class="w-full h-auto rounded-lg shadow-md cursor-zoom-in" 
                 loading="lazy"
                 onclick="
                     const modal = document.getElementById('image-modal');
@@ -741,15 +803,16 @@ html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
                         document.body.style.overflow = 'hidden';
                     }
                 "
-                onerror="this.onerror=null; this.src='https://placehold.co/600x400/808080/FFFFFF?text=Image+Not+Found'"
+                onerror="this.onerror=null; this.src='https://placehold.co/800x450/808080/FFFFFF?text=Image+Not+Found'"
+                style="max-width: 100%; height: auto; display: block;"
             />
             <button 
-                class="absolute top-2 right-2 p-1 bg-black bg-opacity-50 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                class="absolute top-3 right-3 p-2 bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 onclick="
                     navigator.clipboard.writeText('${safeSrc}');
                     const notification = document.createElement('div');
                     notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg flex items-center';
-                    notification.innerHTML = '<svg class=\"w-4 h-4 mr-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 13l4 4L19 7\"></path></svg>コピーしました！';
+                    notification.innerHTML = '<svg class=\"w-4 h-4 mr-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 13l4 4L19 7\"></path></svg>画像URLをコピーしました';
                     document.body.appendChild(notification);
                     setTimeout(() => notification.remove(), 2000);
                     event.stopPropagation();
@@ -2316,23 +2379,28 @@ export default function App() {
             }, 1500);
         } catch (err) {
             console.error('Quiz error:', err);
-            showToast('クイズ処琁E��にエラーが発生しました');
+            showToast('クイズ処理中にエラーが発生しました');
         }
     }, [L.quiz_data, quizState.current, showToast]);
+    
+const GlobalStyle = () => (
+  <style dangerouslySetInnerHTML={{ __html: styles }} />
+);
+return (
+  <>
+    <GlobalStyle />
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
+      <CustomStyles />
 
-    return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
-            <CustomStyles />
+      {/* 1. Global Loading Overlays */}
+      {isAppLoading && <LoadingScreen />}
+      <LoadingBar isLoading={isPageLoading} />
 
-            {/* 1. Global Loading Overlays */}
-            {isAppLoading && <LoadingScreen />}
-            <LoadingBar isLoading={isPageLoading} />
-
-            {/* 2. Navigation */}
-            <Navbar
-                L={L}
-                page={page}
-                navigate={handleNavigate}
+      {/* 2. Navigation */}
+      <Navbar
+        L={L}
+        page={page}
+        navigate={handleNavigate}
                 darkMode={darkMode}
                 setDarkMode={setDarkMode}
                 isMenuOpen={isMenuOpen}
@@ -2414,5 +2482,6 @@ export default function App() {
 
             <AIChat L={L} isChatOpen={isChatOpen} closeChat={() => setIsChatOpen(false)} currentLang={currentLang} />
         </div>
+        </>
     );
 }
