@@ -29,6 +29,7 @@ import remarkGfm from 'remark-gfm';
 // Extracted components 
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
+import HomePage from './pages/Home';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { getDoc } from 'firebase/firestore'; 
@@ -1823,6 +1824,38 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
 // 6. Main App Component (App.jsx)
 // ==========================================
 
+// Handler functions
+const handleCopy = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+        // Copy success feedback could be added here
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+};
+
+const resetQuiz = () => {
+    // This will be passed to HomePage component
+    return { started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null };
+};
+
+const handleQuizAnswer = (answer) => {
+    // This will be handled in HomePage component
+    return answer;
+};
+
+const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+    }
+};
+
+const showToast = (message, type = 'info') => {
+    // Simple toast implementation
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    // Could be enhanced with actual toast UI
+};
+
 const CustomStyles = () => (
     <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
@@ -2013,7 +2046,7 @@ const navigate = useNavigate();
 
     return (
         <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
-            <GlobalStyle />
+            <CustomStyles />
             {isAppLoading && <LoadingScreen />}
             <LoadingBar isLoading={isPageLoading} />
 
