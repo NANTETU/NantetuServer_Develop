@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
     Server, Users, Shield, Clock, MessageCircle, MapPin,
@@ -11,10 +12,10 @@ import {
 import { initializeApp } from "firebase/app";
 import 'prismjs/themes/prism-tomorrow.min.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
-import { useParams } from 'react-router-dom';
 import 'prismjs/plugins/line-numbers/prism-line-numbers';
 import 'prismjs/plugins/toolbar/prism-toolbar.css';
 import 'prismjs/plugins/toolbar/prism-toolbar';
+import { BrowserRouter } from 'react-router-dom';
 import 'prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard';
 import Prism from 'prismjs';
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
@@ -1884,6 +1885,7 @@ export default function App() {
 
     const L = LANGUAGES[currentLang];
 
+const navigate = useNavigate();
 
     const handleGeminiCall = useCallback(async (userPrompt) => {
         const apiEndpoint = '/api/generate';
@@ -1979,6 +1981,13 @@ export default function App() {
             const hash = window.location.hash.replace('#/', '') || 'home';
             setPage(hash);
         };
+
+const handleNavigate = (newPage, e) => {
+    if (e) e.preventDefault();
+    setPage(newPage);
+    window.scrollTo(0, 0);
+    navigate(`/${newPage}`);
+};
 
         // Set initial page from hash
         handleHashChange();
@@ -2173,7 +2182,7 @@ const GlobalStyle = () => (
   <style dangerouslySetInnerHTML={{ __html: styles }} />
 );
 return (
-  <>
+  <BrowserRouter>
     <GlobalStyle />
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
       <CustomStyles />
@@ -2279,7 +2288,7 @@ return (
             </button>
 
             <AIChat L={L} isChatOpen={isChatOpen} closeChat={() => setIsChatOpen(false)} currentLang={currentLang} />
-        </div>
-        </>
-    );
+      </div>  // 既存の閉じタグ
+    </BrowserRouter>  // 追加
+  );
 }
