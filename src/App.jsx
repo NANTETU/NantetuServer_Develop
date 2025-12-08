@@ -22,7 +22,7 @@ import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPag
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { app, firebaseConfig } from './config/firebase';
-import { doc, getDoc } from 'firebase/firestore'; 
+import { getDoc } from 'firebase/firestore'; 
 // ==========================================
 // 1. Configuration & Data (languages.js)
 // ==========================================
