@@ -860,6 +860,7 @@ useEffect(() => {
     console.log('appId:', appId);  
     console.log('Article ID:', id);  
     console.log('Full path:', `apps/${appId}/articles/${id}`);
+    console.log('Firebase App ID from config:', firebaseConfig.appId);
     
     const fetchArticle = async () => {
         try {
@@ -2469,7 +2470,13 @@ return (
                         return <NewsDetail L={L} id={id} newsData={newsData} navigate={handleNavigate} />;
                     })()
                 )}
-                {!searchTerm && page === 'articles' && <ArticlesPage L={L} db={db} appId={appId} navigate={handleNavigate} />}
+                {!searchTerm && page === 'articles' && <ArticleDetail 
+                 L={L} 
+                 id={id} 
+                 db={db} 
+                  appId={firebaseConfig.appId}  
+                navigate={navigate} 
+                />}
                 {!searchTerm && page.startsWith && page.startsWith('articles/') && (
                     (() => {
                         const id = page.split('/')[1];
