@@ -23,13 +23,13 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
-// Extracted components
+// Extracted components 
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
-import { app, firebaseConfig } from './config/firebase';
 import { getDoc } from 'firebase/firestore'; 
+import { app, firebaseConfig } from './config/firebase';
 // ==========================================
 // 1. Configuration & Data (languages.js)
 // ==========================================
@@ -638,7 +638,6 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
     );
 };
 
-const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     const [article, setArticle] = useState(null);
     const [content, setContent] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
@@ -861,6 +860,7 @@ useEffect(() => {
     console.log('Article ID:', id);  
     console.log('Full path:', `apps/${appId}/articles/${id}`);
     console.log('Firebase App ID from config:', firebaseConfig.appId);
+    console.log('Using appId:', firebaseConfig.appId);
     
     const fetchArticle = async () => {
         try {
@@ -2470,13 +2470,15 @@ return (
                         return <NewsDetail L={L} id={id} newsData={newsData} navigate={handleNavigate} />;
                     })()
                 )}
-                {!searchTerm && page === 'articles' && <ArticleDetail 
-                 L={L} 
-                 id={id} 
-                 db={db} 
-                  appId={firebaseConfig.appId}  
-                navigate={navigate} 
-                />}
+{!searchTerm && page === 'articles' && (
+    <ArticleDetail 
+        L={L} 
+        id={id} 
+        db={db} 
+        appId={firebaseConfig.appId}
+        navigate={navigate} 
+    />
+)}
                 {!searchTerm && page.startsWith && page.startsWith('articles/') && (
                     (() => {
                         const id = page.split('/')[1];
