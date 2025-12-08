@@ -29,7 +29,6 @@ import remarkGfm from 'remark-gfm';
 // Extracted components 
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
-import HomePage from './pages/Home';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { getDoc } from 'firebase/firestore'; 
