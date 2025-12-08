@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, useParams, useNavigate, Link } from 'react-router-dom';
+
 import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
     Server, Users, Shield, Clock, MessageCircle, MapPin,
@@ -15,6 +16,7 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers';
 import 'prismjs/plugins/toolbar/prism-toolbar.css';
 import 'prismjs/plugins/toolbar/prism-toolbar';
+
 import 'prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard';
 import Prism from 'prismjs';
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
@@ -1584,6 +1586,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
                 </div>
                 <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center">
+                    <Navbar />
                     <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-bold animate-fade-in-up">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         {serverStatus.loading ? L.status.loading : serverStatus.online ? L.status.online(serverStatus.players) : L.status.offline}
@@ -1604,6 +1607,9 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                     </div>
                 </div>
             </header>
+
+
+
 
             {/* Stats Bar */}
             <div className="relative z-20 -mt-24 max-w-6xl mx-auto px-4">
@@ -1963,7 +1969,6 @@ const navigate = useNavigate();
             document.documentElement.classList.add('dark');
             document.documentElement.style.colorScheme = 'dark';
         } else {
-            document.documentElement.classList.remove('dark');
             document.documentElement.style.colorScheme = 'light';
         }
     }, [darkMode]);
@@ -1974,41 +1979,6 @@ const navigate = useNavigate();
         return () => clearTimeout(timer);
     }, []);
 
-    // --- Router Logic (Hash Router) ---
-    useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.replace('#/', '') || 'home';
-            setPage(hash);
-        };
-
-const handleNavigate = (newPage, e) => {
-    if (e) e.preventDefault();
-    setPage(newPage);
-    window.scrollTo(0, 0);
-    navigate(`/${newPage}`);
-};
-
-        // Set initial page from hash
-        handleHashChange();
-
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
-
-    // --- Router Logic (Hash Router) ---
-    useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.replace('#/', '') || 'home';
-            setPage(hash);
-        };
-
-        // Set initial page from hash
-        handleHashChange();
-
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
-
     // Enhanced Navigation with Loading Bar & Routing (Memoized)
     const handleNavigate = useCallback((targetPage, sectionId = null) => {
         if (targetPage === page && !sectionId) return;
@@ -2016,8 +1986,10 @@ const handleNavigate = (newPage, e) => {
         setIsPageLoading(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Update URL hash
-        window.location.hash = `/${targetPage}`;
+        // React Router navigation based on logical page key
+        const path = targetPage === 'home' ? '/' : `/${targetPage}`;
+        setPage(targetPage);
+        navigate(path);
 
         // Simulate loading delay for smooth feel
         setTimeout(() => {
@@ -2029,170 +2001,26 @@ const handleNavigate = (newPage, e) => {
                 }, 100);
             }
         }, 400);
-    }, [page]);
+    }, [page, navigate]);
 
-    useEffect(() => {
-        const fetchStatus = async () => {
-            try {
-                const res = await fetch(`https://api.mcsrvstat.us/bedrock/2/${L.server.ip}:${L.server.port}`);
-                const data = await res.json();
-                setServerStatus({ online: data.online, players: data.online ? data.players.online : 0, loading: false });
-            } catch { setServerStatus({ online: false, players: 0, loading: false }); }
-        };
-        fetchStatus();
-        const interval = setInterval(fetchStatus, 60000);
+    // ...
 
-        const fetchNews = async () => {
-            try {
-                const res = await fetch(NEWS_SHEET_URL);
-                if (res.ok) {
-                    const text = await res.text();
-                    // Google Sheets API returns JSONP with 'new Date(...)' which breaks JSON.parse
-                    // 1. Strip the function call: google.visualization.Query.setResponse(...)
-                    const startRaw = text.indexOf('(');
-                    const endRaw = text.lastIndexOf(')');
-                    if (startRaw === -1 || endRaw === -1) throw new Error("Invalid format");
+    // Wrapper component for NewsDetail to supply URL param id
+    const NewsDetailRoute = () => {
+        const { id } = useParams();
+        return <NewsDetail L={L} id={id} newsData={newsData} navigate={handleNavigate} />;
+    };
 
-                    let jsonString = text.substring(startRaw + 1, endRaw);
+    return (
+        <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
+            <GlobalStyle />
+            {isAppLoading && <LoadingScreen />}
+            <LoadingBar isLoading={isPageLoading} />
 
-                    // 2. Replace 'new Date(y, m, d)' with '"Date(y, m, d)"' to make it valid JSON strings
-                    // Regex: new Date\(  ->  "Date(
-                    //        \d+,\d+,\d+ -> capture args
-                    //        \)          ->  )"
-                    // Actually simpler: just replace `new Date(` with `"Date(` and `)` with `)"`? 
-                    // No, `)` is common. We need to match the specific date pattern.
-                    jsonString = jsonString.replace(/new Date\((.*?)\)/g, '"Date($1)"');
-
-                    const json = JSON.parse(jsonString);
-                    if (json.table?.rows) {
-                        const parsed = json.table.rows.map((row, i) => {
-                            let rawDate = row.c[0]?.v;
-                            let dateStr = rawDate; // Default
-
-                            if (typeof rawDate === 'string' && rawDate.startsWith('Date(')) {
-                                const parts = rawDate.match(/\d+/g);
-                                if (parts && parts.length >= 3) {
-                                    const y = parseInt(parts[0]);
-                                    const m = parseInt(parts[1]) + 1;
-                                    const d = parseInt(parts[2]);
-                                    dateStr = `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`;
-                                }
-                            } else if (typeof rawDate === 'number') {
-                                const excelEpoch = new Date(1899, 11, 30);
-                                const dateObj = new Date(excelEpoch.getTime() + rawDate * 86400000);
-                                dateStr = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
-                            } else {
-                                try {
-                                    const d = new Date(rawDate);
-                                    if (!isNaN(d.getTime())) {
-                                        dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-                                    } else {
-                                        dateStr = String(rawDate);
-                                    }
-                                } catch { dateStr = String(rawDate); }
-                            }
-
-                            return {
-                                id: i + 100,
-                                date: dateStr,
-                                title: row.c[1]?.v || '',
-                                content: row.c[2]?.v || '',
-                                url: row.c[3]?.v,
-                                type: (() => {
-                                    const c = row.c[2]?.v || '';
-                                    if (c.includes('メンチンス')) return 'maintenance';
-                                    if (c.includes('お願い')) return 'request';
-                                    if (c.includes('解説')) return 'explanation';
-                                    if (c.includes('募集')) return 'recruitment';
-                                    if (c.includes('その他')) return 'other';
-                                    return 'info';
-                                })()
-                            };
-                        }).filter(i => i.title);
-                        setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
-                    }
-                }
-            } catch (e) {
-                console.error("News fetch error", e);
-                // Cannot access showToast here because it is defined below
-            }
-        };
-        fetchNews();
-        return () => clearInterval(interval);
-    }, []);
-
-    const showToast = useCallback((msg) => {
-        setToastMessage(msg);
-        setTimeout(() => setToastMessage(null), 3000);
-    }, []);
-
-    const handleCopy = useCallback((text) => {
-        navigator.clipboard.writeText(text).catch(err => {
-            console.error('Failed to copy:', err);
-            showToast('コピーに失敗しました');
-        });
-    }, [showToast]);
-
-    const scrollToSection = useCallback((id) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, []);
-
-    const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
-
-
-
-    // Handle Quiz (Memoized with error handling)
-    const handleQuizAnswer = useCallback((selectedOption) => {
-        try {
-            const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
-            setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
-
-            setTimeout(() => {
-                if (isCorrect) {
-                    setQuizState(prev => {
-                        const nextIdx = prev.current + 1;
-                        if (nextIdx < L.quiz_data.length) {
-                            return { ...prev, current: nextIdx, score: prev.score + 1, showResult: false, isCorrect: null };
-                        } else {
-                            return { ...prev, score: prev.score + 1, finished: true, showResult: false };
-                        }
-                    });
-                } else {
-                    setQuizState(prev => {
-                        const nextIdx = prev.current + 1;
-                        if (nextIdx < L.quiz_data.length) {
-                            return { ...prev, current: nextIdx, showResult: false, isCorrect: null };
-                        } else {
-                            return { ...prev, finished: true, showResult: false };
-                        }
-                    });
-                }
-            }, 1500);
-        } catch (err) {
-            console.error('Quiz error:', err);
-            showToast('クイズ処理中にエラーが発生しました');
-        }
-    }, [L.quiz_data, quizState.current, showToast]);
-    
-const GlobalStyle = () => (
-  <style dangerouslySetInnerHTML={{ __html: styles }} />
-);
-return (
-  <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
-      <CustomStyles />
-
-      {/* 1. Global Loading Overlays */}
-      {isAppLoading && <LoadingScreen />}
-      <LoadingBar isLoading={isPageLoading} />
-
-      {/* 2. Navigation */}
-      <Navbar
-        L={L}
-        page={page}
-        navigate={handleNavigate}
+            <Navbar
+                L={L}
+                page={page}
+                navigate={handleNavigate}
                 darkMode={darkMode}
                 setDarkMode={setDarkMode}
                 isMenuOpen={isMenuOpen}
@@ -2207,84 +2035,59 @@ return (
                 newsData={newsData}
             />
 
-            {/* 3. Main Content Router - TEXT COLOR FIX applied here */}
-            <main className="relative z-10 min-h-screen text-gray-900 dark:text-gray-100">
-                {searchTerm && (
-                    <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
-                        <h2 className="text-4xl font-black mb-8 dark:text-white">{L.footer.search_results_title}</h2>
-                        <SearchResultsPage L={L} searchTerm={searchTerm} navigate={handleNavigate} />
-                    </div>
-                )}
-                {!searchTerm && page === 'home' && (
-                    <HomePage
-                        L={L}
-                        serverStatus={serverStatus}
-                        quizState={quizState}
-                        setQuizState={setQuizState}
-                        resetQuiz={resetQuiz}
-                        handleQuizAnswer={handleQuizAnswer}
-                        handleCopy={handleCopy}
-                        scrollToSection={scrollToSection}
-                        navigate={handleNavigate}
-                        activeAccordion={activeAccordion}
-                        setActiveAccordion={setActiveAccordion}
-                        showToast={showToast}
-                        newsData={newsData}
-                        hasUnreadNews={hasUnreadNews}
+            <main className="container mx-auto px-4 py-8">
+                <Routes>
+                    <Route
+                        path="/"
+                        element={
+                            <HomePage
+                                L={L}
+                                serverStatus={serverStatus}
+                                quizState={quizState}
+                                setQuizState={setQuizState}
+                                resetQuiz={resetQuiz}
+                                handleQuizAnswer={handleQuizAnswer}
+                                handleCopy={handleCopy}
+                                scrollToSection={scrollToSection}
+                                navigate={handleNavigate}
+                                activeAccordion={activeAccordion}
+                                setActiveAccordion={setActiveAccordion}
+                                showToast={showToast}
+                                newsData={newsData}
+                                hasUnreadNews={hasUnreadNews}
+                            />
+                        }
                     />
-                )}
-                {!searchTerm && page === 'news' && <NewsPage L={L} newsData={newsData} />}
-                {!searchTerm && page.startsWith && page.startsWith('news/') && (
-                    (() => {
-                        const id = page.split('/')[1];
-                        return <NewsDetail L={L} id={id} newsData={newsData} navigate={handleNavigate} />;
-                    })()
-                )}
-<Routes>
-    <Route 
-        path="/articles/:id" 
-        element={
-            <ArticleDetail 
-                L={L}
-                db={db}
-                appId={firebaseConfig.appId}
-                navigate={navigate}
-            />
-        } 
-    />
-</Routes>
-                {!searchTerm && page.startsWith && page.startsWith('articles/') && (
-                    (() => {
-                        const id = page.split('/')[1];
-                        return <ArticleDetail L={L} id={id} db={db} appId={appId} navigate={handleNavigate} />;
-                    })()
-                )}
-                {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
-                {!searchTerm && page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
-                {!searchTerm && page === 'commands' && <CommandsPage L={L} />}
-                {!searchTerm && page === 'terms' && <TermsPage L={L} />}
-                {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
-                {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
-                {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} appId={appId} showToast={showToast} />}
-                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && !page.startsWith('news/') && <NotFoundPage L={L} navigate={handleNavigate} />}
+                    <Route
+                        path="/articles"
+                        element={<ArticlesPage L={L} db={db} appId={appId} navigate={handleNavigate} />}
+                    />
+                    <Route
+                        path="/articles/:id"
+                        element={<ArticleDetail L={L} db={db} appId={appId} navigate={handleNavigate} />}
+                    />
+                    <Route
+                        path="/news"
+                        element={<NewsPage L={L} newsData={newsData} />}
+                    />
+                    <Route
+                        path="/news/:id"
+                        element={<NewsDetailRoute />}
+                    />
+                    <Route
+                        path="/admin"
+                        element={<AdminPage L={L} user={user} db={db} appId={appId} showToast={showToast} />}
+                    />
+                    <Route path="/privacy" element={<PrivacyPage L={L} />} />
+                    <Route path="/guide" element={<GuidePage L={L} />} />
+                    <Route path="/commands" element={<CommandsPage L={L} />} />
+                    <Route path="/forum" element={<ForumPage L={L} />} />
+                    <Route path="/terms" element={<TermsPage L={L} />} />
+                    <Route path="*" element={<NotFoundPage L={L} />} />
+                </Routes>
             </main>
 
-            {/* 4. Footer */}
-            <Footer L={L} navigate={handleNavigate} />
-
-            {/* 5. Global Overlays */}
-            {toastMessage && <Toast message={toastMessage} />}
-
-            {/* Chat Button */}
-            <button
-                onClick={() => setIsChatOpen(true)}
-                className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform hover:shadow-purple-500/50 group"
-            >
-                <MessageCircle size={28} className="group-hover:animate-pulse" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
-            </button>
-
-            <AIChat L={L} isChatOpen={isChatOpen} closeChat={() => setIsChatOpen(false)} currentLang={currentLang} />
-      </div>
-  );
+            <Footer L={L} />
+        </div>
+    );
 }
