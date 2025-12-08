@@ -2181,9 +2181,7 @@ const GlobalStyle = () => (
   <style dangerouslySetInnerHTML={{ __html: styles }} />
 );
 return (
-  <BrowserRouter>
-    <GlobalStyle />
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
+  <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
       <CustomStyles />
 
       {/* 1. Global Loading Overlays */}
@@ -2287,7 +2285,6 @@ return (
             </button>
 
             <AIChat L={L} isChatOpen={isChatOpen} closeChat={() => setIsChatOpen(false)} currentLang={currentLang} />
-      </div>  // 既存の閉じタグ
-    </BrowserRouter>  // 追加
+      </div>
   );
 }

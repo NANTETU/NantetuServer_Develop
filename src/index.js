@@ -1,12 +1,15 @@
+// src/index.js または src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App';
 import './index.css';
-import App from './App.jsx'; // 修正: 親ディレクトリを示す'../'を削除し、'./'で同じディレクトリを参照する
 
-// アプリケーションをpublic/index.htmlのid="root"要素にレンダリングする
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
