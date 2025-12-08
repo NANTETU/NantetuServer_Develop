@@ -22,6 +22,7 @@ import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPag
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { app, firebaseConfig } from './config/firebase';
+import { doc, getDoc } from 'firebase/firestore'; 
 // ==========================================
 // 1. Configuration & Data (languages.js)
 // ==========================================
@@ -563,101 +564,104 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
     );
 };
 
-export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
+const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     const [article, setArticle] = useState(null);
     const [content, setContent] = useState('');
 
+    // マークダウン変換関数をトップレベルで定義
+    const simpleRenderMarkdown = useCallback((text) => {
+        if (!text) return '';
+        
+        // 1. HTMLエスケープ
+        let html = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        // 2. コードブロック
+        html = html.replace(/```([\s\S]*?)```/g, (_, code) => 
+            `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto">${code}</pre>`
+        );
+
+        // 3. 見出し
+        html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold my-4">$1</h1>');
+        html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold my-3">$1</h2>');
+        html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold my-2">$1</h3>');
+        html = html.replace(/^#### (.*$)/gim, '<h4 class="text-base font-bold my-2">$1</h4>');
+        html = html.replace(/^##### (.*$)/gim, '<h5 class="text-sm font-bold my-2">$1</h5>');
+        html = html.replace(/^###### (.*$)/gim, '<h6 class="text-xs font-bold my-2">$1</h6>');
+
+        // 4. 太字・斜体
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+        // 5. 画像
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+            const safeSrc = src.startsWith('https://') ? src : '';
+            return `<img src="${safeSrc}" alt="${alt}" class="max-w-full rounded-md my-3" loading="lazy" onerror="this.style.display='none'" />`;
+        });
+
+        // 6. リンク
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+            '<a href="$2" target="_blank" rel="noopener noreferrer nofollow" class="text-purple-600 dark:text-purple-400 underline hover:text-purple-800 dark:hover:text-purple-300">$1</a>'
+        );
+
+        // 7. 改行
+        return html.replace(/\n/g, '<br />');
+    }, []);
+
+    // 記事データの取得
     useEffect(() => {
-        let unsub = null;
-        if (db) {
+        if (!db || !id) return;
+
+        const fetchArticle = async () => {
             try {
-                const docRef = collection(db, 'articles');
-                // Firestore doc id may be string; get by query
-                const q = query(collection(db, 'articles'));
-                unsub = onSnapshot(q, snap => {
-                    const found = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(x => x.id === id || String(x.id) === String(id) || String(x.id) === String(Number(id)));
-                    setArticle(found || null);
-                });
-            } catch (e) { console.error('article detail fetch error', e); }
-        } else {
-            try {
-                const local = JSON.parse(localStorage.getItem('admin_articles_v1') || '[]');
-                const found = local.find(a => String(a.id) === String(id));
-                setArticle(found || null);
-            } catch { setArticle(null); }
-        }
-        return () => { if (unsub) unsub(); };
-    }, [db, id]);
+                const docRef = doc(db, 'articles', id);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const articleData = {
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    };
+                    setArticle(articleData);
+                    setContent(simpleRenderMarkdown(articleData.md || ''));
+                }
+            } catch (error) {
+                console.error("記事の読み込み中にエラーが発生しました:", error);
+            }
+        };
 
-    if (!article) return (
-        <div className="max-w-4xl mx-auto py-24 px-4 text-center">記事が見つかりません。</div>
-    );
+        fetchArticle();
+    }, [db, id, simpleRenderMarkdown]);
 
-    // Simple markdown renderer
-const simpleRenderMarkdown = useCallback((text) => {
-    if (!text) return '';
-    
-    // 1. HTMLエスケープ（XSS対策）
-    let html = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-
-    // 2. コードブロック
-    html = html.replace(/```([\s\S]*?)```/g, (_, code) => 
-        `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto">${code}</pre>`
-    );
-
-    // 3. 見出し（# から ###### まで対応）
-    html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold my-4">$1</h1>');
-    html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold my-3">$1</h2>');
-    html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold my-2">$1</h3>');
-    html = html.replace(/^#### (.*$)/gim, '<h4 class="text-base font-bold my-2">$1</h4>');
-    html = html.replace(/^##### (.*$)/gim, '<h5 class="text-sm font-bold my-2">$1</h5>');
-    html = html.replace(/^###### (.*$)/gim, '<h6 class="text-xs font-bold my-2">$1</h6>');
-
-    // 4. 太字・斜体
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-    // 5. 画像（セーフなURLのみ許可）
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
-        // 安全な画像URLかどうかをチェック（必要に応じて実装）
-        const safeSrc = src.startsWith('https://') ? src : '';
-        return `<img src="${safeSrc}" alt="${alt}" class="max-w-full rounded-md my-3" loading="lazy" onerror="this.style.display='none'" />`;
-    });
-
-    // 6. リンク（nofollowとnoopenerを追加）
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
-        '<a href="$2" target="_blank" rel="noopener noreferrer nofollow" class="text-purple-600 dark:text-purple-400 underline hover:text-purple-800 dark:hover:text-purple-300">$1</a>'
-    );
-
-    // 7. 改行
-    html = html.replace(/\n/g, '<br />');
-
-    return html;
-}, []);
-
-useEffect(() => {
-    if (article) {
-        setContent(simpleRenderMarkdown(article.md));
+    if (!article) {
+        return <div className="max-w-4xl mx-auto py-24 px-4 text-center">読み込み中...</div>;
     }
-}, [article, simpleRenderMarkdown]);  // 依存配列に simpleRenderMarkdown を追加
 
-return (
-    <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
+    return (
+        <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in">
             <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
-            <div className="text-sm text-gray-500 mb-6">{article.date} • {article.type}</div>
-            <div className="prose bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: content }} />
+            <div className="text-sm text-gray-500 mb-6">
+                {article.date} • {article.type}
+            </div>
+            <div 
+                className="prose dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: content }} 
+            />
             <div className="mt-6">
-                <button onClick={() => navigate('articles')} className="px-4 py-2 rounded border">一覧に戻る</button>
+                <button 
+                    onClick={() => navigate(-1)} 
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                    戻る
+                </button>
             </div>
         </div>
     );
 };
-
 
 // =====================
 // Admin: Markdown記事作成GUI
