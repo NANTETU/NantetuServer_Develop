@@ -718,27 +718,51 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
         html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
 
         // 11. 画像
-        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
-            const safeSrc = src.startsWith('https://') ? src : '';
-            return `
-                <div class="my-4 relative group">
-                    <img 
-                        src="${safeSrc}" 
-                        alt="${alt}" 
-                        class="max-w-full rounded-md cursor-zoom-in transition-transform duration-200 hover:shadow-lg" 
-                        loading="lazy" 
-                        onclick="document.getElementById('image-modal').src='${safeSrc}'; document.getElementById('image-modal-container').classList.remove('hidden'); document.body.style.overflow='hidden';"
-                    />
-                    <button 
-                        class="absolute top-2 right-2 p-1 bg-black bg-opacity-50 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                        onclick="navigator.clipboard.writeText('${safeSrc}'); alert('画像URLをコピーしました'); event.stopPropagation();"
-                        title="画像URLをコピー"
-                    >
-                        <Copy size={16} />
-                    </button>
-                </div>
-            `;
-        });
+html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+    // 相対パスの場合はベースURLを追加
+    let safeSrc = src;
+    if (!src.startsWith('http') && !src.startsWith('data:image')) {
+        safeSrc = src.startsWith('/') ? src : `/${src}`;
+    }
+    
+    return `
+        <div class="my-4 relative group">
+            <img 
+                src="${safeSrc}" 
+                alt="${alt || '画像'}" 
+                class="max-w-full rounded-md cursor-zoom-in transition-transform duration-200 hover:shadow-lg" 
+                loading="lazy"
+                onclick="
+                    const modal = document.getElementById('image-modal');
+                    const container = document.getElementById('image-modal-container');
+                    if (modal && container) {
+                        modal.src = '${safeSrc}';
+                        container.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+                "
+                onerror="this.onerror=null; this.src='https://placehold.co/600x400/808080/FFFFFF?text=Image+Not+Found'"
+            />
+            <button 
+                class="absolute top-2 right-2 p-1 bg-black bg-opacity-50 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                onclick="
+                    navigator.clipboard.writeText('${safeSrc}');
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg flex items-center';
+                    notification.innerHTML = '<svg class=\"w-4 h-4 mr-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 13l4 4L19 7\"></path></svg>コピーしました！';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                    event.stopPropagation();
+                "
+                title="画像URLをコピー"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+});
 
         // 12. リンク
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
@@ -813,24 +837,24 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
         return <div className="max-w-4xl mx-auto py-24 px-4 text-center">読み込み中...</div>;
     }
 
-    return (
-        <div className="max-w-4xl mx-auto py-12 px-4 animate-fade-in">
-            <article className="prose dark:prose-invert max-w-none" ref={contentRef}>
-                <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
-                <div className="flex items-center justify-between mb-8">
-                    <div className="text-sm text-gray-500">
-                        {article.date} • {article.type}
-                    </div>
-                    <button
-                        onClick={shareArticle}
-                        className="flex items-center text-sm text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                        title="共有する"
-                    >
-                        <Share2 size={16} className="mr-1" /> 共有
-                    </button>
+return (
+    <div className="max-w-4xl mx-auto pt-24 pb-12 px-4 min-h-screen animate-fade-in">
+        <article className="prose dark:prose-invert max-w-none" ref={contentRef}>
+            <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
+            <div className="flex items-center justify-between mb-8">
+                <div className="text-sm text-gray-500">
+                    {article.date} • {article.type}
                 </div>
+                <button
+                    onClick={shareArticle}
+                    className="flex items-center text-sm text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                    title="共有する"
+                >
+                    <Share2 size={16} className="mr-1" /> 共有
+                </button>
+            </div>
 
-                <div dangerouslySetInnerHTML={{ __html: content }} />
+            <div dangerouslySetInnerHTML={{ __html: content }} />
 
                 {/* Related Articles */}
                 {article.relatedArticles && article.relatedArticles.length > 0 && (
@@ -853,34 +877,40 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
             </article>
 
             {/* Image Modal */}
-            <div 
-                id="image-modal-container" 
-                className="fixed inset-0 bg-black bg-opacity-90 z-50 items-center justify-center hidden"
-                onClick={() => {
-                    document.getElementById('image-modal-container').classList.add('hidden');
-                    document.body.style.overflow = 'auto';
-                }}
-            >
-                <button
-                    className="absolute top-4 right-4 text-white hover:text-gray-300"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        document.getElementById('image-modal-container').classList.add('hidden');
-                        document.body.style.overflow = 'auto';
-                    }}
-                >
-                    <X size={32} />
-                </button>
-                <div className="max-w-4xl w-full max-h-[90vh] flex items-center justify-center p-4">
-                    <img
-                        id="image-modal"
-                        src=""
-                        alt="Enlarged content"
-                        className="max-w-full max-h-[80vh] object-contain"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
-            </div>
+<div 
+    id="image-modal-container" 
+    className="fixed inset-0 bg-black bg-opacity-90 z-50 items-center justify-center hidden"
+    onClick={() => {
+        const container = document.getElementById('image-modal-container');
+        if (container) {
+            container.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    }}
+>
+    <button
+        className="absolute top-4 right-4 text-white hover:text-gray-300"
+        onClick={(e) => {
+            e.stopPropagation();
+            const container = document.getElementById('image-modal-container');
+            if (container) {
+                container.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        }}
+    >
+        <X size={32} />
+    </button>
+    <div className="max-w-4xl w-full max-h-[90vh] flex items-center justify-center p-4">
+        <img
+            id="image-modal"
+            src=""
+            alt="拡大表示"
+            className="max-w-full max-h-[80vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+        />
+    </div>
+</div>
 
             {/* Copy Notification */}
             {copied && (
