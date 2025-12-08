@@ -856,10 +856,15 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
 // 記事データの取得
 useEffect(() => {
     if (!db || !id) return;
+
+    console.log('appId:', appId);  
+    console.log('Article ID:', id);  
+    console.log('Full path:', `apps/${appId}/articles/${id}`);
     
     const fetchArticle = async () => {
         try {
             const docRef = doc(db, `apps/${appId}/articles`, id);
+            
             const docSnap = await getDoc(docRef);
             
             if (docSnap.exists()) {
@@ -867,7 +872,7 @@ useEffect(() => {
                 setArticle(data);
                 const renderedContent = simpleRenderMarkdown(data.md || '');
                 setContent(renderedContent);
-                
+
                 // コンテンツがレンダリングされた後にコードブロックのコピーボタンを追加
                 setTimeout(() => {
                     if (contentRef.current) {
