@@ -11,6 +11,7 @@ import {
 import { initializeApp } from "firebase/app";
 import 'prismjs/themes/prism-tomorrow.min.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+import { useParams } from 'react-router-dom';
 import 'prismjs/plugins/line-numbers/prism-line-numbers';
 import 'prismjs/plugins/toolbar/prism-toolbar.css';
 import 'prismjs/plugins/toolbar/prism-toolbar';
@@ -637,7 +638,26 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
         </div>
     );
 };
-const ArticleDetail = ({ L, id, db, appId, navigate }) => {
+const ArticleDetail = ({ L, db, appId, navigate }) => {
+    const { id } = useParams();
+        console.log('ArticleDetail - id:', id); // デバッグ用ログ
+
+    if (!id) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 py-24 text-center">
+                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+                    <p className="font-bold">エラー</p>
+                    <p>記事IDが指定されていません。</p>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
+                    >
+                        戻る
+                    </button>
+                </div>
+            </div>
+        );
+    }
     const [article, setArticle] = useState(null);
     const [content, setContent] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -1077,9 +1097,11 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                     </div>
 
                     {/* タイトル */}
-                    <h4 className="text-lg font-semibold dark:text-white line-clamp-2">
-                        {article.title}
-                    </h4>
+<h4 className="text-lg font-semibold dark:text-white line-clamp-2">
+    <Link to={`/articles/${article.id}`} className="block hover:text-purple-600 dark:hover:text-purple-400">
+        {article.title}
+    </Link>
+</h4>
                     
                     {/* アクションボタン */}
                     <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -2212,15 +2234,19 @@ return (
                         return <NewsDetail L={L} id={id} newsData={newsData} navigate={handleNavigate} />;
                     })()
                 )}
-{!searchTerm && page === 'articles' && (
-    <ArticleDetail 
-        L={L} 
-        id={id} 
-        db={db} 
-        appId={firebaseConfig.appId}
-        navigate={navigate} 
+<Routes>
+    <Route 
+        path="/articles/:id" 
+        element={
+            <ArticleDetail 
+                L={L}
+                db={db}
+                appId={firebaseConfig.appId}
+                navigate={navigate}
+            />
+        } 
     />
-)}
+</Routes>
                 {!searchTerm && page.startsWith && page.startsWith('articles/') && (
                     (() => {
                         const id = page.split('/')[1];
