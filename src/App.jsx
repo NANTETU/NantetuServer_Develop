@@ -594,42 +594,60 @@ export const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     );
 
     // Simple markdown renderer
-    const simpleRenderMarkdown = (text) => {
-        if (!text) return '';
-        // escape
-        let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        // code blocks
-        html = html.replace(/```([\s\S]*?)```/g, (m, code) => 
-            `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g, '&lt;')}</pre>`
-        );
-        // headings
-        html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
-        html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
-        html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
-        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-        // bold / italic
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-        // images
-        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, 
-            '<img src="$2" alt="$1" class="max-w-full rounded-md my-3" loading="lazy" />');
-        // links
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
-            '<a href="$2" target="_blank" rel="noreferrer" class="text-purple-600 dark:text-purple-400 underline">$1</a>');
-        // paragraphs / line breaks
-        return html.replace(/\n/g, '<br />');
-    };
+const simpleRenderMarkdown = useCallback((text) => {
+    if (!text) return '';
+    
+    // 1. HTMLエスケープ（XSS対策）
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 
-    useEffect(() => {
-        if (article) {
-            setContent(simpleRenderMarkdown(article.md));
-        }
-    }, [article]);
+    // 2. コードブロック
+    html = html.replace(/```([\s\S]*?)```/g, (_, code) => 
+        `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto">${code}</pre>`
+    );
 
-    return (
-        <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
+    // 3. 見出し（# から ###### まで対応）
+    html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold my-4">$1</h1>');
+    html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold my-3">$1</h2>');
+    html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold my-2">$1</h3>');
+    html = html.replace(/^#### (.*$)/gim, '<h4 class="text-base font-bold my-2">$1</h4>');
+    html = html.replace(/^##### (.*$)/gim, '<h5 class="text-sm font-bold my-2">$1</h5>');
+    html = html.replace(/^###### (.*$)/gim, '<h6 class="text-xs font-bold my-2">$1</h6>');
+
+    // 4. 太字・斜体
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // 5. 画像（セーフなURLのみ許可）
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+        // 安全な画像URLかどうかをチェック（必要に応じて実装）
+        const safeSrc = src.startsWith('https://') ? src : '';
+        return `<img src="${safeSrc}" alt="${alt}" class="max-w-full rounded-md my-3" loading="lazy" onerror="this.style.display='none'" />`;
+    });
+
+    // 6. リンク（nofollowとnoopenerを追加）
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+        '<a href="$2" target="_blank" rel="noopener noreferrer nofollow" class="text-purple-600 dark:text-purple-400 underline hover:text-purple-800 dark:hover:text-purple-300">$1</a>'
+    );
+
+    // 7. 改行
+    html = html.replace(/\n/g, '<br />');
+
+    return html;
+}, []);
+
+useEffect(() => {
+    if (article) {
+        setContent(simpleRenderMarkdown(article.md));
+    }
+}, [article, simpleRenderMarkdown]);  // 依存配列に simpleRenderMarkdown を追加
+
+return (
+    <div className="max-w-4xl mx-auto py-24 px-4 animate-fade-in-scale">
             <h1 className="text-4xl font-black mb-2 dark:text-white">{article.title}</h1>
             <div className="text-sm text-gray-500 mb-6">{article.date} • {article.type}</div>
             <div className="prose bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700" dangerouslySetInnerHTML={{ __html: content }} />
@@ -919,6 +937,14 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         maintenance: { text: 'メンテナンス', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
         explanation: { text: '解説', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
         recruitment: { text: '募集', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
+    };
+
+    // マークダウンから最初の画像URLを抽出する関数
+    const extractFirstImage = (markdown) => {
+        if (!markdown) return null;
+        const imgRegex = /!\[.*?\]\((.*?)\)/;
+        const match = markdown.match(imgRegex);
+        return match ? match[1] : null;
     };
 
     // 記事カードコンポーネント
