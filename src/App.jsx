@@ -9,9 +9,10 @@ import {
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where, setDoc, updateDoc as fsUpdateDoc, getDocs } from 'firebase/firestore';
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
-import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -23,6 +24,7 @@ import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { app, firebaseConfig } from './config/firebase';
 import { getDoc } from 'firebase/firestore'; 
+
 // ==========================================
 // 1. Configuration & Data (languages.js)
 // ==========================================
@@ -32,7 +34,6 @@ import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from '
 
 // Firebase and helper functions now imported from config and utils
 // (firebaseConfig, app, formatCorrectedDate)
-
 
 // LANGUAGES object now imported from './config/languages'
 
@@ -235,7 +236,7 @@ export const NewsItem = ({ item, L }) => {
 
 // Navbar and Footer are now imported from ./components
 
-export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
+export const AIChat = ({ L, isChatOpen, closeChat, currentLang, user, profile }) => {
     const [chatHistory, setChatHistory] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -414,7 +415,7 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang }) => {
 // 4. Sub Pages (SubPages.jsx)
 // ==========================================
 
-export const NewsPage = ({ L, newsData }) => {
+export const NewsPage = ({ L, newsData, user, profile }) => {
     const displayData = (newsData && newsData.length > 0) ? newsData : L.news.default_data;
     return (
         <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-scale">
@@ -431,7 +432,7 @@ export const NewsPage = ({ L, newsData }) => {
     );
 };
 
-export const NewsDetail = ({ L, id, newsData, navigate }) => {
+export const NewsDetail = ({ L, id, newsData, navigate, user, profile }) => {
     const [item, setItem] = useState(null);
 
     useEffect(() => {
@@ -487,7 +488,7 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
     );
 };
 
-export const ArticlesPage = ({ L, db, appId, navigate }) => {
+export const ArticlesPage = ({ L, db, appId, navigate, user, profile }) => {
     const [articles, setArticles] = useState([]);
 
     // Markdownから最初の画像URLを抽出する関数
@@ -565,7 +566,7 @@ export const ArticlesPage = ({ L, db, appId, navigate }) => {
 };
 
 // 記事詳細 + コメント機能
-const ArticleDetail = ({ L, id, db, appId, navigate }) => {
+const ArticleDetail = ({ L, id, db, appId, navigate, user, profile }) => {
     const [article, setArticle] = useState(null);
     const [content, setContent] = useState('');
     const [comments, setComments] = useState([]);
@@ -576,6 +577,8 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     const [replyText, setReplyText] = useState('');
     const [isSendingComment, setIsSendingComment] = useState(false);
     const [isSendingReply, setIsSendingReply] = useState(false);
+
+    const isGoogleUser = user && !user.isAnonymous;
 
     const simpleRenderMarkdown = useCallback((text) => {
         if (!text) return '';
@@ -727,7 +730,8 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
             await addDoc(collection(db, 'article_comments'), {
                 articleId: id,
                 parentId: null,
-                name: newCommentName.trim() || (L.forum?.anonymous || '名無しさん'),
+                uid: user && !user.isAnonymous ? user.uid : null,
+                name: (isGoogleUser && profile?.name) ? profile.name : (newCommentName.trim() || (L.forum?.anonymous || '名無しさん')),
                 text: newCommentText.trim(),
                 createdAt: serverTimestamp(),
             });
@@ -755,7 +759,8 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
             await addDoc(collection(db, 'article_comments'), {
                 articleId: id,
                 parentId: replyToId,
-                name: replyName.trim() || (L.forum?.anonymous || '名無しさん'),
+                uid: user && !user.isAnonymous ? user.uid : null,
+                name: (isGoogleUser && profile?.name) ? profile.name : (replyName.trim() || (L.forum?.anonymous || '名無しさん')),
                 text: replyText.trim(),
                 createdAt: serverTimestamp(),
             });
@@ -801,15 +806,17 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
 
                 {/* 新規コメント入力 */}
                 <form onSubmit={handleSubmitComment} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 mb-6 shadow-sm">
-                    <div className="flex flex-col md:flex-row gap-3 mb-3">
-                        <input
-                            type="text"
-                            value={newCommentName}
-                            onChange={(e) => setNewCommentName(e.target.value)}
-                            placeholder={L.forum?.input_name || '名前 (任意)'}
-                            className="w-full md:w-1/3 px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white text-sm"
-                        />
-                    </div>
+                    {!isGoogleUser && (
+                        <div className="flex flex-col md:flex-row gap-3 mb-3">
+                            <input
+                                type="text"
+                                value={newCommentName}
+                                onChange={(e) => setNewCommentName(e.target.value)}
+                                placeholder={L.forum?.input_name || '名前 (任意)'}
+                                className="w-full md:w-1/3 px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white text-sm"
+                            />
+                        </div>
+                    )}
                     <textarea
                         value={newCommentText}
                         onChange={(e) => setNewCommentText(e.target.value)}
@@ -845,14 +852,24 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
                             className="bg-white dark:bg-gray-900/80 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm"
                         >
                             <div className="flex items-start gap-3 mb-2">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-400 to-blue-400 flex items-center justify-center text-white font-bold text-xs">
+                                <button
+                                    type="button"
+                                    onClick={() => comment.uid && navigate(`user/${comment.uid}`)}
+                                    className={comment.uid ? "w-9 h-9 rounded-full bg-gradient-to-tr from-purple-400 to-blue-400 flex items-center justify-center text-white font-bold text-xs cursor-pointer" : "w-9 h-9 rounded-full bg-gradient-to-tr from-purple-400 to-blue-400 flex items-center justify-center text-white font-bold text-xs"}
+                                >
                                     {(comment.name || 'N').charAt(0)}
-                                </div>
+                                </button>
+
                                 <div className="flex-1">
                                     <div className="flex items-center justify-between mb-1">
-                                        <span className="font-bold text-sm text-purple-900 dark:text-purple-300">
+                                        <button
+                                            type="button"
+                                            onClick={() => comment.uid && navigate(`user/${comment.uid}`)}
+                                            className={comment.uid ? "font-bold text-sm text-purple-900 dark:text-purple-300 hover:underline cursor-pointer" : "font-bold text-sm text-purple-900 dark:text-purple-300"}
+                                        >
                                             {comment.name || (L.forum?.anonymous || '名無しさん')}
-                                        </span>
+                                        </button>
+
                                         <span className="text-[11px] text-gray-400">
                                             {comment.createdAt?.toDate ? comment.createdAt.toDate().toLocaleString() : ''}
                                         </span>
@@ -875,14 +892,24 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
                                 <div className="mt-3 pl-6 border-l border-gray-200 dark:border-gray-700 space-y-3">
                                     {repliesByParent[comment.id].map((reply) => (
                                         <div key={reply.id} className="flex items-start gap-3">
-                                            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-400 to-sky-400 flex items-center justify-center text-white font-bold text-[10px]">
+                                            <button
+                                                type="button"
+                                                onClick={() => reply.uid && navigate(`user/${reply.uid}`)}
+                                                className={reply.uid ? "w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-400 to-sky-400 flex items-center justify-center text-white font-bold text-[10px] cursor-pointer" : "w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-400 to-sky-400 flex items-center justify-center text-white font-bold text-[10px]"}
+                                            >
                                                 {(reply.name || 'N').charAt(0)}
-                                            </div>
+                                            </button>
+
                                             <div className="flex-1">
                                                 <div className="flex items-center justify-between mb-0.5">
-                                                    <span className="font-bold text-xs text-purple-900 dark:text-purple-300">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => reply.uid && navigate(`user/${reply.uid}`)}
+                                                        className={reply.uid ? "font-bold text-xs text-purple-900 dark:text-purple-300 hover:underline cursor-pointer" : "font-bold text-xs text-purple-900 dark:text-purple-300"}
+                                                    >
                                                         {reply.name || (L.forum?.anonymous || '名無しさん')}
-                                                    </span>
+                                                    </button>
+
                                                     <span className="text-[10px] text-gray-400">
                                                         {reply.createdAt?.toDate ? reply.createdAt.toDate().toLocaleString() : ''}
                                                     </span>
@@ -899,15 +926,17 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
                             {/* 返信フォーム */}
                             {replyToId === comment.id && (
                                 <form onSubmit={handleSubmitReply} className="mt-3 pl-6">
-                                    <div className="flex flex-col md:flex-row gap-2 mb-2">
-                                        <input
-                                            type="text"
-                                            value={replyName}
-                                            onChange={(e) => setReplyName(e.target.value)}
-                                            placeholder={L.forum?.input_name || '名前 (任意)'}
-                                            className="w-full md:w-1/3 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white text-xs"
-                                        />
-                                    </div>
+                                    {!isGoogleUser && (
+                                        <div className="flex flex-col md:flex-row gap-2 mb-2">
+                                            <input
+                                                type="text"
+                                                value={replyName}
+                                                onChange={(e) => setReplyName(e.target.value)}
+                                                placeholder={L.forum?.input_name || '名前 (任意)'}
+                                                className="w-full md:w-1/3 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white text-xs"
+                                            />
+                                        </div>
+                                    )}
                                     <textarea
                                         value={replyText}
                                         onChange={(e) => setReplyText(e.target.value)}
@@ -952,55 +981,62 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
 };
 
 // ==========================================
-// 4. Admin Page
+// 5. Admin Page
 // ==========================================
-
 export const AdminPage = ({ L, user, db, appId, showToast }) => {
-    // 管理ログイン・記事管理用 state
     const [loggedIn, setLoggedIn] = useState(false);
     const [keyInput, setKeyInput] = useState('');
+    const [warningAck, setWarningAck] = useState(false);
     const [articles, setArticles] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [deletingId, setDeletingId] = useState(null);
 
-    // コメント管理用 state（既存）
+    const [title, setTitle] = useState('');
+    const [deletingId, setDeletingId] = useState(null);
+    const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+    const [type, setType] = useState('info');
+    const [md, setMd] = useState('');
+    const [editingId, setEditingId] = useState(null);
+    const fileRef = useRef(null);
+
+    // コメント管理用 state
     const [comments, setComments] = useState([]);
     const [commentsLoading, setCommentsLoading] = useState(true);
     const [deletingCommentId, setDeletingCommentId] = useState(null);
 
-    // 初期ログイン状態の読み込み
     useEffect(() => {
-        const stored = localStorage.getItem('admin_logged_in');
-        if (stored === '1') {
+        if (localStorage.getItem('admin_logged_in') === '1') {
             setLoggedIn(true);
         }
     }, []);
 
-    // 記事一覧の読み込み
+    // 記事一覧のリアルタイム購読
     useEffect(() => {
         if (!db || !loggedIn) {
             setLoading(false);
             return;
         }
 
-        setLoading(true);
         const articlesRef = collection(db, 'articles');
-        const qArticles = query(articlesRef, orderBy('createdAt', 'desc'));
+        const q = query(articlesRef, orderBy('createdAt', 'desc'));
 
-        const unsubscribe = onSnapshot(qArticles, (snapshot) => {
-            const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setArticles(loaded);
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const articlesData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                date: doc.data().date || new Date(doc.data().createdAt?.toDate() || Date.now()).toISOString().slice(0, 10),
+            }));
+            setArticles(articlesData);
             setLoading(false);
         }, (error) => {
-            console.error('記事の読み込みに失敗しました:', error);
+            console.error('Failed to load articles:', error);
+            showToast?.(L?.errorLoadingArticles || '記事の読み込みに失敗しました', 'error');
             setLoading(false);
-            if (showToast) showToast('記事の読み込みに失敗しました', 'error');
         });
 
         return () => unsubscribe();
-    }, [db, loggedIn, showToast]);
+    }, [db, loggedIn, L, showToast]);
 
-    // 記事コメントの読み込み（既存ロジックを活かす）
+    // コメント一覧のリアルタイム購読
     useEffect(() => {
         if (!db || !loggedIn) {
             setCommentsLoading(false);
@@ -1022,136 +1058,254 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         return () => unsubscribe();
     }, [db, loggedIn]);
 
-    // 管理ログイン処理
+    const simpleRenderMarkdown = useCallback((text) => {
+        if (!text) return '';
+        let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        html = html.replace(/```([\s\S]*?)```/g, (m, code) => `<pre class="p-4 bg-gray-100 dark:bg-gray-800 rounded">${code.replace(/</g, '&lt;')}</pre>`);
+        html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+        html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+        html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-md my-3" loading="lazy" />');
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-purple-600 dark:text-purple-400 underline">$1</a>');
+        html = html.replace(/\n/g, '<br />');
+        return html;
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('admin_articles_v1', JSON.stringify(articles));
+    }, [articles]);
+
     const handleLogin = async () => {
-        if (!keyInput.trim()) return;
+        if (!keyInput.trim()) {
+            showToast?.('管理者キーを入力してください。', 'warning');
+            return;
+        }
 
         try {
-            const res = await fetch('/api/admin-login', {
+            const response = await fetch('/api/admin-login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: keyInput })
+                body: JSON.stringify({ keyInput }),
             });
 
-            const data = await res.json();
-            if (res.ok && data.success) {
-                setLoggedIn(true);
+            const data = await response.json();
+
+            if (response.ok && data.success) {
                 localStorage.setItem('admin_logged_in', '1');
-                if (showToast) showToast('ログインしました', 'success');
+                setLoggedIn(true);
+                showToast?.('ログインに成功しました', 'success');
             } else {
-                if (showToast) showToast(data.message || 'ログインに失敗しました', 'error');
+                showToast?.(data.message || '認証に失敗しました。', 'error');
+                console.error('Login failed:', data.message);
             }
-        } catch (e) {
-            console.error('Admin login failed', e);
-            if (showToast) showToast('ログイン中にエラーが発生しました', 'error');
+        } catch (error) {
+            console.error('API Call Error:', error);
+            showToast?.('ログイン処理中にネットワークエラーが発生しました。', 'error');
         }
     };
 
     const handleLogout = () => {
-        setLoggedIn(false);
         localStorage.removeItem('admin_logged_in');
-        if (showToast) showToast('ログアウトしました', 'success');
+        setLoggedIn(false);
+        showToast?.('ログアウトしました', 'info');
+        clearForm();
     };
 
-    // 記事削除
-    const handleDelete = async (id) => {
-        if (!db || !window.confirm('この記事を削除しますか？')) return;
+    const clearForm = () => {
+        setTitle('');
+        setDate(new Date().toISOString().slice(0, 10));
+        setType('info');
+        setMd('');
+        setEditingId(null);
+    };
+
+    const handleSave = async () => {
+        if (!title.trim()) {
+            showToast?.('タイトルを入力してください', 'warning');
+            return;
+        }
+
+        const obj = {
+            title: title.trim(),
+            date,
+            type,
+            md,
+            html: simpleRenderMarkdown(md),
+        };
+
+        const size = new Blob([JSON.stringify(obj)]).size;
+        if (size > 1000000) {
+            showToast?.(`記事のサイズが大きすぎます(${Math.round(size / 1024)} KB)。画像は外部URLを使用し、Base64の埋め込みを避けてください。(Firestoreの上限は 1MB です)`, 'error');
+            return;
+        }
+
+        if (!db) {
+            showToast?.('データベースが利用できません。記事を保存するには、Firebaseをセットアップしてください。', 'error');
+            return;
+        }
+
         try {
-            setDeletingId(id);
-            await deleteDoc(doc(db, 'articles', id));
-            if (showToast) showToast('記事を削除しました', 'success');
+            if (editingId) {
+                const docRef = doc(db, 'articles', editingId);
+                await updateDoc(docRef, { ...obj, updatedAt: serverTimestamp() });
+                showToast?.('記事を更新しました', 'success');
+            } else {
+                await addDoc(collection(db, 'articles'), {
+                    ...obj,
+                    author: user?.uid || 'admin',
+                    createdAt: serverTimestamp(),
+                });
+                showToast?.('新しい記事を公開しました', 'success');
+            }
         } catch (e) {
-            console.error('記事削除に失敗しました:', e);
-            if (showToast) showToast('記事の削除に失敗しました', 'error');
+            console.error('Firestore save failed', e);
+            const errorMessage = e.code === 'permission-denied'
+                ? 'Firestoreへの保存権限がありません。セキュリティルールを確認してください。'
+                : `Firestoreへの保存に失敗しました: (${e.message})`;
+            showToast?.(errorMessage, 'error');
+        }
+
+        clearForm();
+    };
+
+    const handleEdit = (a) => {
+        setEditingId(a.id);
+        setTitle(a.title);
+        setDate(a.date);
+        setType(a.type);
+        setMd(a.md || '');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDelete = (id) => {
+        setDeletingId(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!deletingId || !db) return;
+        try {
+            await deleteDoc(doc(db, 'articles', deletingId));
+            showToast?.('記事を完全に削除しました', 'success');
+        } catch (e) {
+            console.error('Firestore deletion failed:', e);
+            showToast?.('Firestoreからの削除に失敗しました', 'error');
         } finally {
             setDeletingId(null);
         }
     };
 
-    // 記事編集（ここでは親側に編集対象を渡すだけにしておく）
-    const handleEdit = (article) => {
-        // 実際の編集フォームは左側カラムの既存実装に委ねる前提
-        if (showToast) showToast(`記事「${article.title}」を編集モードにしました`, 'info');
-        // 必要であればここでカスタムイベントやコールバックを使って連携する
-    };
-
-    // 記事データのエクスポート
     const handleExport = async () => {
-        if (!db) return;
         try {
-            const articlesRef = collection(db, 'articles');
-            const snap = await import('firebase/firestore').then(m => m.getDocs(articlesRef));
-            const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'articles_export.json';
-            a.click();
-            URL.revokeObjectURL(url);
-            if (showToast) showToast('記事データをエクスポートしました', 'success');
+            const dataToCopy = JSON.stringify(articles, null, 2);
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = dataToCopy;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            showToast?.('記事データをクリップボードにコピーしました。', 'success');
         } catch (e) {
-            console.error('Export failed:', e);
-            if (showToast) showToast('エクスポートに失敗しました', 'error');
+            console.error(e);
+            showToast?.('クリップボードへのコピーに失敗しました。', 'error');
         }
     };
 
-    // コメント削除（既存）
     const handleDeleteComment = (id) => {
         setDeletingCommentId(id);
     };
 
     const confirmDeleteComment = async () => {
         if (!deletingCommentId || !db) return;
-
         try {
             await deleteDoc(doc(db, 'article_comments', deletingCommentId));
-            if (showToast) showToast('コメントを削除しました', 'success');
+            showToast?.('コメントを削除しました', 'success');
         } catch (e) {
             console.error('コメント削除に失敗しました:', e);
-            if (showToast) showToast('コメントの削除に失敗しました', 'error');
+            showToast?.('コメントの削除に失敗しました', 'error');
         } finally {
             setDeletingCommentId(null);
         }
     };
 
-    // 記事カードコンポーネント（右カラム）
+    const typeStyles = {
+        info: { text: 'お知らせ', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+        request: { text: 'お願い', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+        maintenance: { text: 'メンテナンス', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
+        explanation: { text: '解説', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
+        recruitment: { text: '募集', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
+    };
+
+    const extractFirstImage = (markdown) => {
+        if (!markdown) return null;
+        const imgRegex = /!\[([^\]]*)\]\((.*?)\)/;
+        const match = markdown.match(imgRegex);
+        return match ? match[2] : null;
+    };
+
     const ArticleCard = ({ article, onEdit, onDelete, isDeleting }) => {
-        const typeLabel = L.news?.[article.type] || article.type || 'info';
+        const style = typeStyles[article.type] || typeStyles.info;
+        const imageUrl = extractFirstImage(article.md);
+
         return (
-            <div className="border border-gray-100 dark:border-gray-700 rounded-2xl p-4 bg-white dark:bg-gray-900/70 shadow-sm flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-2">
-                    <div>
-                        <span className="inline-block text-[10px] font-bold px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 mb-1">
-                            {typeLabel}
+            <div className={`
+                relative bg-white dark:bg-gray-800 rounded-xl shadow-lg transition-all transform hover:shadow-xl
+                ${article.id === editingId ? 'ring-4 ring-purple-500/50' : 'hover:scale-[1.01]'}
+            `}>
+                <div className="h-40 bg-gray-100 dark:bg-gray-700 rounded-t-xl overflow-hidden flex items-center justify-center">
+                    {imageUrl ? (
+                        <img
+                            src={imageUrl}
+                            alt={article.title}
+                            className="object-cover w-full h-full"
+                            loading="lazy"
+                            onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/600x400/808080/FFFFFF?text=Image+Load+Error"; }}
+                        />
+                    ) : (
+                        <GlobeIcon className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                    )}
+                </div>
+
+                <div className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${style.color}`}>
+                            {style.text}
                         </span>
-                        <h4 className="font-bold text-sm dark:text-white line-clamp-2">{article.title}</h4>
-                        {article.createdAt?.toDate && (
-                            <p className="text-[10px] text-gray-400 mt-1">{article.createdAt.toDate().toLocaleString()}</p>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {article.date}
+                        </span>
+                    </div>
+
+                    <h4 className="text-lg font-semibold dark:text-white line-clamp-2">
+                        {article.title}
+                    </h4>
+
+                    <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                        {isDeleting ? (
+                            <>
+                                <button onClick={confirmDelete} className="flex-1 px-4 py-2 text-sm font-bold rounded-lg bg-red-600 text-white transition-colors hover:bg-red-700 active:scale-95">
+                                    <CheckCircleIcon className="w-5 h-5 inline-block mr-1" />
+                                    本当に削除しますか?
+                                </button>
+                                <button onClick={() => setDeletingId(null)} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-200 dark:bg-gray-700 dark:text-white transition-colors hover:bg-gray-300 active:scale-95">
+                                    キャンセル
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button onClick={() => onEdit(article)} className="flex-1 flex items-center justify-center gap-1 px-4 py-2 text-sm font-semibold rounded-lg bg-purple-500 text-white transition-colors hover:bg-purple-600 active:scale-95">
+                                    <PencilIcon className="w-4 h-4" /> 編集
+                                </button>
+                                <button onClick={() => onDelete(article.id)} className="w-1/3 flex items-center justify-center gap-1 px-4 py-2 text-sm font-semibold rounded-lg bg-red-500 text-white transition-colors hover:bg-red-600 active:scale-95">
+                                    <TrashIcon className="w-4 h-4" /> 削除
+                                </button>
+                            </>
                         )}
                     </div>
-                </div>
-                <div className="flex justify-end gap-2 mt-2">
-                    <button
-                        type="button"
-                        onClick={() => onEdit(article)}
-                        className="px-3 py-1 rounded-lg text-[11px] bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 flex items-center gap-1"
-                    >
-                        <PencilIcon className="w-3 h-3" /> 編集
-                    </button>
-                    <button
-                        type="button"
-                        disabled={isDeleting}
-                        onClick={() => onDelete(article.id)}
-                        className="px-3 py-1 rounded-lg text-[11px] bg-red-500 text-white flex items-center gap-1 disabled:opacity-60"
-                    >
-                        {isDeleting ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                            <TrashIcon className="w-3 h-3" />
-                        )}
-                        削除
-                    </button>
                 </div>
             </div>
         );
@@ -1224,7 +1378,64 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                 <div className="grid lg:grid-cols-3 gap-10">
                     {/* 記事作成・編集フォーム (左側 2/3) */}
                     <div className="lg:col-span-2 space-y-8">
-                        {/* ここには既存のフォーム実装がある前提 */}
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700">
+                            <h3 className="text-2xl font-bold dark:text-white mb-6">
+                                {editingId ? '記事を編集中' : '新しい記事を作成'}
+                            </h3>
+
+                            <div className="space-y-4">
+                                <input
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="記事のタイトル"
+                                    className="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 outline-none dark:text-white text-lg font-semibold focus:border-purple-500 transition-all"
+                                />
+
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <input
+                                        type="date"
+                                        value={date}
+                                        onChange={(e) => setDate(e.target.value)}
+                                        className="px-5 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:border-purple-500 transition-all w-full sm:w-auto"
+                                    />
+                                    <select
+                                        value={type}
+                                        onChange={(e) => setType(e.target.value)}
+                                        className="px-5 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:border-purple-500 transition-all w-full sm:flex-1"
+                                    >
+                                        <option value="info">お知らせ</option>
+                                        <option value="request">お願い</option>
+                                        <option value="maintenance">メンテナンス</option>
+                                        <option value="explanation">解説</option>
+                                        <option value="recruitment">募集</option>
+                                    </select>
+                                </div>
+
+                                <textarea
+                                    value={md}
+                                    onChange={(e) => setMd(e.target.value)}
+                                    rows={15}
+                                    placeholder="Markdownで記事を記述してください。画像は外部のURLで挿入してください: ![alt text](https://external.image/url.jpg)"
+                                    className="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:border-purple-500 transition-all font-mono text-sm resize-none"
+                                ></textarea>
+                            </div>
+
+                            <div className="flex gap-4 mt-6">
+                                <button
+                                    onClick={handleSave}
+                                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold px-8 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2 hover:-translate-y-1 text-lg"
+                                >
+                                    <CloudArrowUpIcon className="w-6 h-6" />
+                                    {editingId ? '変更を保存' : '公開'}
+                                </button>
+                                <button
+                                    onClick={clearForm}
+                                    className="px-8 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-white font-semibold hover:bg-gray-100 dark:hover:bg-gray-600 transition-all"
+                                >
+                                    クリア
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {/* 記事一覧 (右側 1/3) & コメント管理 */}
@@ -1254,7 +1465,6 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                             )}
                         </div>
 
-                        {/* コメント管理セクション */}
                         <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700">
                             <h3 className="text-xl font-bold dark:text-white mb-4 flex items-center gap-2">
                                 <MessageSquare className="text-purple-500" size={20} /> コメント管理
@@ -1410,20 +1620,15 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                 });
             }
 
-            // 2. Firestore Articles (Async)
-            const db = getFirestore(); // Ensure initialized or import instance?
-            // Actually usually db is passed down but SearchResultsPage only receives L, searchTerm, navigate.
-            // We can get db instance via getFirestore() since app is initialized.
+            // 2. Firestore Articles & Profiles (Async)
+            const db = getFirestore();
 
             try {
-                // Determine collection path - using 'articles' based on fix
-                // Doing client-side filter for simplicity on small dataset, or simple query
-                // Firestore doesn't support full-text search natively easily for "contains".
-                // We will fetch recent articles and filter.
-                const q = query(collection(db, 'articles'), limit(20)); // Limit to prevent overload
-                const querySnapshot = await import('firebase/firestore').then(mod => mod.getDocs(q));
+                // --- Articles ---
+                const articlesQuery = query(collection(db, 'articles'), limit(20));
+                const articlesSnapshot = await import('firebase/firestore').then(mod => mod.getDocs(articlesQuery));
 
-                querySnapshot.forEach((doc) => {
+                articlesSnapshot.forEach((doc) => {
                     const data = doc.data();
                     if (data.title?.toLowerCase().includes(lowerSearchTerm) || data.md?.toLowerCase().includes(lowerSearchTerm)) {
                         results.push({
@@ -1435,6 +1640,34 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                         });
                     }
                 });
+
+                // --- User Profiles ---
+                try {
+                    const profilesSnapshot = await import('firebase/firestore').then(mod => mod.getDocs(collection(db, 'profiles')));
+
+                    profilesSnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const name = (data.name || '').toLowerCase();
+                        const gamerTag = (data.gamerTag || '').toLowerCase();
+
+                        if (!name && !gamerTag) return;
+
+                        if (name.includes(lowerSearchTerm) || gamerTag.includes(lowerSearchTerm)) {
+                            const displayName = data.name || 'No Name';
+                            const displayTag = data.gamerTag ? `@${data.gamerTag}` : '';
+
+                            results.push({
+                                id: `user-${doc.id}`,
+                                category: L.footer.search_category_user || 'User',
+                                title: displayName,
+                                description: displayTag || (data.bio || '').substring(0, 80),
+                                action: () => navigate(`user/${doc.id}`)
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.log('Search profiles error (silent):', e);
+                }
             } catch (e) {
                 console.log("Search Firestore error (silent):", e);
             }
@@ -1465,13 +1698,11 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
                             className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer group"
                         >
                             <div className="flex justify-between items-start gap-4 mb-3">
-                                <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">{result.category}</span>
+                                <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded border ${result.category === L.footer.search_category_news ? 'bg-blue-50 text-blue-600 border-blue-100' : result.category === L.footer.search_category_terms ? 'bg-red-50 text-red-600 border-red-100' : result.category === L.footer.search_category_privacy ? 'bg-green-50 text-green-600 border-green-100' : 'bg-purple-100 text-purple-600 border-purple-100'}`}>{result.category}</span>
                             </div>
                             <h3 className="text-lg font-bold mb-2 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{result.title}</h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{result.description}</p>
-                            <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                {L.footer.search_result_btn} <ArrowRight size={14} />
-                            </div>
+                            <div className="text-purple-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform mt-auto">Read More <ArrowRight size={14} /></div>
                         </div>
                     ))}
                 </>
@@ -1583,7 +1814,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                 <div className="max-w-6xl mx-auto">
                     <div className="flex justify-between items-end mb-10">
                         <div>
-                            <h2 className="text-3xl font-black dark:text-white mb-2">{L.home.latest_news_title || "最新のお知らせ"}</h2>
+                            <h2 className="text-3xl font-black mb-2 dark:text-white">{L.home.latest_news_title || "最新のお知らせ"}</h2>
                             <div className="h-1.5 w-20 bg-purple-500 rounded-full"></div>
                         </div>
                         <button onClick={() => navigate('news')} className="hidden md:flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold hover:text-purple-800 dark:hover:text-purple-300 transition-colors">
@@ -1594,7 +1825,7 @@ export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, 
                         {latestNews.map((item) => (
                             <div key={item.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 flex flex-col group cursor-pointer" onClick={() => navigate('news')}>
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.type === 'maintenance' ? L.news.maintenance : L.news.info}</span>
+                                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded border ${item.type === 'maintenance' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.type === 'maintenance' ? L.news.maintenance : L.news.info}</span>
                                     <span className="text-xs text-gray-400 font-bold">{item.date}</span>
                                 </div>
                                 <h3 className="font-bold text-lg mb-3 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{item.title}</h3>
@@ -1798,6 +2029,7 @@ const CustomStyles = () => (
 );
 
 export default function App() {
+
     // State Definitions
     const [darkMode, setDarkMode] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -1827,6 +2059,10 @@ export default function App() {
     const [db, setDb] = useState(null);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+    // User Profile
+    const [profile, setProfile] = useState(null);
+    const [isProfileLoading, setIsProfileLoading] = useState(false);
+
     // Search Handler (FIX: Updates input immediately, debounces effect)
     const handleSearch = useCallback((e) => {
         const value = e.target.value;
@@ -1838,7 +2074,6 @@ export default function App() {
     }, []);
 
     const L = LANGUAGES[currentLang];
-
 
     const handleGeminiCall = useCallback(async (userPrompt) => {
         const apiEndpoint = '/api/generate';
@@ -1866,11 +2101,10 @@ export default function App() {
         }
     }, []);
 
-    // --- Initialize Firebase ---
+    // --- Initialize Firebase & Auth Listener ---
     useEffect(() => {
         const initAuth = async () => {
             try {
-                // Use global config if available, otherwise fall back to local const firebaseConfig
                 const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
                 if (config) {
                     const app = initializeApp(config);
@@ -1883,10 +2117,13 @@ export default function App() {
                     } else {
                         await signInAnonymously(auth);
                     }
-                    onAuthStateChanged(auth, setUser);
+
+                    onAuthStateChanged(auth, (u) => {
+                        setUser(u || null);
+                    });
                 } else {
                     console.warn("Firebase config not found. Running in demo mode.");
-                    setUser({ uid: 'demo-user' });
+                    setUser({ uid: 'demo-user', isAnonymous: true });
                 }
             } catch (e) {
                 console.error("Firebase init failed:", e);
@@ -1894,6 +2131,75 @@ export default function App() {
         };
         initAuth();
     }, []);
+
+    const isGoogleUser = user && !user.isAnonymous;
+
+    // --- Load or Create User Profile ---
+    useEffect(() => {
+        const loadProfile = async () => {
+            if (!db || !user || user.isAnonymous) {
+                setProfile(null);
+                return;
+            }
+
+            setIsProfileLoading(true);
+            try {
+                const profileRef = doc(db, 'profiles', user.uid);
+                const snap = await getDoc(profileRef);
+
+                const now = new Date();
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setProfile(data);
+                    // 更新: 最終ログイン日時のみ
+                    await fsUpdateDoc(profileRef, {
+                        lastLoginAt: serverTimestamp(),
+                    });
+                } else {
+                    const initialProfile = {
+                        name: user.displayName || 'No Name',
+                        bio: '',
+                        gamerTag: '',
+                        location: '',
+                        links: '',
+                        createdAt: serverTimestamp(),
+                        lastLoginAt: serverTimestamp(),
+                    };
+                    await setDoc(profileRef, initialProfile);
+                    setProfile(initialProfile);
+                }
+            } catch (e) {
+                console.error('Failed to load profile', e);
+            } finally {
+                setIsProfileLoading(false);
+            }
+        };
+
+        loadProfile();
+    }, [db, user]);
+
+    const handleGoogleLogin = useCallback(async () => {
+        try {
+            const auth = getAuth();
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+        } catch (e) {
+            console.error('Google login failed', e);
+            showToast('Googleログインに失敗しました');
+        }
+    }, []);
+
+    const handleUserLogout = useCallback(async () => {
+        try {
+            const auth = getAuth();
+            await signOut(auth);
+            setProfile(null);
+        } catch (e) {
+            console.error('Logout failed', e);
+            showToast('ログアウトに失敗しました');
+        }
+    }, [showToast]);
 
     // Enhanced dark mode management with localStorage persistence
     useEffect(() => {
@@ -2089,8 +2395,6 @@ export default function App() {
 
     const resetQuiz = useCallback(() => setQuizState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null }), []);
 
-
-
     // Handle Quiz (Memoized with error handling)
     const handleQuizAnswer = useCallback((selectedOption) => {
         try {
@@ -2149,6 +2453,11 @@ export default function App() {
                 serverStatus={serverStatus}
                 hasUnreadNews={hasUnreadNews}
                 newsData={newsData}
+                user={user}
+                profile={profile}
+                isProfileLoading={isProfileLoading}
+                onLogin={handleGoogleLogin}
+                onLogout={handleUserLogout}
             />
 
             {/* 3. Main Content Router - TEXT COLOR FIX applied here */}
@@ -2191,14 +2500,20 @@ export default function App() {
                         return <ArticleDetail L={L} id={id} db={db} appId={appId} navigate={handleNavigate} />;
                     })()
                 )}
-                {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} />}
+                {!searchTerm && page === 'forum' && <ForumPage L={L} user={user} db={db} appId={appId} profile={profile} navigate={handleNavigate} />}
                 {!searchTerm && page === 'guide' && <GuidePage L={L} activeAccordion={activeAccordion} setActiveAccordion={setActiveAccordion} />}
                 {!searchTerm && page === 'commands' && <CommandsPage L={L} />}
                 {!searchTerm && page === 'terms' && <TermsPage L={L} />}
                 {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
                 {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
                 {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} user={user} appId={appId} showToast={showToast} />}
-                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && !page.startsWith('news/') && <NotFoundPage L={L} navigate={handleNavigate} />}
+                {!searchTerm && (page === 'user' || (page.startsWith && page.startsWith('user/'))) && (
+                    <ProfilePage L={L} user={user} profile={profile} db={db} page={page} />
+                )}
+                {!searchTerm && page === 'user-edit' && (
+                    <ProfileEditPage L={L} user={user} profile={profile} db={db} showToast={showToast} />
+                )}
+                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin', 'user', 'user-edit'].includes(page) && !page.startsWith('articles/') && !page.startsWith('news/') && !(page.startsWith && page.startsWith('user/')) && <NotFoundPage L={L} navigate={handleNavigate} />}
             </main>
 
             {/* 4. Footer */}

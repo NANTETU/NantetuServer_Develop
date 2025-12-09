@@ -28,10 +28,16 @@ const useScrollDirection = () => {
 export const Navbar = ({
     L, page, navigate, darkMode, setDarkMode,
     isMenuOpen, setIsMenuOpen, currentLang, setCurrentLang,
-    searchTerm, searchValue, handleSearch, serverStatus, hasUnreadNews, newsData
+    searchTerm, searchValue, handleSearch, serverStatus, hasUnreadNews, newsData,
+    user, profile, isProfileLoading, onLogin, onLogout
 }) => {
     const { scrollDirection, scrolledToTop } = useScrollDirection();
     const isHidden = scrollDirection === "down" && !scrolledToTop && !isMenuOpen;
+
+    const isGoogleUser = user && !user.isAnonymous;
+    const displayName = (profile && profile.name) || (user && user.displayName) || '';
+    const avatarChar = (displayName || 'U').charAt(0).toUpperCase();
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
     return (
         <>
@@ -94,16 +100,75 @@ export const Navbar = ({
                                     })}
                                 </div>
 
-                                {/* Search & Toggles & Server Status */}
+                                {/* Search & Toggles & Server Status + Auth */}
                                 <div className={`flex items-center gap-3 border-l pl-6 ${scrolledToTop && !darkMode ? 'border-white/20' : 'border-gray-200 dark:border-gray-700'}`}>
                                     <div className="relative group">
                                         <Search size={16} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors ${scrolledToTop && !darkMode ? 'text-white/70 group-focus-within:text-purple-500' : 'text-gray-400 group-focus-within:text-purple-500'}`} />
                                         <input type="text" placeholder={L.footer.search_placeholder} value={searchValue} onChange={handleSearch} className={`pl-9 pr-4 py-2 w-32 focus:w-48 rounded-full text-sm border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all ${scrolledToTop && !darkMode ? 'bg-white/20 text-white placeholder-white/70 focus:bg-white focus:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 dark:text-white'}`} />
                                     </div>
 
-                                    <div className="flex gap-2">
-                                        <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all font-bold text-xs border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{currentLang === 'ja' ? 'EN' : 'JP'}</button>
-                                        <button onClick={() => setDarkMode(!darkMode)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{darkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all font-bold text-xs border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{currentLang === 'ja' ? 'EN' : 'JP'}</button>
+                                            <button onClick={() => setDarkMode(!darkMode)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{darkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
+                                        </div>
+
+                                        {/* Auth: Login button or profile avatar */}
+                                        <div className="relative">
+                                            {!isGoogleUser ? (
+                                                <button
+                                                    onClick={() => onLogin && onLogin()}
+                                                    className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${scrolledToTop && !darkMode
+                                                        ? 'bg-white/20 text-white border-white/30 hover:bg-white/30'
+                                                        : 'bg-purple-600 text-white border-transparent hover:bg-purple-700'
+                                                        }`}
+                                                >
+                                                    {isProfileLoading ? '読み込み中...' : 'Googleでログイン'}
+                                                </button>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsProfileMenuOpen((v) => !v)}
+                                                        className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs shadow-md hover:shadow-lg hover:scale-105 transition-all"
+                                                    >
+                                                        {avatarChar}
+                                                    </button>
+                                                    {displayName && (
+                                                        <span className={`text-xs font-bold hidden xl:inline ${scrolledToTop && !darkMode ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}>
+                                                            {displayName}
+                                                        </span>
+                                                    )}
+
+                                                    {isProfileMenuOpen && (
+                                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => { setIsProfileMenuOpen(false); navigate('user'); }}
+                                                                className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                            >
+                                                                プロフィール
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => { setIsProfileMenuOpen(false); navigate('user-edit'); }}
+                                                                className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                            >
+                                                                プロフィールを編集
+                                                            </button>
+                                                            <div className="my-1 border-t border-gray-200 dark:border-gray-700" />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => { setIsProfileMenuOpen(false); onLogout && onLogout(); }}
+                                                                className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                            >
+                                                                ログアウト
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
