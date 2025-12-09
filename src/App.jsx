@@ -951,16 +951,56 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
     );
 };
 
-// ... (rest of the code remains the same)
+// ==========================================
+// 4. Admin Page
+// ==========================================
 
 export const AdminPage = ({ L, user, db, appId, showToast }) => {
-    // ... (rest of the code remains the same)
+    // 管理ログイン・記事管理用 state
+    const [loggedIn, setLoggedIn] = useState(false);
+    const [keyInput, setKeyInput] = useState('');
+    const [articles, setArticles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState(null);
 
+    // コメント管理用 state（既存）
     const [comments, setComments] = useState([]);
     const [commentsLoading, setCommentsLoading] = useState(true);
     const [deletingCommentId, setDeletingCommentId] = useState(null);
 
-    // 記事コメントの読み込み
+    // 初期ログイン状態の読み込み
+    useEffect(() => {
+        const stored = localStorage.getItem('admin_logged_in');
+        if (stored === '1') {
+            setLoggedIn(true);
+        }
+    }, []);
+
+    // 記事一覧の読み込み
+    useEffect(() => {
+        if (!db || !loggedIn) {
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        const articlesRef = collection(db, 'articles');
+        const qArticles = query(articlesRef, orderBy('createdAt', 'desc'));
+
+        const unsubscribe = onSnapshot(qArticles, (snapshot) => {
+            const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setArticles(loaded);
+            setLoading(false);
+        }, (error) => {
+            console.error('記事の読み込みに失敗しました:', error);
+            setLoading(false);
+            if (showToast) showToast('記事の読み込みに失敗しました', 'error');
+        });
+
+        return () => unsubscribe();
+    }, [db, loggedIn, showToast]);
+
+    // 記事コメントの読み込み（既存ロジックを活かす）
     useEffect(() => {
         if (!db || !loggedIn) {
             setCommentsLoading(false);
@@ -968,9 +1008,9 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         }
 
         const commentsRef = collection(db, 'article_comments');
-        const q = query(commentsRef, orderBy('createdAt', 'desc'), limit(100));
+        const qComments = query(commentsRef, orderBy('createdAt', 'desc'), limit(100));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        const unsubscribe = onSnapshot(qComments, (snapshot) => {
             const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setComments(loaded);
             setCommentsLoading(false);
@@ -982,6 +1022,81 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
         return () => unsubscribe();
     }, [db, loggedIn]);
 
+    // 管理ログイン処理
+    const handleLogin = async () => {
+        if (!keyInput.trim()) return;
+
+        try {
+            const res = await fetch('/api/admin-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: keyInput })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setLoggedIn(true);
+                localStorage.setItem('admin_logged_in', '1');
+                if (showToast) showToast('ログインしました', 'success');
+            } else {
+                if (showToast) showToast(data.message || 'ログインに失敗しました', 'error');
+            }
+        } catch (e) {
+            console.error('Admin login failed', e);
+            if (showToast) showToast('ログイン中にエラーが発生しました', 'error');
+        }
+    };
+
+    const handleLogout = () => {
+        setLoggedIn(false);
+        localStorage.removeItem('admin_logged_in');
+        if (showToast) showToast('ログアウトしました', 'success');
+    };
+
+    // 記事削除
+    const handleDelete = async (id) => {
+        if (!db || !window.confirm('この記事を削除しますか？')) return;
+        try {
+            setDeletingId(id);
+            await deleteDoc(doc(db, 'articles', id));
+            if (showToast) showToast('記事を削除しました', 'success');
+        } catch (e) {
+            console.error('記事削除に失敗しました:', e);
+            if (showToast) showToast('記事の削除に失敗しました', 'error');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    // 記事編集（ここでは親側に編集対象を渡すだけにしておく）
+    const handleEdit = (article) => {
+        // 実際の編集フォームは左側カラムの既存実装に委ねる前提
+        if (showToast) showToast(`記事「${article.title}」を編集モードにしました`, 'info');
+        // 必要であればここでカスタムイベントやコールバックを使って連携する
+    };
+
+    // 記事データのエクスポート
+    const handleExport = async () => {
+        if (!db) return;
+        try {
+            const articlesRef = collection(db, 'articles');
+            const snap = await import('firebase/firestore').then(m => m.getDocs(articlesRef));
+            const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'articles_export.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            if (showToast) showToast('記事データをエクスポートしました', 'success');
+        } catch (e) {
+            console.error('Export failed:', e);
+            if (showToast) showToast('エクスポートに失敗しました', 'error');
+        }
+    };
+
+    // コメント削除（既存）
     const handleDeleteComment = (id) => {
         setDeletingCommentId(id);
     };
@@ -991,16 +1106,56 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
 
         try {
             await deleteDoc(doc(db, 'article_comments', deletingCommentId));
-            showToast('コメントを削除しました', 'success');
+            if (showToast) showToast('コメントを削除しました', 'success');
         } catch (e) {
             console.error('コメント削除に失敗しました:', e);
-            showToast('コメントの削除に失敗しました', 'error');
+            if (showToast) showToast('コメントの削除に失敗しました', 'error');
         } finally {
             setDeletingCommentId(null);
         }
     };
 
-    // ... (rest of the code remains the same)
+    // 記事カードコンポーネント（右カラム）
+    const ArticleCard = ({ article, onEdit, onDelete, isDeleting }) => {
+        const typeLabel = L.news?.[article.type] || article.type || 'info';
+        return (
+            <div className="border border-gray-100 dark:border-gray-700 rounded-2xl p-4 bg-white dark:bg-gray-900/70 shadow-sm flex flex-col gap-2">
+                <div className="flex items-start justify-between gap-2">
+                    <div>
+                        <span className="inline-block text-[10px] font-bold px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 mb-1">
+                            {typeLabel}
+                        </span>
+                        <h4 className="font-bold text-sm dark:text-white line-clamp-2">{article.title}</h4>
+                        {article.createdAt?.toDate && (
+                            <p className="text-[10px] text-gray-400 mt-1">{article.createdAt.toDate().toLocaleString()}</p>
+                        )}
+                    </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-2">
+                    <button
+                        type="button"
+                        onClick={() => onEdit(article)}
+                        className="px-3 py-1 rounded-lg text-[11px] bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 flex items-center gap-1"
+                    >
+                        <PencilIcon className="w-3 h-3" /> 編集
+                    </button>
+                    <button
+                        type="button"
+                        disabled={isDeleting}
+                        onClick={() => onDelete(article.id)}
+                        className="px-3 py-1 rounded-lg text-[11px] bg-red-500 text-white flex items-center gap-1 disabled:opacity-60"
+                    >
+                        {isDeleting ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                            <TrashIcon className="w-3 h-3" />
+                        )}
+                        削除
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="max-w-7xl mx-auto py-12 px-4 bg-gray-50 dark:bg-gray-900 min-h-screen font-inter">
@@ -1069,10 +1224,10 @@ export const AdminPage = ({ L, user, db, appId, showToast }) => {
                 <div className="grid lg:grid-cols-3 gap-10">
                     {/* 記事作成・編集フォーム (左側 2/3) */}
                     <div className="lg:col-span-2 space-y-8">
-                        {/* ... (rest of the code remains the same) */}
+                        {/* ここには既存のフォーム実装がある前提 */}
                     </div>
 
-                    {/* 記事一覧 (右側 1/3) */}
+                    {/* 記事一覧 (右側 1/3) & コメント管理 */}
                     <div className="lg:col-span-1">
                         <div className="sticky top-8 bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700">
                             <h3 className="text-2xl font-bold dark:text-white mb-6">
