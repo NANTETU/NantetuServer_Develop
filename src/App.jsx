@@ -2054,6 +2054,11 @@ export default function App() {
     const [hasUnreadNews, setHasUnreadNews] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
 
+    const showToast = useCallback((msg) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), 3000);
+    }, []);
+
     // Firebase
     const [user, setUser] = useState(null);
     const [db, setDb] = useState(null);
@@ -2062,18 +2067,6 @@ export default function App() {
     // User Profile
     const [profile, setProfile] = useState(null);
     const [isProfileLoading, setIsProfileLoading] = useState(false);
-
-    // Search Handler (FIX: Updates input immediately, debounces effect)
-    const handleSearch = useCallback((e) => {
-        const value = e.target.value;
-        setSearchValue(value);
-        clearTimeout(searchTimeoutRef.current);
-        searchTimeoutRef.current = setTimeout(() => {
-            setSearchTerm(value);
-        }, 500);
-    }, []);
-
-    const L = LANGUAGES[currentLang];
 
     const handleGeminiCall = useCallback(async (userPrompt) => {
         const apiEndpoint = '/api/generate';
@@ -2199,7 +2192,7 @@ export default function App() {
             console.error('Logout failed', e);
             showToast('ログアウトに失敗しました');
         }
-    }, [showToast]);
+    }, []);
 
     // Enhanced dark mode management with localStorage persistence
     useEffect(() => {
@@ -2367,16 +2360,11 @@ export default function App() {
                 }
             } catch (e) {
                 console.error("News fetch error", e);
-                // Cannot access showToast here because it is defined below
+                showToast('ニュースの取得に失敗しました');
             }
         };
         fetchNews();
         return () => clearInterval(interval);
-    }, []);
-
-    const showToast = useCallback((msg) => {
-        setToastMessage(msg);
-        setTimeout(() => setToastMessage(null), 3000);
     }, []);
 
     const handleCopy = useCallback((text) => {
