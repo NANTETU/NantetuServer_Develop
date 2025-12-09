@@ -265,6 +265,7 @@ export const AIChat = ({ L, isChatOpen, closeChat, currentLang, user, profile })
             あなたは「なんてつサーバー」の公式AIアシスタントです。
             以下の情報を元に、ユーザーの質問に親切に答えてください。
             また、嘘の情報を言わずに、本当の情報だけを言い、サーバーに関係のない話には、「私は なんてつサーバー 以外の情報は提供できません。」と答えましょう。
+            そして、回答する際、極力500トークン以内で回答するようにしてください。
 
             【サーバー情報】
             - 統合版(Bedrock)専用
@@ -2386,6 +2387,8 @@ export default function App() {
     // Handle Quiz (Memoized with error handling)
     const handleQuizAnswer = useCallback((selectedOption) => {
         try {
+            if (!L || !L.quiz_data || !L.quiz_data[quizState.current]) return;
+
             const isCorrect = selectedOption === L.quiz_data[quizState.current].answer;
             setQuizState(prev => ({ ...prev, showResult: true, isCorrect }));
 
@@ -2414,7 +2417,7 @@ export default function App() {
             console.error('Quiz error:', err);
             showToast('クイズ処琁E��にエラーが発生しました');
         }
-    }, [L.quiz_data, quizState.current, showToast]);
+    }, [quizState.current, showToast]);
 
     return (
         <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
