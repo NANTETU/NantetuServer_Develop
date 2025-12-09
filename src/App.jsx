@@ -2041,10 +2041,25 @@ export default function App() {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [currentLang, setCurrentLang] = useState('ja');
 
+    // Localization
+    const L = LANGUAGES[currentLang];
+
     // Search State
     const [searchTerm, setSearchTerm] = useState(''); // Debounced
     const [searchValue, setSearchValue] = useState(''); // Immediate Input
     const searchTimeoutRef = useRef(null);
+
+    // Debounced search handler for navbar search box
+    const handleSearch = useCallback((e) => {
+        const value = e.target.value;
+        setSearchValue(value);
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+        searchTimeoutRef.current = setTimeout(() => {
+            setSearchTerm(value);
+        }, 500);
+    }, []);
 
     // Initial Loading
     const [isAppLoading, setIsAppLoading] = useState(true);
@@ -2226,34 +2241,6 @@ export default function App() {
     useEffect(() => {
         const timer = setTimeout(() => setIsAppLoading(false), 2000);
         return () => clearTimeout(timer);
-    }, []);
-
-    // --- Router Logic (Hash Router) ---
-    useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.replace('#/', '') || 'home';
-            setPage(hash);
-        };
-
-        // Set initial page from hash
-        handleHashChange();
-
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
-
-    // --- Router Logic (Hash Router) ---
-    useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.replace('#/', '') || 'home';
-            setPage(hash);
-        };
-
-        // Set initial page from hash
-        handleHashChange();
-
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
     // Enhanced Navigation with Loading Bar & Routing (Memoized)
