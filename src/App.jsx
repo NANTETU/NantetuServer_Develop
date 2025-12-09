@@ -18,6 +18,7 @@ import remarkGfm from 'remark-gfm';
 
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
+import { JoinSection } from './pages/Home';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { app, firebaseConfig } from './config/firebase';
