@@ -1626,7 +1626,7 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
             try {
                 // --- Articles ---
                 const articlesQuery = query(collection(db, 'articles'), limit(20));
-                const articlesSnapshot = await import('firebase/firestore').then(mod => mod.getDocs(articlesQuery));
+                const articlesSnapshot = await getDocs(articlesQuery);
 
                 articlesSnapshot.forEach((doc) => {
                     const data = doc.data();
@@ -1643,7 +1643,7 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
 
                 // --- User Profiles ---
                 try {
-                    const profilesSnapshot = await import('firebase/firestore').then(mod => mod.getDocs(collection(db, 'profiles')));
+                    const profilesSnapshot = await getDocs(collection(db, 'profiles'));
 
                     profilesSnapshot.forEach((doc) => {
                         const data = doc.data();
