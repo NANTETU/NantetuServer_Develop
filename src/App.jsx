@@ -2156,12 +2156,9 @@ export default function App() {
                 const profileRef = doc(db, 'profiles', user.uid);
                 const snap = await getDoc(profileRef);
 
-                const now = new Date();
-
                 if (snap.exists()) {
                     const data = snap.data();
                     setProfile(data);
-                    // 更新: 最終ログイン日時のみ
                     await fsUpdateDoc(profileRef, {
                         lastLoginAt: serverTimestamp(),
                     });
@@ -2219,7 +2216,6 @@ export default function App() {
             if (isDark) document.documentElement.classList.add('dark');
             else document.documentElement.classList.remove('dark');
         } else {
-            // Check system preference
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             setDarkMode(prefersDark);
             if (prefersDark) document.documentElement.classList.add('dark');
@@ -2243,17 +2239,31 @@ export default function App() {
         return () => clearTimeout(timer);
     }, []);
 
+    // --- Router Logic (Hash Router) ---
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace('#/', '') || 'home';
+            setPage(hash);
+        };
+
+        handleHashChange();
+
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
+
     // Enhanced Navigation with Loading Bar & Routing (Memoized)
     const handleNavigate = useCallback((targetPage, sectionId = null) => {
         if (targetPage === page && !sectionId) return;
 
+        setSearchTerm('');
+        setSearchValue('');
+
         setIsPageLoading(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Update URL hash
         window.location.hash = `/${targetPage}`;
 
-        // Simulate loading delay for smooth feel
         setTimeout(() => {
             setIsPageLoading(false);
             if (sectionId) {
@@ -2271,7 +2281,9 @@ export default function App() {
                 const res = await fetch(`https://api.mcsrvstat.us/bedrock/2/${L.server.ip}:${L.server.port}`);
                 const data = await res.json();
                 setServerStatus({ online: data.online, players: data.online ? data.players.online : 0, loading: false });
-            } catch { setServerStatus({ online: false, players: 0, loading: false }); }
+            } catch {
+                setServerStatus({ online: false, players: 0, loading: false });
+            }
         };
         fetchStatus();
         const interval = setInterval(fetchStatus, 60000);
@@ -2281,27 +2293,18 @@ export default function App() {
                 const res = await fetch(NEWS_SHEET_URL);
                 if (res.ok) {
                     const text = await res.text();
-                    // Google Sheets API returns JSONP with 'new Date(...)' which breaks JSON.parse
-                    // 1. Strip the function call: google.visualization.Query.setResponse(...)
                     const startRaw = text.indexOf('(');
                     const endRaw = text.lastIndexOf(')');
-                    if (startRaw === -1 || endRaw === -1) throw new Error("Invalid format");
+                    if (startRaw === -1 || endRaw === -1) throw new Error('Invalid format');
 
                     let jsonString = text.substring(startRaw + 1, endRaw);
-
-                    // 2. Replace 'new Date(y, m, d)' with '"Date(y, m, d)"' to make it valid JSON strings
-                    // Regex: new Date\(  ->  "Date(
-                    //        \d+,\d+,\d+ -> capture args
-                    //        \)          ->  )"
-                    // Actually simpler: just replace `new Date(` with `"Date(` and `)` with `)"`? 
-                    // No, `)` is common. We need to match the specific date pattern.
                     jsonString = jsonString.replace(/new Date\((.*?)\)/g, '"Date($1)"');
 
                     const json = JSON.parse(jsonString);
                     if (json.table?.rows) {
                         const parsed = json.table.rows.map((row, i) => {
                             let rawDate = row.c[0]?.v;
-                            let dateStr = rawDate; // Default
+                            let dateStr = rawDate;
 
                             if (typeof rawDate === 'string' && rawDate.startsWith('Date(')) {
                                 const parts = rawDate.match(/\d+/g);
@@ -2323,7 +2326,9 @@ export default function App() {
                                     } else {
                                         dateStr = String(rawDate);
                                     }
-                                } catch { dateStr = String(rawDate); }
+                                } catch {
+                                    dateStr = String(rawDate);
+                                }
                             }
 
                             return {
@@ -2340,14 +2345,14 @@ export default function App() {
                                     if (c.includes('募集')) return 'recruitment';
                                     if (c.includes('その他')) return 'other';
                                     return 'info';
-                                })()
+                                })(),
                             };
-                        }).filter(i => i.title);
+                        }).filter((i) => i.title);
                         setNewsData(parsed.sort((a, b) => b.date.localeCompare(a.date)));
                     }
                 }
             } catch (e) {
-                console.error("News fetch error", e);
+                console.error('News fetch error', e);
                 showToast('ニュースの取得に失敗しました');
             }
         };
@@ -2362,6 +2367,7 @@ export default function App() {
         });
     }, [showToast]);
 
+    // ... rest of the code remains the same ...
     const scrollToSection = useCallback((id) => {
         const element = document.getElementById(id);
         if (element) {
