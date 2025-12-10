@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-    Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
-    Server, Users, Shield, Clock, MessageCircle, MapPin, User,
+    Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle, AlertCircle,
+    Server, Users, Shield, Clock, MessageCircle, MessageSquare, MapPin, User,
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap, ArrowRight, BookOpen,
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
     LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
@@ -44,7 +44,7 @@ import remarkGfm from 'remark-gfm';
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
 import { JoinSection } from './pages/Home';
-import { app, firebaseConfig } from './config/firebase';
+import { app, auth, firebaseConfig } from './config/firebase';
 import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
@@ -3197,14 +3197,13 @@ export default function App() {
 
     const handleGoogleLogin = useCallback(async () => {
         try {
-            const auth = getAuth();
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
+            const result = await signInWithPopup(auth, provider);
         } catch (e) {
             console.error('Google login failed', e);
             showToast('Googleログインに失敗しました');
         }
-    }, []);
+    }, [auth]);
 
     const handleUserLogout = useCallback(async () => {
         try {
