@@ -5,7 +5,7 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap, ArrowRight, BookOpen,
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
     LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
-    Sparkles, Loader2, Send, FileText
+    Sparkles, Loader2, Send, FileText, Search
 } from 'lucide-react';
 import { 
     getFirestore, 
@@ -3123,15 +3123,7 @@ export default function App() {
     useEffect(() => {
         const initAuth = async () => {
             try {
-                const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-                if (!config) {
-                    console.warn('Firebase config not found. Running in demo mode.');
-                    setUser({ uid: 'demo-user', isAnonymous: true });
-                    return;
-                }
-
-                const app = initializeApp(config);
-                const auth = getAuth(app);
+                // Use the already initialized app and auth from firebase.js
                 const firestore = getFirestore(app);
                 setDb(firestore);
 

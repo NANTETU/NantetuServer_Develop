@@ -1,8 +1,10 @@
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 export const firebaseConfig = {
     apiKey: "AIzaSyDtRGDqHlWdaRIM9RdHbMH-lLKyZHpJh80",
-    authDomain: "nantetu-29158.firebaseapp.com",
+    authDomain: "nantetu-29158.firebasestorage.app",
     projectId: "nantetu-29158",
     storageBucket: "nantetu-29158.firebasestorage.app",
     messagingSenderId: "971397700888",
@@ -10,4 +12,8 @@ export const firebaseConfig = {
 };
 
 // Initialize Firebase
-export const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+export { app, auth, db, firebaseConfig };
