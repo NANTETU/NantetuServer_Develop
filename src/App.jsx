@@ -5,7 +5,7 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap, ArrowRight, BookOpen,
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
     LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
-    Sparkles, Loader2, Send
+    Sparkles, Loader2, Send, FileText
 } from 'lucide-react';
 import { 
     getFirestore, 
@@ -44,7 +44,7 @@ import remarkGfm from 'remark-gfm';
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
 import { JoinSection } from './pages/Home';
-import { app } from './config/firebase';
+import { app, firebaseConfig } from './config/firebase';
 import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
