@@ -7,3 +7,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 App (2).jsx
+.env
