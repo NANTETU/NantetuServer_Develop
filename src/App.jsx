@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-    Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle, AlertCircle,
+    Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle, AlertCircle, Bell,
     Server, Users, Shield, Clock, MessageCircle, MessageSquare, MapPin, User,
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap, ArrowRight, BookOpen,
-    Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
+    Pencil as PencilIcon, Edit3, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
     LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
     Sparkles, Loader2, Send, FileText, Search
 } from 'lucide-react';
@@ -3169,7 +3169,7 @@ export default function App() {
                 if (snap.exists()) {
                     const data = snap.data();
                     setProfile(data);
-                    await fsUpdateDoc(profileRef, {
+                    await updateDoc(profileRef, {
                         lastLoginAt: serverTimestamp(),
                     });
                 } else {
