@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
     Server, Users, Shield, Clock, MessageCircle, MapPin,
-    HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
+    HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap,
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
