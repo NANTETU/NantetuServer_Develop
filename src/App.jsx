@@ -3,10 +3,10 @@ import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
     Server, Users, Shield, Clock, MessageCircle, MapPin,
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap, ArrowRight, BookOpen,
-    Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
-    Sparkles, Loader2, Send
+    Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
+    LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
+    Sparkles, Loader2, Send, User
 } from 'lucide-react';
-import { initializeApp } from "firebase/app";
 import { 
     getFirestore, 
     collection, 
@@ -27,7 +27,15 @@ import {
     writeBatch,
     getCountFromServer
 } from 'firebase/firestore';
-import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { 
+    signInAnonymously, 
+    onAuthStateChanged, 
+    signInWithCustomToken, 
+    getAuth, 
+    GoogleAuthProvider, 
+    signInWithPopup, 
+    signOut 
+} from 'firebase/auth';
 
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -38,8 +46,10 @@ import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPag
 import { JoinSection } from './pages/Home';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
-import { app, firebaseConfig } from './config/firebase';
+import { app } from './config/firebase'; // initializeApp はここで初期化済み
 
+// 定数は直接インポート
+import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
 // ==========================================
 // 1. Configuration & Data (languages.js)
 // ==========================================
