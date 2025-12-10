@@ -1733,16 +1733,18 @@ const formatTimestamp = (ts) => {
     }
 };
 
-const ProfilePage = ({ L, user, profile, db, page }) => {
+const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
     const [targetProfile, setTargetProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
     const [posts, setPosts] = useState([]);
     const [postsLoading, setPostsLoading] = useState(true);
     const [newPostText, setNewPostText] = useState('');
     const [replyToPostId, setReplyToPostId] = useState(null);
     const [replyText, setReplyText] = useState('');
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followersCount, setFollowersCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
 
     useEffect(() => {
         const load = async () => {
@@ -1775,6 +1777,20 @@ const ProfilePage = ({ L, user, profile, db, page }) => {
                     return;
                 }
                 setTargetProfile(snap.data());
+                
+                // フォロー状態を確認
+                if (user.uid !== targetUid) {
+                    const followRef = doc(db, 'follows', `${user.uid}_${targetUid}`);
+                    const followSnap = await getDoc(followRef);
+                    setIsFollowing(followSnap.exists());
+                }
+                
+                // フォロワー/フォロー中数を取得
+                const followersSnap = await getCountFromServer(collection(db, 'follows', 'followerCounts', targetUid));
+                const followingSnap = await getCountFromServer(collection(db, 'follows', 'followingCounts', targetUid));
+                setFollowersCount(followersSnap.data().count || 0);
+                setFollowingCount(followingSnap.data().count || 0);
+                
             } catch (e) {
                 console.error('Failed to load profile page', e);
                 setError('プロフィールの読み込みに失敗しました');
@@ -1789,7 +1805,7 @@ const ProfilePage = ({ L, user, profile, db, page }) => {
         load();
     }, [db, user, profile, page, L]);
 
-    // Twitter風ユーザー投稿タイムライン (user_posts)
+    // ユーザー投稿タイムライン
     useEffect(() => {
         if (!db || !user) {
             setPosts([]);
@@ -1807,11 +1823,17 @@ const ProfilePage = ({ L, user, profile, db, page }) => {
             const q = query(
                 collection(db, 'user_posts'),
                 where('authorUid', '==', targetUid),
-                orderBy('createdAt', 'desc')
+                orderBy('createdAt', 'desc'),
+                limit(20)
             );
 
             const unsub = onSnapshot(q, (snap) => {
-                const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const loaded = snap.docs.map(d => ({ 
+                    id: d.id, 
+                    ...d.data(),
+                    // 日付を変換
+                    createdAt: d.data().createdAt?.toDate ? d.data().createdAt : new Date(d.data().createdAt?.seconds * 1000)
+                }));
                 setPosts(loaded);
                 setPostsLoading(false);
             }, (e) => {
@@ -1828,20 +1850,64 @@ const ProfilePage = ({ L, user, profile, db, page }) => {
         }
     }, [db, user, page]);
 
-    const isOwnProfile = user && targetProfile && user.uid === (page && page.startsWith && page.startsWith('user/') ? page.split('/')[1] || user.uid : user.uid);
+    const isOwnProfile = user && targetProfile && user.uid === (page && page.startsWith('user/') ? page.split('/')[1] || user.uid : user.uid);
+
+    const handleFollow = async () => {
+        if (!db || !user || user.isAnonymous || !targetProfile) return;
+        
+        try {
+            const targetUid = page && page.startsWith('user/') ? page.split('/')[1] : user.uid;
+            const followRef = doc(db, 'follows', `${user.uid}_${targetUid}`);
+            
+            if (isFollowing) {
+                // フォロー解除
+                await deleteDoc(followRef);
+                // カウントを更新
+                await updateDoc(doc(db, 'profiles', targetUid), {
+                    followerCount: increment(-1)
+                });
+                await updateDoc(doc(db, 'profiles', user.uid), {
+                    followingCount: increment(-1)
+                });
+                setFollowersCount(prev => Math.max(0, prev - 1));
+            } else {
+                // フォロー
+                await setDoc(followRef, {
+                    followerId: user.uid,
+                    followingId: targetUid,
+                    createdAt: serverTimestamp()
+                });
+                // カウントを更新
+                await updateDoc(doc(db, 'profiles', targetUid), {
+                    followerCount: increment(1)
+                });
+                await updateDoc(doc(db, 'profiles', user.uid), {
+                    followingCount: increment(1)
+                });
+                setFollowersCount(prev => prev + 1);
+            }
+            setIsFollowing(!isFollowing);
+        } catch (e) {
+            console.error('Follow action failed', e);
+        }
+    };
 
     const handlePostSubmit = async (e) => {
         e.preventDefault();
         if (!db || !user || user.isAnonymous) return;
         const text = newPostText.trim();
         if (!text) return;
-        if (text.length > 200) return; // シンプルな安全策
+        if (text.length > 200) return;
 
         try {
             await addDoc(collection(db, 'user_posts'), {
                 authorUid: user.uid,
+                authorName: profile?.name || 'Unknown',
+                authorAvatar: profile?.iconUrl || '',
                 text,
                 parentId: null,
+                likes: 0,
+                replies: 0,
                 createdAt: serverTimestamp(),
             });
             setNewPostText('');
@@ -1863,12 +1929,22 @@ const ProfilePage = ({ L, user, profile, db, page }) => {
         if (text.length > 200) return;
 
         try {
+            // 返信を追加
             await addDoc(collection(db, 'user_posts'), {
                 authorUid: user.uid,
+                authorName: profile?.name || 'Unknown',
+                authorAvatar: profile?.iconUrl || '',
                 text,
                 parentId: replyToPostId,
+                likes: 0,
                 createdAt: serverTimestamp(),
             });
+            
+            // 親投稿の返信数を更新
+            await updateDoc(doc(db, 'user_posts', replyToPostId), {
+                replies: increment(1)
+            });
+            
             setReplyText('');
             setReplyToPostId(null);
         } catch (e) {
@@ -1876,16 +1952,102 @@ const ProfilePage = ({ L, user, profile, db, page }) => {
         }
     };
 
+    const handleLikePost = async (postId, currentLikes) => {
+        if (!db || !user || user.isAnonymous) return;
+        
+        try {
+            const likeRef = doc(db, 'post_likes', `${user.uid}_${postId}`);
+            const likeSnap = await getDoc(likeRef);
+            
+            if (likeSnap.exists()) {
+                // いいねを解除
+                await deleteDoc(likeRef);
+                await updateDoc(doc(db, 'user_posts', postId), {
+                    likes: increment(-1)
+                });
+            } else {
+                // いいねを追加
+                await setDoc(likeRef, {
+                    userId: user.uid,
+                    postId,
+                    createdAt: serverTimestamp()
+                });
+                await updateDoc(doc(db, 'user_posts', postId), {
+                    likes: increment(1)
+                });
+                
+                // 通知を送信（自分以外の投稿の場合）
+                const postRef = doc(db, 'user_posts', postId);
+                const postSnap = await getDoc(postRef);
+                const post = postSnap.data();
+                
+                if (post && post.authorUid !== user.uid) {
+                    await addDoc(collection(db, 'notifications'), {
+                        type: 'like',
+                        fromUserId: user.uid,
+                        fromUserName: profile?.name || 'Unknown',
+                        toUserId: post.authorUid,
+                        postId,
+                        read: false,
+                        createdAt: serverTimestamp()
+                    });
+                }
+            }
+            
+            // 投稿一覧を更新
+            setPosts(prev => prev.map(p => 
+                p.id === postId 
+                    ? { ...p, likes: likeSnap.exists() ? (p.likes || 1) - 1 : (p.likes || 0) + 1 } 
+                    : p
+            ));
+            
+        } catch (e) {
+            console.error('Like action failed', e);
+        }
+    };
+
     if (loading) {
-        return <div className="max-w-3xl mx-auto py-32 px-4 text-center">読み込み中...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+        );
     }
 
     if (error) {
-        return <div className="max-w-3xl mx-auto py-32 px-4 text-center text-red-500">{error}</div>;
+        return (
+            <div className="max-w-4xl mx-auto py-16 px-4">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
+                    <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">エラーが発生しました</h3>
+                    <p className="text-red-600 dark:text-red-300">{error}</p>
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="mt-4 px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900 text-red-700 dark:text-red-200 rounded-lg font-medium transition-colors"
+                    >
+                        再読み込み
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     if (!targetProfile) {
-        return <div className="max-w-3xl mx-auto py-32 px-4 text-center">プロフィールが見つかりません。</div>;
+        return (
+            <div className="max-w-4xl mx-auto py-16 px-4">
+                <div className="text-center">
+                    <UserX className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">プロフィールが見つかりません</h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">指定されたユーザーは存在しないか、削除された可能性があります</p>
+                    <button 
+                        onClick={() => navigate('/')}
+                        className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                        ホームに戻る
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     const rootPosts = posts.filter(p => !p.parentId);
@@ -1896,35 +2058,227 @@ const ProfilePage = ({ L, user, profile, db, page }) => {
         return map;
     }, {});
 
+    // ソーシャルメディアアイコン
+    const socialIcons = {
+        twitter: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/twitter.svg',
+        youtube: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/youtube.svg',
+        twitch: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/twitch.svg',
+        github: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/github.svg',
+        instagram: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/instagram.svg',
+        facebook: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/facebook.svg',
+    };
+
     return (
-        <div className="max-w-3xl mx-auto py-32 px-4 space-y-8 animate-fade-in-scale">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold">
-                        {(targetProfile.name || 'U').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-black dark:text-white">{targetProfile.name || 'No Name'}</h2>
-                        {targetProfile.gamerTag && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">@{targetProfile.gamerTag}</p>
+        <div className="max-w-4xl mx-auto pb-16">
+            {/* バナー画像 */}
+            <div className="relative h-48 bg-gradient-to-r from-purple-500 to-indigo-600 overflow-hidden">
+                {targetProfile.bannerUrl ? (
+                    <img 
+                        src={targetProfile.bannerUrl} 
+                        alt="Banner" 
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <div className="w-full h-full bg-gradient-to-r from-purple-400 to-indigo-500"></div>
+                )}
+                
+                {/* プロフィール画像 */}
+                <div className="absolute -bottom-16 left-6 md:left-8">
+                    <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-700 overflow-hidden shadow-lg">
+                        {targetProfile.iconUrl ? (
+                            <img 
+                                src={targetProfile.iconUrl} 
+                                alt={targetProfile.name || 'User'} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(targetProfile.name || 'U')}&background=7c3aed&color=fff&size=128`;
+                                }}
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white bg-gradient-to-br from-purple-500 to-indigo-600">
+                                {(targetProfile.name || 'U').charAt(0).toUpperCase()}
+                            </div>
                         )}
                     </div>
                 </div>
-
+                
+                {/* アクションボタン */}
+                <div className="absolute bottom-6 right-6 flex space-x-3">
+                    {isOwnProfile ? (
+                        <>
+                            <button 
+                                onClick={() => navigate('profile/edit')}
+                                className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-full font-medium flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
+                            >
+                                <Edit3 size={16} />
+                                <span>プロフィールを編集</span>
+                            </button>
+                            <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                <MoreHorizontal />
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button 
+                                onClick={handleFollow}
+                                className={`px-4 py-2 rounded-full font-medium flex items-center space-x-2 transition-colors ${
+                                    isFollowing 
+                                        ? 'bg-white text-gray-800 border border-gray-200 hover:bg-gray-50' 
+                                        : 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+                                }`}
+                            >
+                                {isFollowing ? (
+                                    <>
+                                        <UserCheck size={16} />
+                                        <span>フォロー中</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <UserPlus size={16} />
+                                        <span>フォローする</span>
+                                    </>
+                                )}
+                            </button>
+                            <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                <MessageSquare size={16} />
+                            </button>
+                            <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                <MoreHorizontal />
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+            
+            {/* プロフィール情報 */}
+            <div className="px-6 md:px-8 pt-20 pb-6">
+                <div className="mb-4">
+                    <h1 className="text-2xl font-black dark:text-white">{targetProfile.name || 'No Name'}</h1>
+                    {targetProfile.gamerTag && (
+                        <p className="text-gray-500 dark:text-gray-400">@{targetProfile.gamerTag}</p>
+                    )}
+                </div>
+                
+                {/* 自己紹介（Markdown対応） */}
                 {targetProfile.bio && (
-                    <p className="mb-4 text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{targetProfile.bio}</p>
+                    <div className="mb-4 text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            components={{
+                                a: ({node, ...props}) => (
+                                    <a 
+                                        {...props} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-purple-600 dark:text-purple-400 hover:underline"
+                                    />
+                                ),
+                                code: ({node, inline, ...props}) => (
+                                    <code 
+                                        {...props} 
+                                        className={`${
+                                            inline 
+                                                ? 'bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm' 
+                                                : 'block bg-gray-100 dark:bg-gray-800 p-4 rounded-lg my-2 overflow-x-auto text-sm'
+                                        } font-mono`}
+                                    />
+                                ),
+                            }}
+                        >
+                            {targetProfile.bio}
+                        </ReactMarkdown>
+                    </div>
                 )}
-
-                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                
+                {/* 基本情報 */}
+                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
                     {targetProfile.location && (
-                        <p><span className="font-bold">場所: </span>{targetProfile.location}</p>
+                        <div className="flex items-center">
+                            <MapPin className="w-4 h-4 mr-1.5" />
+                            <span>{targetProfile.location}</span>
+                        </div>
                     )}
                     {targetProfile.links && (
-                        <p><span className="font-bold">リンク: </span>{targetProfile.links}</p>
+                        <div className="flex items-center">
+                            <Link2 className="w-4 h-4 mr-1.5" />
+                            <a 
+                                href={targetProfile.links.startsWith('http') ? targetProfile.links : `https://${targetProfile.links}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-purple-600 dark:text-purple-400 hover:underline"
+                            >
+                                {targetProfile.links.replace(/^https?:\/\//, '').split('/')[0]}
+                            </a>
+                        </div>
                     )}
-                    <p><span className="font-bold">作成日: </span>{formatTimestamp(targetProfile.createdAt)}</p>
-                    <p><span className="font-bold">最終ログイン: </span>{formatTimestamp(targetProfile.lastLoginAt)}</p>
+                    <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1.5" />
+                        <span>登録日: {formatTimestamp(targetProfile.createdAt)}</span>
+                    </div>
+                    <div className="flex items-center">
+                        <Clock className="w-4 h-4 mr-1.5" />
+                        <span>最終ログイン: {formatTimestamp(targetProfile.lastLoginAt) || '不明'}</span>
+                    </div>
                 </div>
+                
+                {/* フォロー/フォロワー */}
+                <div className="flex space-x-6 mb-6">
+                    <button 
+                        className="hover:underline"
+                        onClick={() => navigate(`/user/${page?.split('/')[1]}/following`)}
+                    >
+                        <span className="font-bold text-gray-900 dark:text-white">{followingCount}</span>{' '}
+                        <span className="text-gray-600 dark:text-gray-400">フォロー中</span>
+                    </button>
+                    <button 
+                        className="hover:underline"
+                        onClick={() => navigate(`/user/${page?.split('/')[1]}/followers`)}
+                    >
+                        <span className="font-bold text-gray-900 dark:text-white">{followersCount}</span>{' '}
+                        <span className="text-gray-600 dark:text-gray-400">フォロワー</span>
+                    </button>
+                </div>
+                
+                {/* ソーシャルリンク */}
+                {targetProfile.socialLinks?.length > 0 && (
+                    <div className="flex space-x-3 mb-6">
+                        {targetProfile.socialLinks.map((link, index) => (
+                            link.url && (
+                                <a 
+                                    key={index}
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                    title={link.platform}
+                                >
+                                    <img 
+                                        src={socialIcons[link.platform] || socialIcons.twitter} 
+                                        alt={link.platform}
+                                        className="w-5 h-5"
+                                    />
+                                </a>
+                            )
+                        ))}
+                    </div>
+                )}
+            </div>
+            
+            {/* タブナビゲーション */}
+            <div className="border-b border-gray-200 dark:border-gray-700">
+                <nav className="flex -mb-px">
+                    <button className="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm border-purple-500 text-purple-600 dark:text-purple-400">
+                        投稿
+                    </button>
+                    <button className="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300">
+                        メディア
+                    </button>
+                    <button className="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300">
+                        いいね
+                    </button>
+                </nav>
             </div>
 
             {/* Twitter風タイムライン */}
@@ -2042,8 +2396,20 @@ const ProfileEditPage = ({ L, user, profile, db, showToast }) => {
         gamerTag: profile?.gamerTag || '',
         location: profile?.location || '',
         links: profile?.links || '',
+        bannerUrl: profile?.bannerUrl || '',
+        iconUrl: profile?.iconUrl || '',
     });
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState({ banner: false, icon: false });
+    const [preview, setPreview] = useState({
+        banner: profile?.bannerUrl || '',
+        icon: profile?.iconUrl || '',
+    });
+    const [socialLinks, setSocialLinks] = useState(profile?.socialLinks || [
+        { platform: 'twitter', url: '' },
+        { platform: 'youtube', url: '' },
+        { platform: 'twitch', url: '' },
+    ]);
 
     if (!user || user.isAnonymous) {
         return <div className="max-w-3xl mx-auto py-32 px-4 text-center">プロフィールを編集するにはログインしてください。</div>;
@@ -2052,6 +2418,57 @@ const ProfileEditPage = ({ L, user, profile, db, showToast }) => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSocialLinkChange = (index, field, value) => {
+        const newLinks = [...socialLinks];
+        newLinks[index] = { ...newLinks[index], [field]: value };
+        setSocialLinks(newLinks);
+    };
+
+    const handleFileUpload = async (file, type) => {
+        if (!file) return null;
+        
+        setUploading(prev => ({ ...prev, [type]: true }));
+        
+        try {
+            // In a real app, upload to Supabase Storage here
+            // For now, we'll just create a preview URL
+            const previewUrl = URL.createObjectURL(file);
+            setPreview(prev => ({ ...prev, [type]: previewUrl }));
+            
+            // Simulate upload delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // In a real app, return the uploaded file URL
+            return previewUrl;
+        } catch (error) {
+            console.error('Upload failed:', error);
+            showToast && showToast('画像のアップロードに失敗しました');
+            return null;
+        } finally {
+            setUploading(prev => ({ ...prev, [type]: false }));
+        }
+    };
+
+    const handleBannerChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const url = await handleFileUpload(file, 'banner');
+        if (url) {
+            setForm(prev => ({ ...prev, bannerUrl: url }));
+        }
+    };
+
+    const handleIconChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const url = await handleFileUpload(file, 'icon');
+        if (url) {
+            setForm(prev => ({ ...prev, iconUrl: url }));
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -2066,7 +2483,11 @@ const ProfileEditPage = ({ L, user, profile, db, showToast }) => {
                 gamerTag: form.gamerTag || '',
                 location: form.location || '',
                 links: form.links || '',
+                bannerUrl: form.bannerUrl || '',
+                iconUrl: form.iconUrl || '',
+                socialLinks: socialLinks.filter(link => link.url),
                 lastLoginAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
             });
             showToast && showToast('プロフィールを保存しました');
         } catch (e) {
@@ -2077,33 +2498,208 @@ const ProfileEditPage = ({ L, user, profile, db, showToast }) => {
         }
     };
 
+    const socialIcons = {
+        twitter: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/twitter.svg',
+        youtube: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/youtube.svg',
+        twitch: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/twitch.svg',
+        github: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/github.svg',
+        instagram: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/instagram.svg',
+        facebook: 'https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/facebook.svg',
+    };
+
     return (
-        <div className="max-w-3xl mx-auto py-32 px-4 animate-fade-in-scale">
-            <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 space-y-6">
-                <h2 className="text-2xl font-black dark:text-white mb-4">プロフィールを編集</h2>
-                <div>
-                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">名前</label>
-                    <input name="name" value={form.name} onChange={handleChange} className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
+        <div className="max-w-4xl mx-auto py-8 px-4 animate-fade-in-scale">
+            <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                {/* Banner Upload */}
+                <div className="relative h-48 bg-gradient-to-r from-purple-500 to-indigo-600">
+                    {preview.banner ? (
+                        <img 
+                            src={preview.banner} 
+                            alt="Banner" 
+                            className="w-full h-full object-cover"
+                        />
+                    ) : null}
+                    <label className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-white dark:hover:bg-gray-700 transition-colors">
+                        <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleBannerChange}
+                            disabled={uploading.banner}
+                        />
+                        {uploading.banner ? (
+                            <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        )}
+                    </label>
                 </div>
-                <div>
-                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">一言</label>
-                    <textarea name="bio" value={form.bio} onChange={handleChange} rows="3" className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
+
+                <div className="px-8 pb-8 relative">
+                    {/* Profile Picture Upload */}
+                    <div className="absolute -top-16 left-8">
+                        <div className="relative group">
+                            <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 bg-gradient-to-br from-purple-400 to-indigo-500 overflow-hidden">
+                                {preview.icon ? (
+                                    <img 
+                                        src={preview.icon} 
+                                        alt="Profile" 
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white">
+                                        {form.name ? form.name.charAt(0).toUpperCase() : 'U'}
+                                    </div>
+                                )}
+                            </div>
+                            <label className="absolute bottom-0 right-0 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-white dark:hover:bg-gray-700 transition-colors">
+                                <input 
+                                    type="file" 
+                                    className="hidden" 
+                                    accept="image/*" 
+                                    onChange={handleIconChange}
+                                    disabled={uploading.icon}
+                                />
+                                {uploading.icon ? (
+                                    <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                )}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="pt-20 space-y-6">
+                        <h2 className="text-2xl font-black dark:text-white">プロフィールを編集</h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold mb-1 dark:text-gray-200">表示名</label>
+                                <input 
+                                    name="name" 
+                                    value={form.name} 
+                                    onChange={handleChange} 
+                                    placeholder="ユーザー名"
+                                    className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold mb-1 dark:text-gray-200">ゲーマータグ</label>
+                                <input 
+                                    name="gamerTag" 
+                                    value={form.gamerTag} 
+                                    onChange={handleChange} 
+                                    placeholder="例: Player123"
+                                    className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold mb-1 dark:text-gray-200">自己紹介 (Markdown対応)</label>
+                            <textarea 
+                                name="bio" 
+                                value={form.bio} 
+                                onChange={handleChange} 
+                                rows="4" 
+                                placeholder="自己紹介を入力してください。マークダウンが使用できます。"
+                                className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm" 
+                            />
+                            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                マークダウン記法が使用できます。例: **太字**、*斜体*、[リンク](https://example.com)
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold mb-1 dark:text-gray-200">場所</label>
+                            <input 
+                                name="location" 
+                                value={form.location} 
+                                onChange={handleChange} 
+                                placeholder="例: 東京都渋谷区"
+                                className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold mb-1 dark:text-gray-200">ウェブサイト</label>
+                            <input 
+                                name="links" 
+                                value={form.links} 
+                                onChange={handleChange} 
+                                placeholder="https://example.com"
+                                className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold mb-2 dark:text-gray-200">ソーシャルリンク</label>
+                            <div className="space-y-3">
+                                {socialLinks.map((link, index) => (
+                                    <div key={index} className="flex items-center space-x-2">
+                                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                                            <img 
+                                                src={socialIcons[link.platform] || socialIcons.twitter} 
+                                                alt={link.platform} 
+                                                className="w-5 h-5"
+                                            />
+                                        </div>
+                                        <select
+                                            value={link.platform}
+                                            onChange={(e) => handleSocialLinkChange(index, 'platform', e.target.value)}
+                                            className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        >
+                                            <option value="twitter">Twitter / X</option>
+                                            <option value="youtube">YouTube</option>
+                                            <option value="twitch">Twitch</option>
+                                            <option value="github">GitHub</option>
+                                            <option value="instagram">Instagram</option>
+                                            <option value="facebook">Facebook</option>
+                                        </select>
+                                        <input
+                                            type="text"
+                                            value={link.url}
+                                            onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)}
+                                            placeholder="https://"
+                                            className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-end space-x-3">
+                            <button 
+                                type="button"
+                                onClick={() => window.history.back()}
+                                className="px-6 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                            >
+                                キャンセル
+                            </button>
+                            <button 
+                                type="submit" 
+                                disabled={saving}
+                                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 transition-colors flex items-center"
+                            >
+                                {saving ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        保存中...
+                                    </>
+                                ) : '変更を保存'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">gamerTag</label>
-                    <input name="gamerTag" value={form.gamerTag} onChange={handleChange} className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
-                </div>
-                <div>
-                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">場所</label>
-                    <input name="location" value={form.location} onChange={handleChange} className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
-                </div>
-                <div>
-                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">リンク</label>
-                    <input name="links" value={form.links} onChange={handleChange} className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
-                </div>
-                <button type="submit" disabled={saving} className="w-full py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 disabled:bg-gray-400">
-                    {saving ? '保存中...' : '保存する'}
-                </button>
             </form>
         </div>
     );
