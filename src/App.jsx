@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
-    Server, Users, Shield, Clock, MessageCircle, MapPin,
+    Server, Users, Shield, Clock, MessageCircle, MapPin, User,
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap, ArrowRight, BookOpen,
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
     LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
-    Sparkles, Loader2, Send, User
+    Sparkles, Loader2, Send
 } from 'lucide-react';
 import { 
     getFirestore, 
