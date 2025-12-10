@@ -3,14 +3,29 @@ import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle,
     Server, Users, Shield, Clock, MessageCircle, MapPin,
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal,
-    Send, ExternalLink, Home, FileText, List, Bell, BookOpen,
-    User, DollarSign, Theater, Lock, Hammer, AlertCircle, Search, Trash2, Zap, Sparkles, ArrowRight, Loader2, Map, Info,
-    Youtube, Twitter, MessageSquare, Clipboard, ClipboardCheck, Bot, ChevronLeft, UploadCloud, LogOut, Globe as GlobeIcon,
     Pencil as PencilIcon, Trash as TrashIcon, CheckCircle as CheckCircleIcon, LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, where, setDoc, updateDoc as fsUpdateDoc, getDocs } from 'firebase/firestore';
-import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
+import { 
+    getFirestore, 
+    collection, 
+    doc, 
+    getDoc, 
+    setDoc, 
+    updateDoc, 
+    deleteDoc, 
+    query, 
+    where, 
+    orderBy, 
+    limit, 
+    onSnapshot, 
+    serverTimestamp, 
+    addDoc, 
+    increment,
+    getDocs,
+    writeBatch,
+    getCountFromServer
+} from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken, getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 
 import ReactMarkdown from 'react-markdown';
@@ -23,7 +38,6 @@ import { JoinSection } from './pages/Home';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 import { app, firebaseConfig } from './config/firebase';
-import { getDoc } from 'firebase/firestore'; 
 
 // ==========================================
 // 1. Configuration & Data (languages.js)
