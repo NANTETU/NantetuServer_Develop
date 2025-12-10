@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Menu, X, Moon, Sun, Copy, CheckCircle, AlertTriangle, AlertCircle, Bell,
-    Server, Users, Shield, Clock, MessageCircle, MessageSquare, MapPin, User,
+    Server, Users, Shield, Clock, MessageCircle, MessageSquare, MapPin, User, Link2,
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap, ArrowRight, BookOpen,
     Pencil as PencilIcon, Edit3, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
     LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
