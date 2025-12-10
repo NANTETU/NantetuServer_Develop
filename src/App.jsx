@@ -1719,7 +1719,193 @@ export const JoinPage = ({ L, serverStatus, handleCopy, navigate }) => (
 
 
 // ==========================================
-// 5. Home Page (Home.jsx)
+// 5. Profile Pages
+// ==========================================
+
+const formatTimestamp = (ts) => {
+    if (!ts) return '';
+    try {
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
+        if (Number.isNaN(d.getTime())) return '';
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } catch {
+        return '';
+    }
+};
+
+const ProfilePage = ({ L, user, profile, db, page }) => {
+    const [targetProfile, setTargetProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                if (!db) {
+                    setError('プロファイルを読み込めません (DB 未初期化)');
+                    return;
+                }
+
+                if (!user) {
+                    setError(L?.profile?.need_login || 'プロフィールを見るにはログインしてください');
+                    return;
+                }
+
+                let targetUid = user.uid;
+                if (page && page.startsWith && page.startsWith('user/')) {
+                    const parts = page.split('/');
+                    if (parts[1]) targetUid = parts[1];
+                }
+
+                if (targetUid === user.uid && profile) {
+                    setTargetProfile(profile);
+                    return;
+                }
+
+                const ref = doc(db, 'profiles', targetUid);
+                const snap = await getDoc(ref);
+                if (!snap.exists()) {
+                    setError(L?.profile?.not_found || 'プロフィールが見つかりません');
+                    return;
+                }
+                setTargetProfile(snap.data());
+            } catch (e) {
+                console.error('Failed to load profile page', e);
+                setError('プロフィールの読み込みに失敗しました');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        setLoading(true);
+        setError(null);
+        setTargetProfile(null);
+        load();
+    }, [db, user, profile, page, L]);
+
+    if (loading) {
+        return <div className="max-w-3xl mx-auto py-32 px-4 text-center">読み込み中...</div>;
+    }
+
+    if (error) {
+        return <div className="max-w-3xl mx-auto py-32 px-4 text-center text-red-500">{error}</div>;
+    }
+
+    if (!targetProfile) {
+        return <div className="max-w-3xl mx-auto py-32 px-4 text-center">プロフィールが見つかりません。</div>;
+    }
+
+    return (
+        <div className="max-w-3xl mx-auto py-32 px-4 animate-fade-in-scale">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold">
+                        {(targetProfile.name || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black dark:text-white">{targetProfile.name || 'No Name'}</h2>
+                        {targetProfile.gamerTag && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">@{targetProfile.gamerTag}</p>
+                        )}
+                    </div>
+                </div>
+
+                {targetProfile.bio && (
+                    <p className="mb-4 text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{targetProfile.bio}</p>
+                )}
+
+                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    {targetProfile.location && (
+                        <p><span className="font-bold">場所: </span>{targetProfile.location}</p>
+                    )}
+                    {targetProfile.links && (
+                        <p><span className="font-bold">リンク: </span>{targetProfile.links}</p>
+                    )}
+                    <p><span className="font-bold">作成日: </span>{formatTimestamp(targetProfile.createdAt)}</p>
+                    <p><span className="font-bold">最終ログイン: </span>{formatTimestamp(targetProfile.lastLoginAt)}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ProfileEditPage = ({ L, user, profile, db, showToast }) => {
+    const [form, setForm] = useState({
+        name: profile?.name || '',
+        bio: profile?.bio || '',
+        gamerTag: profile?.gamerTag || '',
+        location: profile?.location || '',
+        links: profile?.links || '',
+    });
+    const [saving, setSaving] = useState(false);
+
+    if (!user || user.isAnonymous) {
+        return <div className="max-w-3xl mx-auto py-32 px-4 text-center">プロフィールを編集するにはログインしてください。</div>;
+    }
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!db) return;
+        setSaving(true);
+        try {
+            const ref = doc(db, 'profiles', user.uid);
+            await fsUpdateDoc(ref, {
+                name: form.name || 'No Name',
+                bio: form.bio || '',
+                gamerTag: form.gamerTag || '',
+                location: form.location || '',
+                links: form.links || '',
+                lastLoginAt: serverTimestamp(),
+            });
+            showToast && showToast('プロフィールを保存しました');
+        } catch (e) {
+            console.error('Failed to save profile', e);
+            showToast && showToast('プロフィールの保存に失敗しました');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="max-w-3xl mx-auto py-32 px-4 animate-fade-in-scale">
+            <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 space-y-6">
+                <h2 className="text-2xl font-black dark:text-white mb-4">プロフィールを編集</h2>
+                <div>
+                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">名前</label>
+                    <input name="name" value={form.name} onChange={handleChange} className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
+                </div>
+                <div>
+                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">一言</label>
+                    <textarea name="bio" value={form.bio} onChange={handleChange} rows="3" className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
+                </div>
+                <div>
+                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">gamerTag</label>
+                    <input name="gamerTag" value={form.gamerTag} onChange={handleChange} className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
+                </div>
+                <div>
+                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">場所</label>
+                    <input name="location" value={form.location} onChange={handleChange} className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
+                </div>
+                <div>
+                    <label className="block text-sm font-bold mb-1 dark:text-gray-200">リンク</label>
+                    <input name="links" value={form.links} onChange={handleChange} className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white" />
+                </div>
+                <button type="submit" disabled={saving} className="w-full py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 disabled:bg-gray-400">
+                    {saving ? '保存中...' : '保存する'}
+                </button>
+            </form>
+        </div>
+    );
+};
+
+
+// ==========================================
+// 6. Home Page (Home.jsx)
 // ==========================================
 
 export const HomePage = ({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast, newsData, hasUnreadNews }) => {
@@ -2115,29 +2301,38 @@ export default function App() {
         const initAuth = async () => {
             try {
                 const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-                if (config) {
-                    const app = initializeApp(config);
-                    const auth = getAuth(app);
-                    const firestore = getFirestore(app);
-                    setDb(firestore);
+                if (!config) {
+                    console.warn('Firebase config not found. Running in demo mode.');
+                    setUser({ uid: 'demo-user', isAnonymous: true });
+                    return;
+                }
 
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
+                const app = initializeApp(config);
+                const auth = getAuth(app);
+                const firestore = getFirestore(app);
+                setDb(firestore);
+
+                onAuthStateChanged(auth, async (u) => {
+                    if (u) {
+                        setUser(u);
+                        return;
                     }
 
-                    onAuthStateChanged(auth, (u) => {
-                        setUser(u || null);
-                    });
-                } else {
-                    console.warn("Firebase config not found. Running in demo mode.");
-                    setUser({ uid: 'demo-user', isAnonymous: true });
-                }
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) {
+                        console.error('Fallback auth failed:', e);
+                    }
+                });
             } catch (e) {
-                console.error("Firebase init failed:", e);
+                console.error('Firebase init failed:', e);
             }
         };
+
         initAuth();
     }, []);
 
