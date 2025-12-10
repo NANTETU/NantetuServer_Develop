@@ -5,7 +5,7 @@ import {
     HelpCircle, ChevronDown, ChevronUp, Gamepad2, Terminal, Zap, ArrowRight, BookOpen,
     Pencil as PencilIcon, Edit3, Trash as TrashIcon, CheckCircle as CheckCircleIcon, 
     LogOut as ArrowLeftOnRectangleIcon, UploadCloud as CloudArrowUpIcon,
-    Sparkles, Loader2, Send, FileText, Search
+    Sparkles, Loader2, Send, FileText, Search, ExternalLink, MoreHorizontal
 } from 'lucide-react';
 import { 
     getFirestore, 
