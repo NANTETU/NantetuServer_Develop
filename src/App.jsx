@@ -44,7 +44,8 @@ import remarkGfm from 'remark-gfm';
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
 import { JoinSection } from './pages/Home';
-import { app, SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/firebase';
+import { app } from './config/firebase';
+import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
 
