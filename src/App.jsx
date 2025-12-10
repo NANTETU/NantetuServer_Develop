@@ -44,18 +44,13 @@ import remarkGfm from 'remark-gfm';
 import { Navbar, Footer } from './components';
 import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
 import { JoinSection } from './pages/Home';
+import { app, SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/firebase';
 import { LANGUAGES } from './config/languages';
 import { formatCorrectedDate } from './utils/helpers';
-import { app } from './config/firebase'; // initializeApp はここで初期化済み
 
-// 定数は直接インポート
-import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
 // ==========================================
 // 1. Configuration & Data (languages.js)
 // ==========================================
-
-// Imported from config/constants.js
-import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
 
 // Firebase and helper functions now imported from config and utils
 // (firebaseConfig, app, formatCorrectedDate)
