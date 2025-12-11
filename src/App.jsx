@@ -1808,19 +1808,15 @@ const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
                 try {
                     console.log('Fetching follow counts for UID:', targetUid);
                     
-                    // フォロワー数を取得 - followersサブコレクションからカウント
-                    const followersQuery = query(
-                        collection(db, 'follows', targetUid, 'followers')
-                    );
-                    const followersSnapshot = await getDocs(followersQuery);
-                    const followersCount = followersSnapshot.size || 0;
+                    // フォロワー数を取得 - followsコレクションのfollowerCountsサブコレクション
+                    const followerDocRef = doc(db, 'follows', 'followerCounts', targetUid);
+                    const followerDoc = await getDoc(followerDocRef);
+                    const followersCount = followerDoc.exists() ? (followerDoc.data().count || 0) : 0;
                     
-                    // フォロー中数を取得 - followingサブコレクションからカウント
-                    const followingQuery = query(
-                        collection(db, 'follows', targetUid, 'following')
-                    );
-                    const followingSnapshot = await getDocs(followingQuery);
-                    const followingCount = followingSnapshot.size || 0;
+                    // フォロー中数を取得 - followsコレクションのfollowingCountsサブコレクション
+                    const followingDocRef = doc(db, 'follows', 'followingCounts', targetUid);
+                    const followingDoc = await getDoc(followingDocRef);
+                    const followingCount = followingDoc.exists() ? (followingDoc.data().count || 0) : 0;
                     
                     console.log('Follow counts:', { followersCount, followingCount });
                     
