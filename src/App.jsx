@@ -1810,17 +1810,19 @@ const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
                 try {
                     console.log('Fetching follow counts for UID:', targetUid);
                     
-                    // フォロワー数を取得
-                    const followerDoc = await getDoc(doc(db, 'follows', `followerCounts/${targetUid}`));
-                    console.log('Follower doc exists:', followerDoc.exists());
+                    // フォロワー数を取得 - コレクションからカウントを取得
+                    const followersQuery = query(
+                        collection(db, 'follows', 'followers', targetUid)
+                    );
+                    const followersSnapshot = await getCountFromServer(followersQuery);
+                    const followersCount = followersSnapshot.data().count || 0;
                     
-                    // フォロー中数を取得
-                    const followingDoc = await getDoc(doc(db, 'follows', `followingCounts/${targetUid}`));
-                    console.log('Following doc exists:', followingDoc.exists());
-                    
-                    // カウントを設定（ドキュメントが存在しない場合は0）
-                    const followersCount = followerDoc.exists() ? (followerDoc.data().count || 0) : 0;
-                    const followingCount = followingDoc.exists() ? (followingDoc.data().count || 0) : 0;
+                    // フォロー中数を取得 - コレクションからカウントを取得
+                    const followingQuery = query(
+                        collection(db, 'follows', 'following', targetUid)
+                    );
+                    const followingSnapshot = await getCountFromServer(followingQuery);
+                    const followingCount = followingSnapshot.data().count || 0;
                     
                     console.log('Follow counts:', { followersCount, followingCount });
                     
@@ -1832,6 +1834,7 @@ const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
                         message: error.message,
                         stack: error.stack
                     });
+                    // エラーが発生した場合は0を設定
                     setFollowersCount(0);
                     setFollowingCount(0);
                 }
