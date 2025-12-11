@@ -1807,10 +1807,16 @@ const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
                 }
                 
                 // フォロワー/フォロー中数を取得
-                const followersSnap = await getCountFromServer(collection(db, 'follows', 'followerCounts', targetUid));
-                const followingSnap = await getCountFromServer(collection(db, 'follows', 'followingCounts', targetUid));
-                setFollowersCount(followersSnap.data().count || 0);
-                setFollowingCount(followingSnap.data().count || 0);
+                try {
+                    const followerDoc = await getDoc(doc(db, 'follows', 'followerCounts', targetUid));
+                    const followingDoc = await getDoc(doc(db, 'follows', 'followingCounts', targetUid));
+                    setFollowersCount(followerDoc.exists() ? followerDoc.data().count || 0 : 0);
+                    setFollowingCount(followingDoc.exists() ? followingDoc.data().count || 0 : 0);
+                } catch (error) {
+                    console.error('Error fetching follow counts:', error);
+                    setFollowersCount(0);
+                    setFollowingCount(0);
+                }
                 
             } catch (e) {
                 console.error('Failed to load profile page', e);
