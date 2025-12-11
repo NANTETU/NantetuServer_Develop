@@ -1643,8 +1643,6 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
             }
 
             // 2. Firestore Articles & Profiles (Async)
-            const db = getFirestore();
-
             try {
                 // --- Articles ---
                 const articlesQuery = query(collection(db, 'articles'), limit(20));
@@ -1810,19 +1808,19 @@ const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
                 try {
                     console.log('Fetching follow counts for UID:', targetUid);
                     
-                    // フォロワー数を取得 - コレクションからカウントを取得
+                    // フォロワー数を取得 - followersサブコレクションからカウント
                     const followersQuery = query(
-                        collection(db, 'follows', 'followers', targetUid)
+                        collection(db, 'follows', targetUid, 'followers')
                     );
-                    const followersSnapshot = await getCountFromServer(followersQuery);
-                    const followersCount = followersSnapshot.data().count || 0;
+                    const followersSnapshot = await getDocs(followersQuery);
+                    const followersCount = followersSnapshot.size || 0;
                     
-                    // フォロー中数を取得 - コレクションからカウントを取得
+                    // フォロー中数を取得 - followingサブコレクションからカウント
                     const followingQuery = query(
-                        collection(db, 'follows', 'following', targetUid)
+                        collection(db, 'follows', targetUid, 'following')
                     );
-                    const followingSnapshot = await getCountFromServer(followingQuery);
-                    const followingCount = followingSnapshot.data().count || 0;
+                    const followingSnapshot = await getDocs(followingQuery);
+                    const followingCount = followingSnapshot.size || 0;
                     
                     console.log('Follow counts:', { followersCount, followingCount });
                     
