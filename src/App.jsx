@@ -1808,12 +1808,30 @@ const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
                 
                 // フォロワー/フォロー中数を取得
                 try {
-                    const followerDoc = await getDoc(doc(db, 'follows', 'followerCounts', targetUid));
-                    const followingDoc = await getDoc(doc(db, 'follows', 'followingCounts', targetUid));
-                    setFollowersCount(followerDoc.exists() ? followerDoc.data().count || 0 : 0);
-                    setFollowingCount(followingDoc.exists() ? followingDoc.data().count || 0 : 0);
+                    console.log('Fetching follow counts for UID:', targetUid);
+                    
+                    // フォロワー数を取得
+                    const followerDoc = await getDoc(doc(db, 'follows', `followerCounts/${targetUid}`));
+                    console.log('Follower doc exists:', followerDoc.exists());
+                    
+                    // フォロー中数を取得
+                    const followingDoc = await getDoc(doc(db, 'follows', `followingCounts/${targetUid}`));
+                    console.log('Following doc exists:', followingDoc.exists());
+                    
+                    // カウントを設定（ドキュメントが存在しない場合は0）
+                    const followersCount = followerDoc.exists() ? (followerDoc.data().count || 0) : 0;
+                    const followingCount = followingDoc.exists() ? (followingDoc.data().count || 0) : 0;
+                    
+                    console.log('Follow counts:', { followersCount, followingCount });
+                    
+                    setFollowersCount(followersCount);
+                    setFollowingCount(followingCount);
                 } catch (error) {
-                    console.error('Error fetching follow counts:', error);
+                    console.error('Error fetching follow counts:', {
+                        code: error.code,
+                        message: error.message,
+                        stack: error.stack
+                    });
                     setFollowersCount(0);
                     setFollowingCount(0);
                 }
