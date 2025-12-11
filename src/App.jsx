@@ -1809,12 +1809,12 @@ const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
                     console.log('Fetching follow counts for UID:', targetUid);
                     
                     // フォロワー数を取得 - followsコレクションのfollowerCountsサブコレクション
-                    const followerDocRef = doc(db, 'follows', 'followerCounts', targetUid);
+                    const followerDocRef = doc(db, 'followerCounts', targetUid);
                     const followerDoc = await getDoc(followerDocRef);
                     const followersCount = followerDoc.exists() ? (followerDoc.data().count || 0) : 0;
                     
                     // フォロー中数を取得 - followsコレクションのfollowingCountsサブコレクション
-                    const followingDocRef = doc(db, 'follows', 'followingCounts', targetUid);
+                    const followingDocRef = doc(db, 'followingCounts', targetUid);
                     const followingDoc = await getDoc(followingDocRef);
                     const followingCount = followingDoc.exists() ? (followingDoc.data().count || 0) : 0;
                     
