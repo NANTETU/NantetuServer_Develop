@@ -1799,44 +1799,11 @@ const ProfilePage = ({ L, user, profile, db, page, navigate }) => {
                 
                 // フォロー状態を確認
                 if (user.uid !== targetUid) {
-                    const followRef = doc(db, 'follows', `${user.uid}_${targetUid}`);
-                    const followSnap = await getDoc(followRef);
-                    setIsFollowing(followSnap.exists());
+                    setLoading(false);
                 }
-                
-                // フォロワー/フォロー中数を取得
-                try {
-                    console.log('Fetching follow counts for UID:', targetUid);
-                    
-                    // フォロワー数を取得 - followsコレクションのfollowerCountsサブコレクション
-                    const followerDocRef = doc(db, 'followerCounts', targetUid);
-                    const followerDoc = await getDoc(followerDocRef);
-                    const followersCount = followerDoc.exists() ? (followerDoc.data().count || 0) : 0;
-                    
-                    // フォロー中数を取得 - followsコレクションのfollowingCountsサブコレクション
-                    const followingDocRef = doc(db, 'followingCounts', targetUid);
-                    const followingDoc = await getDoc(followingDocRef);
-                    const followingCount = followingDoc.exists() ? (followingDoc.data().count || 0) : 0;
-                    
-                    console.log('Follow counts:', { followersCount, followingCount });
-                    
-                    setFollowersCount(followersCount);
-                    setFollowingCount(followingCount);
-                } catch (error) {
-                    console.error('Error fetching follow counts:', {
-                        code: error.code,
-                        message: error.message,
-                        stack: error.stack
-                    });
-                    // エラーが発生した場合は0を設定
-                    setFollowersCount(0);
-                    setFollowingCount(0);
-                }
-                
-            } catch (e) {
-                console.error('Failed to load profile page', e);
-                setError('プロフィールの読み込みに失敗しました');
-            } finally {
+            } catch (error) {
+                console.error("Error loading profile:", error);
+                setError(L?.profile?.load_error || 'プロフィールの読み込み中にエラーが発生しました');
                 setLoading(false);
             }
         };
