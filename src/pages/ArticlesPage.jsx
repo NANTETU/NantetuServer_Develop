@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Calendar, ArrowRight, User, MessageCircle, Heart, Share2,
-    ArrowLeftOnRectangleIcon, Send
+    ArrowLeft, Send
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -124,7 +124,7 @@ export const ArticleDetail = ({ articleId, onBack, L, user, profile, db, navigat
 
     return (
         <div className="max-w-5xl mx-auto py-32 px-4 animate-fade-in-right">
-            <button onClick={onBack} className="group mb-8 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-bold"><ArrowLeftOnRectangleIcon className="transform rotate-180 group-hover:-translate-x-1 transition-transform" size={20} /> {L.news.back_to_list}</button>
+            <button onClick={onBack} className="group mb-8 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-bold"><ArrowLeft className="transform group-hover:-translate-x-1 transition-transform" size={20} /> {L.news.back_to_list}</button>
             <div className="grid lg:grid-cols-4 gap-8">
                 {/* Main Content */}
                 <div className="lg:col-span-3">

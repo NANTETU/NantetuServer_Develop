@@ -1,9 +1,9 @@
-export { default as ForumPage } from './ForumPage';
-export { default as GuidePage } from './GuidePage';
-export { default as CommandsPage } from './CommandsPage';
-export { default as TermsPage } from './TermsPage';
-export { default as PrivacyPage } from './PrivacyPage';
-export { default as NotFoundPage } from './NotFoundPage';
+export { ForumPage } from './ForumPage';
+export { GuidePage } from './GuidePage';
+export { CommandsPage } from './CommandsPage';
+export { TermsPage } from './TermsPage';
+export { PrivacyPage } from './PrivacyPage';
+export { NotFoundPage } from './NotFoundPage';
 
 // New extractions
 export { default as HomePage, JoinPage } from './Home';

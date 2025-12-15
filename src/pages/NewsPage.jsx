@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeftOnRectangleIcon, Calendar, ArrowRight, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, ArrowRight, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -31,7 +31,7 @@ export const NewsDetail = ({ L, id, newsData, navigate }) => {
     return (
         <div className="max-w-4xl mx-auto py-32 px-4 animate-fade-in-right">
             <button onClick={() => navigate('news')} className="group mb-8 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-bold">
-                <ArrowLeftOnRectangleIcon className="transform rotate-180 group-hover:-translate-x-1 transition-transform" size={20} /> {L.news.back_to_list || "Back to List"}
+                <ArrowLeft className="transform group-hover:-translate-x-1 transition-transform" size={20} /> {L.news.back_to_list || "Back to List"}
             </button>
             <article className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
                 <div className="relative h-64 md:h-80 w-full overflow-hidden">
