@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { MessageSquare, Send, Loader2 } from 'lucide-react';
 
-export const ForumPage = ({ L, user, db, appId, profile, navigate }) => {
+export const ForumPage = ({ L, db, appId, navigate }) => {
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState('');
     const [name, setName] = useState('');
     const [isSending, setIsSending] = useState(false);
 
-    const isGoogleUser = user && !user.isAnonymous;
+    const isGoogleUser = false;
 
     // Fetch posts from Firestore (Real)
     useEffect(() => {
-        if (!user || !db || !appId) return; // Wait for User Auth!
+        if (!db || !appId) return;
 
         // Use root path 'forum_posts' as per original success, but with strict auth check
         const forumPath = 'forum_posts';
@@ -34,21 +34,19 @@ export const ForumPage = ({ L, user, db, appId, profile, navigate }) => {
         });
 
         return () => unsubscribe();
-    }, [user, db, appId]);
+    }, [db, appId]);
 
     const handlePost = async (e) => {
         e.preventDefault();
-        if (!newPost.trim() || !user) return;
+        if (!newPost.trim()) return;
         setIsSending(true);
 
         try {
             const forumPath = 'forum_posts';
             await addDoc(collection(db, forumPath), {
                 text: newPost,
-                name: (isGoogleUser && profile?.name)
-                    ? profile.name
-                    : (name.trim() || L.forum.anonymous),
-                uid: user.uid,
+                name: name.trim() || L.forum.anonymous,
+                uid: null,
                 createdAt: serverTimestamp()
             });
             setNewPost('');
@@ -68,15 +66,13 @@ export const ForumPage = ({ L, user, db, appId, profile, navigate }) => {
                 <form onSubmit={handlePost}>
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col md:flex-row gap-4">
-                            {!isGoogleUser && (
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder={L.forum.input_name}
-                                    className="w-full md:w-1/3 px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all"
-                                />
-                            )}
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder={L.forum.input_name}
+                                className="w-full md:w-1/3 px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white focus:ring-2 focus:ring-purple-500 transition-all"
+                            />
                         </div>
                         <textarea value={newPost} onChange={(e) => setNewPost(e.target.value)} placeholder={L.forum.input_message} rows="3" className="w-full px-5 py-4 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 outline-none dark:text-white resize-none focus:ring-2 focus:ring-purple-500 transition-all text-lg" />
                         <div className="flex justify-between items-center">
