@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Menu, X, Moon, Sun, Search, Map, Home, FileText,
+    Menu, X, Search, Map, Home, FileText,
     Bell, BookOpen, Terminal, ExternalLink
 } from 'lucide-react';
 
@@ -26,7 +26,7 @@ const useScrollDirection = () => {
 };
 
 export const Navbar = ({
-    L, page, navigate, darkMode, setDarkMode,
+    L, page, navigate,
     isMenuOpen, setIsMenuOpen, currentLang, setCurrentLang,
     searchTerm, searchValue, handleSearch, serverStatus, hasUnreadNews, newsData,
     user, profile, isProfileLoading, onLogin, onLogout
@@ -59,7 +59,7 @@ export const Navbar = ({
                                     />
                                     <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white dark:border-gray-900 rounded-full ${serverStatus.online ? 'bg-green-500' : 'bg-red-500'}`}></span>
                                 </div>
-                                <span className={`font-black text-xl tracking-tight group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors hidden sm:block ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white drop-shadow-md' : 'text-gray-800 dark:text-white'}`}>なんてつサーバー</span>
+                                <span className="font-black text-xl tracking-tight group-hover:text-purple-400 transition-colors hidden sm:block text-white">なんてつサーバー</span>
                             </div>
 
                             {/* Right Container: Nav Links + Search + Actions */}
@@ -75,8 +75,7 @@ export const Navbar = ({
                                                     href="http://map.nantetu123.f5.si:35854/"
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className={`relative px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1 ${scrolledToTop && !darkMode ? 'text-white hover:bg-white/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                        }`}
+                                                    className="relative px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1 text-gray-400 hover:text-gray-200 hover:bg-gray-800"
                                                 >
                                                     <Map size={16} /> マップ
                                                 </a>
@@ -87,8 +86,8 @@ export const Navbar = ({
                                                 key={key}
                                                 onClick={() => navigate(key)}
                                                 className={`relative px-5 py-2 rounded-full text-sm font-bold transition-all ${page === key
-                                                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-300 shadow-md ring-1 ring-gray-100 dark:ring-gray-600'
-                                                    : scrolledToTop && !darkMode ? 'text-white hover:bg-white/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                    ? 'bg-gray-700 text-purple-300 shadow-md ring-1 ring-gray-600'
+                                                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
                                                     }`}
                                             >
                                                 {L.nav[key]}
@@ -101,16 +100,15 @@ export const Navbar = ({
                                 </div>
 
                                 {/* Search & Toggles & Server Status + Auth */}
-                                <div className={`flex items-center gap-3 border-l pl-6 ${scrolledToTop && !darkMode ? 'border-white/20' : 'border-gray-200 dark:border-gray-700'}`}>
+                                <div className="flex items-center gap-3 border-l pl-6 border-gray-700">
                                     <div className="relative group">
-                                        <Search size={16} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors ${scrolledToTop && !darkMode ? 'text-white/70 group-focus-within:text-purple-500' : 'text-gray-400 group-focus-within:text-purple-500'}`} />
-                                        <input type="text" placeholder={L.footer.search_placeholder} value={searchValue} onChange={handleSearch} className={`pl-9 pr-4 py-2 w-32 focus:w-48 rounded-full text-sm border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all ${scrolledToTop && !darkMode ? 'bg-white/20 text-white placeholder-white/70 focus:bg-white focus:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 dark:text-white'}`} />
+                                        <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors text-gray-400 group-focus-within:text-purple-500" />
+                                        <input type="text" placeholder={L.footer.search_placeholder} value={searchValue} onChange={handleSearch} className="pl-9 pr-4 py-2 w-32 focus:w-48 rounded-full text-sm border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all bg-gray-800 text-white" />
                                     </div>
 
                                     <div className="flex items-center gap-3">
                                         <div className="flex gap-2">
-                                            <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all font-bold text-xs border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{currentLang === 'ja' ? 'EN' : 'JP'}</button>
-                                            <button onClick={() => setDarkMode(!darkMode)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border border-transparent ${scrolledToTop && !darkMode ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-purple-100 dark:hover:bg-gray-700'}`}>{darkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
+                                            <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="w-9 h-9 flex items-center justify-center rounded-full transition-all font-bold text-xs border border-transparent bg-gray-800 text-gray-300 hover:bg-gray-700">{currentLang === 'ja' ? 'EN' : 'JP'}</button>
                                         </div>
 
                                         {/* Auth Removed */}
@@ -122,24 +120,23 @@ export const Navbar = ({
                             {/* Mobile Menu Button */}
                             <div className="lg:hidden flex items-center gap-3">
                                 <div className={`flex items-center gap-2 px-2 py-1 rounded-full text-[10px] font-bold border transition-all ${serverStatus.online
-                                    ? 'bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400'
-                                    : 'bg-gray-100 text-gray-400 border-gray-200'
-                                    } ${scrolledToTop && !isMenuOpen && !darkMode ? 'bg-black/30 text-white border-white/20' : ''}`}>
+                                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                    : 'bg-gray-800 text-gray-400 border-gray-700'
+                                    }`}>
                                     <span className={`w-1.5 h-1.5 rounded-full ${serverStatus.online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
                                     <span className="hidden xs:inline">{serverStatus.online ? `${serverStatus.players} Online` : 'Offline'}</span>
                                 </div>
-                                <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-full transition-colors ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white hover:bg-white/10' : 'text-gray-600 dark:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
-                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-colors ${scrolledToTop && !isMenuOpen && !darkMode ? 'text-white hover:bg-white/10' : 'text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}>{isMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-xl transition-colors text-white hover:bg-gray-800">{isMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
                             </div>
                         </div>
                     </div>
 
                     {/* Mobile Nav Dropdown */}
-                    <div className={`lg:hidden absolute w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden ${isMenuOpen ? 'max-h-[800px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4'}`}>
+                    <div className={`lg:hidden absolute w-full bg-gray-900/95 backdrop-blur-xl border-b border-gray-800 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden ${isMenuOpen ? 'max-h-[800px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4'}`}>
                         <div className="px-4 pt-4 pb-6 space-y-2">
                             <div className="relative mb-6">
                                 <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                <input type="text" placeholder={L.footer.search_placeholder} value={searchValue} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all dark:text-white" />
+                                <input type="text" placeholder={L.footer.search_placeholder} value={searchValue} onChange={handleSearch} className="pl-11 pr-4 py-3 w-full rounded-xl text-base bg-gray-800 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all text-white" />
                             </div>
                             {['home', 'articles', 'news', 'guide', 'commands', 'map'].map((key) => {
                                 if (key === 'map') {
@@ -150,7 +147,7 @@ export const Navbar = ({
                                             target="_blank"
                                             rel="noreferrer"
                                             onClick={() => setIsMenuOpen(false)}
-                                            className="relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                            className="relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 text-gray-200 hover:bg-gray-800"
                                         >
                                             <span className="flex items-center gap-3">
                                                 <Map size={18} className="opacity-70" />
@@ -165,8 +162,8 @@ export const Navbar = ({
                                         key={key}
                                         onClick={() => { navigate(key); setIsMenuOpen(false); }}
                                         className={`relative flex items-center justify-between w-full text-left px-4 py-4 text-base font-bold rounded-xl transition-all active:scale-95 ${page === key
-                                            ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
-                                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                            ? 'bg-purple-900/20 text-purple-400'
+                                            : 'text-gray-200 hover:bg-gray-800'
                                             }`}
                                     >
                                         <span className="flex items-center gap-3">
@@ -194,8 +191,8 @@ export const Navbar = ({
                                 <Map size={20} /> マップ
                             </a>
 
-                            <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
-                            <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="block w-full text-left px-4 py-4 text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-800 rounded-xl">
+                            <div className="border-t border-gray-700 my-4"></div>
+                            <button onClick={() => setCurrentLang(currentLang === 'ja' ? 'en' : 'ja')} className="block w-full text-left px-4 py-4 text-base font-bold text-gray-200 hover:bg-gray-800 rounded-xl">
                                 🌐 {currentLang === 'ja' ? 'Switch to English' : '日本語に切り替え'}
                             </button>
                         </div>

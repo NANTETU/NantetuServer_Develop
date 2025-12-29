@@ -34,7 +34,7 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
 import { Navbar, Footer } from './components';
-import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage } from './pages';
+import { ForumPage, GuidePage, CommandsPage, TermsPage, PrivacyPage, NotFoundPage, AdminPage } from './pages';
 import { JoinSection } from './pages/Home';
 import { app, auth, firebaseConfig } from './config/firebase';
 import { SPREADSHEET_ID, SHEET_GID, NEWS_SHEET_URL, DISCORD_WEBHOOK_URL } from './config/constants';
@@ -249,185 +249,10 @@ export const NewsItem = ({ item, L }) => {
 
 // Navbar and Footer are now imported from ./components
 
-export const AIChat = ({ L, isChatOpen, closeChat, currentLang, user, profile }) => {
-    const [chatHistory, setChatHistory] = useState([]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const chatRef = useRef(null);
-
-    useEffect(() => {
-        if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }, [chatHistory]);
-
-    const handleSend = async (e) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
-
-        const userMessage = { role: 'user', text: input.trim() };
-        const newHistory = [...chatHistory, userMessage];
-        setChatHistory(newHistory);
-        setInput('');
-        setIsLoading(true);
-
-        try {
-            // Check API Key availability
-            // Serverless API call does not require client-side apiKey check
-
-
-            const systemPrompt = `
-            あなたは「なんてつサーバー」の公式AIアシスタントです。
-            以下の情報を元に、ユーザーの質問に親切に答えてください。
-            また、嘘の情報を言わずに、本当の情報だけを言い、サーバーに関係のない話には、「私は なんてつサーバー 以外の情報は提供できません。」と答えましょう。
-            そして、回答する際、極力500トークン以内で回答するようにしてください。
-
-            【サーバー情報】
-            - 統合版(Bedrock)専用
-            - IP: ${L.server.ip}
-            - Port: ${L.server.port}
-            - 参加タグ: ${L.server.tag}
-            - 特徴: 土地保護あり、荒らし対策ログ完備、Discord連携、Java版のような機能(/tpa, /home等)
-
-            【ルール】
-            - 荒らし、窃盗、チート禁止（永久BAN）
-            - 差別発言、ハラスメント禁止
-            - 他人の拠点から5マス以上離れて建築すること
-
-            【コマンド】
-            移動・テレポート系 (Essentials)
-            - /tpa <プレイヤー名>
-            - 指定したプレイヤーにテレポートをリクエストします。
-
-            - /tpaccept
-            - /tpa のリクエストを承認します。
-
-            - /tpdeny
-            - /tpa のリクエストを拒否します。
-
-            - /back
-            - 最後にテレポートした場所、または死んだ場所に戻ります。
-
-            - /sethome
-            - 現在地をホームポイントとして設定します。
-
-            - /home
-            - 設定したホームにテレポートします。
-
-            - /spawn
-            - サーバーの初期スポーン地点に戻ります。
-
-            - /warp
-            - 運営が設定した公共施設へ移動します。
-
-            領地・保護・ログ系 (Territory / Tianyan)
-            - /tty
-            - 自分の領地として設定します。(事前に範囲座標のメモが必要)
-
-            - /tygui
-            - 監査ログをGUIで確認します。荒らし特定に便利です。
-
-            - /ty x y z <時間> <半径>
-            - チャットで検索し監査ログを確認します。（上級者向け）
-
-            経済・コミュニケーション (UMoney / Essentials)
-            - /um
-            - 自分の所持金（マネー）を確認します。
-
-            - /um → <送金>
-            - 指定したプレイヤーにお金を送金します。
-
-            - /um → <ランキング>
-            - 所持金のサーバー内ランキングを確認します。
-
-            - /msg <プレイヤー名> <内容>
-            - 指定したプレイヤーに個人メッセージ（DM）を送ります。
-
-            - /ping
-            - サーバーとの接続遅延(Ping値)を確認します。
-
-            - /notice
-            - サーバーからのお知らせを確認します。
-
-            ロールプレイ系 (RolePlay)
-            - /e <アクション>
-            - チャットにアクション（感情表現）を送信します。（例: /e happy）
-
-            【初心者ガイド】
-            - スポーンしたら混雑していない場所へ移動
-            - 5ブロック離れて建築
-            - /ttyで土地保護
-            - Discordに参加推奨
-            `;
-
-            const response = await fetch('/api/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prompt: `
-                System Prompt: ${systemPrompt}
-                User Message: ${input.trim()}
-                `
-                })
-            });
-
-            const data = await response.json();
-            const reply = data.result || "すみません、うまく答えられませんでした。";
-
-            setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
-        } catch (error) {
-            console.error("AI Error:", error);
-            setChatHistory(prev => [...prev, { role: 'model', text: "エラーが発生しました。時間を置いて再試行してください。" }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleClear = () => setChatHistory([]);
-    if (!isChatOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm flex md:justify-end animate-fade-in" onClick={closeChat}>
-            <div
-                className="bg-white dark:bg-gray-900 w-full md:w-[420px] md:max-w-md h-full flex flex-col shadow-2xl transform transition-all duration-300 ease-out border-l border-gray-200 dark:border-gray-700 overflow-hidden animate-slide-in-bottom md:animate-slide-in-right"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="p-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center shadow-md">
-                    <div><h3 className="text-lg font-black flex items-center gap-2"><Zap size={20} className="text-yellow-300 fill-current" />{L.footer.chat_title}</h3><p className="text-xs text-purple-200 opacity-90">Powered by Gemini</p></div>
-                    <div className="flex items-center gap-1">
-                        <button onClick={handleClear} disabled={chatHistory.length === 0} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"><Trash2 size={18} /></button>
-                        <button onClick={closeChat} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"><X size={24} /></button>
-                    </div>
-                </div>
-                <div ref={chatRef} className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-black/20">
-                    {chatHistory.length === 0 ? (
-                        <div className="text-center p-8 pt-20 text-gray-500 dark:text-gray-400 animate-fade-in-up">
-                            <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6"><Bot size={36} className="text-purple-500" /></div>
-                            <p className="font-bold text-lg mb-2">{L.footer.chat_subtitle}</p>
-                        </div>
-                    ) : (
-                        chatHistory.map((msg, index) => (
-                            <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-scale origin-bottom`}>
-                                <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'}`}>
-                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                    {isLoading && <div className="text-xs text-gray-400 ml-4">{L.footer.chat_loading}</div>}
-                </div>
-                <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-                    <form onSubmit={handleSend} className="flex gap-2 relative">
-                        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={L.footer.chat_input_placeholder} className="flex-grow pl-5 pr-12 py-4 rounded-xl bg-gray-100 dark:bg-gray-800 border-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white" disabled={isLoading} />
-                        <button type="submit" disabled={!input.trim() || isLoading} className="absolute right-2 top-2 bottom-2 aspect-square bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all flex items-center justify-center shadow-md"><Send size={18} /></button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 // ==========================================
-// 4. Sub Pages (SubPages.jsx)
+// 3. Sub Pages (SubPages.jsx)
 // ==========================================
+
 
 export const NewsPage = ({ L, newsData, user, profile }) => {
     const displayData = (newsData && newsData.length > 0) ? newsData : L.news.default_data;
@@ -997,7 +822,7 @@ const ArticleDetail = ({ L, id, db, appId, navigate }) => {
 // ==========================================
 // 5. Admin Page
 // ==========================================
-export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
+export const SearchResultsPage = ({ L, searchTerm, navigate, newsData }) => {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(true);
     const lowerSearchTerm = searchTerm.toLowerCase();
@@ -1009,16 +834,16 @@ export const SearchResultsPage = ({ L, searchTerm, navigate }) => {
             const results = [];
 
             // 1. Static Content (News, Commands, Guide, Terms)
-            // Search in news
-            const newsData = L.news.default_data || [];
-            newsData.forEach(item => {
+            // Search in news - use actual newsData if available, otherwise fallback to default
+            const newsToSearch = (newsData && newsData.length > 0) ? newsData : (L.news.default_data || []);
+            newsToSearch.forEach(item => {
                 if (item.title.toLowerCase().includes(lowerSearchTerm) || item.content.toLowerCase().includes(lowerSearchTerm)) {
                     results.push({
                         id: `news-${item.id}`,
-                        category: L.footer.search_category_news,
+                        category: L.footer.search_category_news || 'ニュース',
                         title: item.title,
                         description: item.content.substring(0, 100) + '...',
-                        action: () => navigate('news') // Could navigate to specific news if updated
+                        action: () => navigate(`news/${item.id}`) // Navigate to specific news
                     });
                 }
             });
@@ -1493,21 +1318,19 @@ const CustomStyles = () => (
     ::-webkit-scrollbar { width: 10px; }
     ::-webkit-scrollbar-thumb { background: #8b5cf6; border-radius: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); }
-    .dark .glass-panel { background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-panel { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
   `}</style>
 );
 
 export default function App() {
 
     // State Definitions
-    const [darkMode, setDarkMode] = useState(false);
+    // Dark mode is now always enabled
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [page, setPage] = useState('home');
     const [serverStatus, setServerStatus] = useState({ online: false, players: 0, loading: true });
     const [quizState, setQuizState] = useState({ started: false, current: 0, score: 0, finished: false, showResult: false, isCorrect: null });
     const [activeAccordion, setActiveAccordion] = useState(null);
-    const [isChatOpen, setIsChatOpen] = useState(false);
     const [currentLang, setCurrentLang] = useState('ja');
 
     // Localization
@@ -1548,31 +1371,7 @@ export default function App() {
     const [db, setDb] = useState(null);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-    const handleGeminiCall = useCallback(async (userPrompt) => {
-        const apiEndpoint = '/api/generate';
 
-        try {
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ prompt: userPrompt }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            console.log("Gemini Result:", data.result);
-            return data.result;
-
-        } catch (error) {
-            console.error("API Call Error:", error);
-        }
-    }, []);
 
     // --- Initialize Firebase ---
     useEffect(() => {
@@ -1594,31 +1393,11 @@ export default function App() {
 
 
 
-    // Enhanced dark mode management with localStorage persistence
+    // Set dark mode as default and only theme
     useEffect(() => {
-        const savedDarkMode = localStorage.getItem('darkMode');
-        if (savedDarkMode !== null) {
-            const isDark = JSON.parse(savedDarkMode);
-            setDarkMode(isDark);
-            if (isDark) document.documentElement.classList.add('dark');
-            else document.documentElement.classList.remove('dark');
-        } else {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setDarkMode(prefersDark);
-            if (prefersDark) document.documentElement.classList.add('dark');
-        }
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
     }, []);
-
-    useEffect(() => {
-        localStorage.setItem('darkMode', JSON.stringify(darkMode));
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-            document.documentElement.style.colorScheme = 'dark';
-        } else {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.style.colorScheme = 'light';
-        }
-    }, [darkMode]);
 
     // Initial Splash Screen Timer
     useEffect(() => {
@@ -1800,7 +1579,7 @@ export default function App() {
     }, [quizState.current, showToast]);
 
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
+        <div className="min-h-screen transition-colors duration-300 dark bg-gray-950 text-white">
             <CustomStyles />
 
             {/* 1. Global Loading Overlays */}
@@ -1812,8 +1591,6 @@ export default function App() {
                 L={L}
                 page={page}
                 navigate={handleNavigate}
-                darkMode={darkMode}
-                setDarkMode={setDarkMode}
                 isMenuOpen={isMenuOpen}
                 setIsMenuOpen={setIsMenuOpen}
                 currentLang={currentLang}
@@ -1831,7 +1608,7 @@ export default function App() {
                 {searchTerm && (
                     <div className="max-w-6xl mx-auto py-32 px-4 animate-fade-in-scale">
                         <h2 className="text-4xl font-black mb-8 dark:text-white">{L.footer.search_results_title}</h2>
-                        <SearchResultsPage L={L} searchTerm={searchTerm} navigate={handleNavigate} />
+                        <SearchResultsPage L={L} searchTerm={searchTerm} navigate={handleNavigate} newsData={newsData} />
                     </div>
                 )}
                 {!searchTerm && page === 'home' && (
@@ -1872,8 +1649,9 @@ export default function App() {
                 {!searchTerm && page === 'terms' && <TermsPage L={L} />}
                 {!searchTerm && page === 'privacy' && <PrivacyPage L={L} />}
                 {!searchTerm && page === 'join' && <JoinPage L={L} serverStatus={serverStatus} handleCopy={handleCopy} navigate={handleNavigate} />}
+                {!searchTerm && page === 'admin' && <AdminPage L={L} db={db} navigate={handleNavigate} />}
 
-                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join'].includes(page) && !page.startsWith('articles/') && !page.startsWith('news/') && <NotFoundPage L={L} navigate={handleNavigate} />}
+                {!searchTerm && !['home', 'news', 'articles', 'forum', 'guide', 'commands', 'terms', 'privacy', 'join', 'admin'].includes(page) && !page.startsWith('articles/') && !page.startsWith('news/') && <NotFoundPage L={L} navigate={handleNavigate} />}
             </main>
 
             {/* 4. Footer */}
@@ -1881,17 +1659,6 @@ export default function App() {
 
             {/* 5. Global Overlays */}
             {toastMessage && <Toast message={toastMessage} />}
-
-            {/* Chat Button */}
-            <button
-                onClick={() => setIsChatOpen(true)}
-                className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform hover:shadow-purple-500/50 group"
-            >
-                <MessageCircle size={28} className="group-hover:animate-pulse" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
-            </button>
-
-            <AIChat L={L} isChatOpen={isChatOpen} closeChat={() => setIsChatOpen(false)} currentLang={currentLang} />
         </div>
     );
 }
