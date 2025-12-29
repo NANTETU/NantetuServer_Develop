@@ -1,7 +1,11 @@
+export { default as HomePage, JoinPage } from './Home';
 export { ForumPage } from './ForumPage';
 export { GuidePage } from './GuidePage';
 export { CommandsPage } from './CommandsPage';
 export { TermsPage } from './TermsPage';
 export { PrivacyPage } from './PrivacyPage';
 export { NotFoundPage } from './NotFoundPage';
-export { default as AdminPage } from './AdminPage';
+export { AdminPage } from './AdminPage';
+export { NewsPage, NewsDetail } from './NewsPage';
+export { ArticlesPage, ArticleDetail } from './ArticlesPage';
+export { SearchResultsPage } from './SearchResultsPage';

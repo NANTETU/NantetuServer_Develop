@@ -6,65 +6,114 @@ import { DISCORD_WEBHOOK_URL } from '../data/languages';
 // --- Sub-Components specific to Home ---
 
 export const JoinSection = ({ L, serverStatus, handleCopy, navigate }) => (
-    <section id="join" className="py-24 px-4 relative overflow-hidden animate-fade-in-scale">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12 items-center relative z-10">
-            <div className="lg:w-1/2">
-                <div className="inline-block p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mb-6">
-                    <Gamepad2 size={32} />
-                </div>
-                <h2 className="text-4xl font-black mb-6 dark:text-white leading-tight">
+    <section id="join" className="py-32 px-4 relative overflow-hidden bg-white dark:bg-gray-950">
+        {/* Background Decorative Circles */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl -mr-48 -mt-48"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-48 -mb-48"></div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+            <div className="text-center mb-16">
+                <span className="inline-block px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-black text-[10px] uppercase tracking-widest mb-4">
+                    Get Started
+                </span>
+                <h2 className="text-4xl md:text-5xl font-black mb-6 dark:text-white leading-tight">
                     {L.join.title}
                 </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                     {L.join.subtitle}
                 </p>
+            </div>
 
-                <div className="space-y-6 mb-10">
-                    {/* ここが修正した箇所: L.lang_code を使用 */}
-                    <CopyBox
-                        label={L.join.label_gamertag}
-                        value={L.server.tag}
-                        onCopy={handleCopy}
-                        lang={L.lang_code}
-                    />
+            <div className="grid lg:grid-cols-12 gap-12 items-start">
+                {/* Left Column: Instructions */}
+                <div className="lg:col-span-7 space-y-12">
+                    <div className="relative">
+                        <div className="absolute left-6 top-8 bottom-8 w-1 bg-gradient-to-b from-purple-500/30 via-blue-500/30 to-transparent hidden md:block"></div>
+
+                        <div className="space-y-10">
+                            {[
+                                { step: 1, title: L.join.label_ip, value: L.server.ip, icon: Terminal },
+                                { step: 2, title: L.join.label_port, value: L.server.port, icon: Zap },
+                                { step: 3, title: L.join.label_gamertag, value: L.server.tag, icon: User }
+                            ].map((item, idx) => (
+                                <div key={idx} className="relative flex flex-col md:flex-row gap-6 group">
+                                    <div className="relative z-10 flex-shrink-0 w-12 h-12 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md flex items-center justify-center text-purple-600 dark:text-purple-400 font-black group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                                        <item.icon size={20} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="mb-4">
+                                            <h3 className="text-sm font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">{item.title}</h3>
+                                            <CopyBox
+                                                label={item.title}
+                                                value={item.value}
+                                                onCopy={handleCopy}
+                                                lang={L.lang_code}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="grid sm:grid-cols-2 gap-4">
-                        <CopyBox
-                            label={L.join.label_ip}
-                            value={L.server.ip}
-                            onCopy={handleCopy}
-                            lang={L.lang_code}
-                        />
-                        <CopyBox
-                            label={L.join.label_port}
-                            value={L.server.port}
-                            onCopy={handleCopy}
-                            lang={L.lang_code}
-                        />
+                        <a href="https://discord.gg/79H7Jy65nz" target="_blank" rel="noreferrer" className="group p-5 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-2xl flex flex-col gap-4 transition-all hover:-translate-y-1 shadow-xl shadow-indigo-500/20">
+                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                <MessageCircle size={24} />
+                            </div>
+                            <div>
+                                <p className="font-black text-lg">{L.join.btn_discord}</p>
+                                <p className="text-white/60 text-xs">Join our community</p>
+                            </div>
+                        </a>
+                        <button onClick={() => navigate('guide')} className="group p-5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-2xl flex flex-col gap-4 transition-all hover:-translate-y-1 border border-gray-200 dark:border-gray-700 shadow-md">
+                            <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
+                                <BookOpen size={24} />
+                            </div>
+                            <div>
+                                <p className="font-black text-lg">{L.join.btn_guide}</p>
+                                <p className="text-gray-500 dark:text-gray-400 text-xs">Detailed connection guide</p>
+                            </div>
+                        </button>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-4">
-                    <a href="https://discord.gg/79H7Jy65nz" target="_blank" rel="noreferrer" className="flex-1 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:-translate-y-1">
-                        <MessageCircle size={20} /> {L.join.btn_discord}
-                    </a>
-                    <button onClick={() => navigate('guide')} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all border border-gray-200 dark:border-gray-700">
-                        <BookOpen size={20} /> {L.join.btn_guide}
-                    </button>
-                </div>
-            </div>
+                {/* Right Column: Status Card */}
+                <div className="lg:col-span-5 lg:sticky lg:top-32">
+                    <div className="group relative overflow-hidden rounded-[2.5rem] shadow-2xl bg-gray-900 aspect-[4/5]">
+                        <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/Minecraft%20Screenshot.png" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/40 to-transparent"></div>
 
-            <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-0 overflow-hidden group rounded-3xl shadow-2xl">
-                <img src="https://raw.githubusercontent.com/NANTETU/Nantetu-Server/refs/heads/main/Minecraft%20Screenshot.png" alt={L.join.img_alt_text} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex flex-col justify-end p-8">
-                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                        <p className="text-white font-bold text-2xl drop-shadow-lg mb-2">{L.join.img_overlay_text}</p>
-                        <div className="w-16 h-1 bg-yellow-400 rounded-full mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100"></div>
+                        <div className="absolute inset-x-8 bottom-8 flex flex-col gap-6">
+                            {/* Live Status Badge */}
+                            <div className="flex items-center gap-3 w-fit px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+                                <span className={`w-3 h-3 rounded-full ${serverStatus.online ? 'bg-green-500' : 'bg-red-500'} animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.6)]`}></span>
+                                <span className="text-white font-black text-xs uppercase tracking-widest">
+                                    {serverStatus.online ? L.join.status_online : L.join.status_offline}
+                                </span>
+                                {serverStatus.online && (
+                                    <>
+                                        <span className="w-px h-3 bg-white/20"></span>
+                                        <span className="text-white font-black text-xs">{serverStatus.players} PLAYERS</span>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <h3 className="text-3xl font-black text-white drop-shadow-lg leading-tight">
+                                    {L.join.img_overlay_text}
+                                </h3>
+                                <div className="w-12 h-1.5 bg-yellow-400 rounded-full transition-all duration-500 group-hover:w-24"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 );
+
+export const JoinPage = JoinSection;
 
 export default function HomePage({ L, serverStatus, quizState, setQuizState, resetQuiz, handleQuizAnswer, handleCopy, scrollToSection, navigate, activeAccordion, setActiveAccordion, showToast }) {
     const QUIZ_DATA = L.quiz_data;
